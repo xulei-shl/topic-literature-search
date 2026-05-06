@@ -1,0 +1,13 @@
+# Python 依赖
+
+python>=3.10
+camoufox
+playwright
+pandas
+openpyxl
+pywin32
+lxml
+
+# LLM 评分依赖
+
+openai
