@@ -72,3 +72,76 @@ def save_results(data: dict[str, Any], output_dir: Path, fallback_result_type: s
         json.dump(data, file, ensure_ascii=False, indent=2)
 
     return str(file_path)
+
+
+def build_batch_output_filename(
+    query: str,
+    batch_index: int,
+    kind: str,
+    suffix: str,
+    fallback: str = "search",
+) -> str:
+    """生成批次文件名。
+
+    Args:
+        query: 检索词。
+        batch_index: 批次序号。
+        kind: 文件类型标记。
+        suffix: 文件后缀。
+        fallback: slug 兜底名称。
+
+    Returns:
+        str: 文件名。
+    """
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    slug = build_output_slug(query, fallback)[:40]
+    return f"{timestamp}-{slug}-batch{batch_index:03d}-{kind}{suffix}"
+
+
+def build_summary_output_filename(query: str, fallback: str = "search") -> str:
+    """生成汇总文件名。
+
+    Args:
+        query: 检索词。
+        fallback: slug 兜底名称。
+
+    Returns:
+        str: 汇总文件名。
+    """
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    slug = build_output_slug(query, fallback)[:40]
+    return f"{timestamp}-{slug}-merged.xlsx"
+
+
+def build_export_file_path(
+    output_dir: Path,
+    query: str,
+    batch_index: int,
+    kind: str,
+    suggested_name: str,
+    fallback: str = "search",
+    default_suffix: str = ".xls",
+) -> Path:
+    """生成导出文件完整路径。
+
+    Args:
+        output_dir: 输出目录。
+        query: 检索词。
+        batch_index: 批次序号。
+        kind: 文件类型标记。
+        suggested_name: 浏览器建议文件名。
+        fallback: slug 兜底名称。
+        default_suffix: 建议文件名缺失后缀时使用的默认后缀。
+
+    Returns:
+        Path: 文件路径。
+    """
+    suffix = Path(suggested_name).suffix or default_suffix
+    filename = build_batch_output_filename(
+        query=query,
+        batch_index=batch_index,
+        kind=kind,
+        suffix=suffix,
+        fallback=fallback,
+    )
+    return output_dir / filename

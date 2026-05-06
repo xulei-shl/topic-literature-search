@@ -8,6 +8,7 @@ import unittest
 from contextlib import contextmanager
 from pathlib import Path
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
 
 TIMEOUT_ENV_KEYS = [
     "PAGE_TIMEOUT",
@@ -70,12 +71,12 @@ class SearchTimeoutConfigTestCase(unittest.TestCase):
         module_cases = [
             (
                 "cnki_config_test",
-                Path("E:/Desk/xinqingnian/cnki-search/scripts/config.py"),
+                ROOT_DIR / "cnki-search" / "scripts" / "config.py",
                 "CnkiSearchConfig",
             ),
             (
                 "vp_config_test",
-                Path("E:/Desk/xinqingnian/vp-search/scripts/config.py"),
+                ROOT_DIR / "vp-search" / "scripts" / "config.py",
                 "VpSearchConfig",
             ),
         ]
@@ -110,7 +111,7 @@ class SearchTimeoutConfigTestCase(unittest.TestCase):
 
     def test_explicit_timeout_should_override_dotenv(self) -> None:
         """显式传入的超时配置应优先于 .env。"""
-        module = load_module("cnki_config_explicit_test", Path("E:/Desk/xinqingnian/cnki-search/scripts/config.py"))
+        module = load_module("cnki_config_explicit_test", ROOT_DIR / "cnki-search" / "scripts" / "config.py")
         config_class = getattr(module, "CnkiSearchConfig")
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -125,7 +126,7 @@ class SearchTimeoutConfigTestCase(unittest.TestCase):
 
     def test_invalid_timeout_should_raise_value_error(self) -> None:
         """非法超时值应抛出明确异常。"""
-        module = load_module("vp_config_invalid_test", Path("E:/Desk/xinqingnian/vp-search/scripts/config.py"))
+        module = load_module("vp_config_invalid_test", ROOT_DIR / "vp-search" / "scripts" / "config.py")
         config_class = getattr(module, "VpSearchConfig")
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -138,7 +139,7 @@ class SearchTimeoutConfigTestCase(unittest.TestCase):
 
     def test_process_env_should_override_dotenv(self) -> None:
         """进程环境变量应优先于 `.env` 文件。"""
-        module = load_module("cnki_config_env_override_test", Path("E:/Desk/xinqingnian/cnki-search/scripts/config.py"))
+        module = load_module("cnki_config_env_override_test", ROOT_DIR / "cnki-search" / "scripts" / "config.py")
         config_class = getattr(module, "CnkiSearchConfig")
 
         os.environ["PAGE_TIMEOUT"] = "66"
@@ -153,17 +154,17 @@ class SearchTimeoutConfigTestCase(unittest.TestCase):
 
     def test_cnki_and_vp_output_dir_should_use_workspace_outputs(self) -> None:
         """CNKI 与维普结果都应写入仓库根目录下的 outputs。"""
-        workspace_root = Path("E:/Desk/xinqingnian").resolve()
+        workspace_root = ROOT_DIR.resolve()
         module_cases = [
             (
                 "cnki_config_output_test",
-                Path("E:/Desk/xinqingnian/cnki-search/scripts/config.py"),
+                ROOT_DIR / "cnki-search" / "scripts" / "config.py",
                 "CnkiSearchConfig",
                 "cnki-search",
             ),
             (
                 "vp_config_output_test",
-                Path("E:/Desk/xinqingnian/vp-search/scripts/config.py"),
+                ROOT_DIR / "vp-search" / "scripts" / "config.py",
                 "VpSearchConfig",
                 "vp-search",
             ),

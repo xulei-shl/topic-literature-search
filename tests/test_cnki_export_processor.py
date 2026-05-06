@@ -7,12 +7,24 @@ from tempfile import TemporaryDirectory
 
 import openpyxl
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1] / "cnki-search" / "scripts"
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-from cli import create_parser, normalize_date_range, parse_cli_date
-from export_processor import ExportResultProcessor
+from tests.script_loader import load_script_module
+
+SCRIPT_DIR = ROOT_DIR / "cnki-search" / "scripts"
+_cli_module = load_script_module(SCRIPT_DIR, "cli", "cnki_cli_module")
+_export_processor_module = load_script_module(
+    SCRIPT_DIR,
+    "export_processor",
+    "cnki_export_processor_module",
+)
+
+create_parser = _cli_module.create_parser
+normalize_date_range = _cli_module.normalize_date_range
+parse_cli_date = _cli_module.parse_cli_date
+ExportResultProcessor = _export_processor_module.ExportResultProcessor
 
 
 class ExportResultProcessorTestCase(unittest.TestCase):

@@ -6,12 +6,18 @@ import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1] / "vp-search" / "scripts"
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-from exceptions import ValidationError
-from progress_store import SearchProgressStore
+from tests.script_loader import load_script_module
+
+SCRIPT_DIR = ROOT_DIR / "vp-search" / "scripts"
+_exceptions_module = load_script_module(SCRIPT_DIR, "exceptions", "vp_progress_exceptions_module")
+_progress_store_module = load_script_module(SCRIPT_DIR, "progress_store", "vp_progress_store_module")
+
+ValidationError = _exceptions_module.ValidationError
+SearchProgressStore = _progress_store_module.SearchProgressStore
 
 
 class SearchProgressStoreTestCase(unittest.TestCase):

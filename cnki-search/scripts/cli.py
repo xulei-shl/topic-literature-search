@@ -6,9 +6,9 @@ import sys
 from pathlib import Path
 
 from browser import BrowserManager
+from cnki_search_interactor import CnkiSearchInteractor
 from config import CnkiSearchConfig
 from exceptions import CnkiSearchError, ValidationError
-from interactor import CnkiSearchInteractor
 from src.utils.cli_dates import normalize_date_range, parse_cli_date
 from utils import print_human_readable, print_json, save_results, setup_logging
 

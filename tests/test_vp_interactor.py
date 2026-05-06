@@ -7,13 +7,26 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import call, patch
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1] / "vp-search" / "scripts"
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-from exceptions import TimeoutError, ValidationError
-from interactor import VpSearchInteractor
-from result_parser import ResultParser
+from tests.script_loader import load_script_module
+
+SCRIPT_DIR = ROOT_DIR / "vp-search" / "scripts"
+_exceptions_module = load_script_module(SCRIPT_DIR, "exceptions", "vp_exceptions_module")
+_interactor_module = load_script_module(
+    SCRIPT_DIR,
+    "vp_search_interactor",
+    "vp_search_interactor_module",
+)
+_result_parser_module = load_script_module(SCRIPT_DIR, "result_parser", "vp_result_parser_module")
+
+VpSearchInteractor = _interactor_module.VpSearchInteractor
+TimeoutError = VpSearchInteractor._wait_for_any_selector.__globals__["TimeoutError"]
+ValidationError = VpSearchInteractor._prepare_progress_store.__globals__["ValidationError"]
+ResultParser = _result_parser_module.ResultParser
+INTERACTOR_TIME = VpSearchInteractor._select_dropdown_option.__globals__["time"]
 
 
 class FakeLocator:
@@ -541,7 +554,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             patch.object(interactor, "_click_export_entry", return_value=True),
             patch.object(interactor, "_page_change_timeout_seconds", return_value=8) as page_change_timeout_seconds,
             patch.object(interactor, "_find_ready_export_page", return_value=interactor.page),
-            patch("interactor.time.time", side_effect=[100.0, 100.0]),
+                patch.object(INTERACTOR_TIME, "time", side_effect=[100.0, 100.0]),
         ):
             result = interactor._open_export_page()
 
@@ -664,7 +677,7 @@ class VpInteractorResultsPageTestCase(unittest.TestCase):
         self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"page": "1/250"})
 
     def test_wait_for_results_ready_accepts_selected_count_marker(self) -> None:
-        with patch("interactor.time.sleep", return_value=None):
+        with patch.object(INTERACTOR_TIME, "sleep", return_value=None):
             self.interactor._wait_for_results_ready()
 
     def test_prefer_results_page_size_clicks_50_option(self) -> None:
@@ -753,7 +766,7 @@ class VpInteractorPaginationTestCase(unittest.TestCase):
             patch.object(self.interactor, "_is_results_page_advanced", side_effect=[False, True]),
             patch.object(self.interactor, "_dismiss_confirm_dialog_if_present") as dismiss_dialog,
             patch.object(self.interactor, "_ensure_captcha_cleared") as ensure_captcha_cleared,
-            patch("interactor.time.sleep", return_value=None),
+            patch.object(INTERACTOR_TIME, "sleep", return_value=None),
         ):
             result = self.interactor._goto_next_results_page()
 
@@ -786,7 +799,7 @@ class VpInteractorPaginationTestCase(unittest.TestCase):
             patch.object(self.interactor, "_is_results_page_advanced", return_value=False),
             patch.object(self.interactor, "_dismiss_confirm_dialog_if_present"),
             patch.object(self.interactor, "_ensure_captcha_cleared"),
-            patch("interactor.time.sleep", return_value=None),
+            patch.object(INTERACTOR_TIME, "sleep", return_value=None),
         ):
             with self.assertRaises(TimeoutError):
                 self.interactor._goto_next_results_page()
@@ -850,7 +863,7 @@ class VpInteractorPaginationTestCase(unittest.TestCase):
         row = FakeLocator(count_value=1)
         row.visible_after = 999999
 
-        with patch("interactor.time.sleep", return_value=None):
+        with patch.object(INTERACTOR_TIME, "sleep", return_value=None):
             with self.assertRaises(ValidationError):
                 interactor._select_dropdown_option(row, "OR", "或")
 

@@ -6,12 +6,24 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import call, patch
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1] / "cnki-search" / "scripts"
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
-from exceptions import TimeoutError, ValidationError
-from interactor import CnkiSearchInteractor
+from tests.script_loader import load_script_module
+
+SCRIPT_DIR = ROOT_DIR / "cnki-search" / "scripts"
+_exceptions_module = load_script_module(SCRIPT_DIR, "exceptions", "cnki_exceptions_module")
+_interactor_module = load_script_module(
+    SCRIPT_DIR,
+    "cnki_search_interactor",
+    "cnki_search_interactor_module",
+)
+
+CnkiSearchInteractor = _interactor_module.CnkiSearchInteractor
+TimeoutError = CnkiSearchInteractor._wait_for_any_selector.__globals__["TimeoutError"]
+ValidationError = CnkiSearchInteractor._prepare_progress_store.__globals__["ValidationError"]
+INTERACTOR_TIME = CnkiSearchInteractor._select_dropdown_option.__globals__["time"]
 
 
 class FakeLocator:
@@ -107,7 +119,7 @@ class CnkiInteractorDropdownTestCase(unittest.TestCase):
         trigger = FakeLocator()
         option = FakeLocator(visible_after=1)
 
-        with patch("interactor.time.sleep", return_value=None):
+        with patch.object(INTERACTOR_TIME, "sleep", return_value=None):
             self.interactor._select_dropdown_option(trigger, option, force=True)
 
         self.assertEqual(len(trigger.click_calls), 2)
@@ -119,7 +131,7 @@ class CnkiInteractorDropdownTestCase(unittest.TestCase):
         option = FakeLocator(visible_after=999999)
         self.interactor.config.page_timeout = 0.01
 
-        with patch("interactor.time.sleep", return_value=None):
+        with patch.object(INTERACTOR_TIME, "sleep", return_value=None):
             with self.assertRaises(ValidationError):
                 self.interactor._select_dropdown_option(trigger, option)
 
@@ -249,7 +261,7 @@ class CnkiInteractorPaginationTestCase(unittest.TestCase):
             patch.object(self.interactor, "_has_results_state_changed", return_value=False),
             patch.object(self.interactor, "_dismiss_dialog_if_present") as dismiss_dialog,
             patch.object(self.interactor, "_ensure_captcha_cleared") as ensure_captcha_cleared,
-            patch("interactor.time.sleep", return_value=None),
+            patch.object(INTERACTOR_TIME, "sleep", return_value=None),
         ):
             result = self.interactor._goto_next_results_page()
 
@@ -267,7 +279,7 @@ class CnkiInteractorPaginationTestCase(unittest.TestCase):
                 "_has_results_state_changed",
                 side_effect=[RuntimeError("页面刷新中"), True],
             ),
-            patch("interactor.time.sleep", return_value=None),
+            patch.object(INTERACTOR_TIME, "sleep", return_value=None),
         ):
             self.interactor._wait_for_results_changed(
                 previous_url="https://example.com/results",

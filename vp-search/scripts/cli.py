@@ -8,8 +8,8 @@ from pathlib import Path
 from browser import BrowserManager
 from config import VpSearchConfig
 from exceptions import ValidationError, VpSearchError
-from interactor import VpSearchInteractor
 from src.utils.cli_dates import normalize_date_range, parse_cli_date
+from vp_search_interactor import VpSearchInteractor
 from utils import print_human_readable, print_json, save_results, setup_logging
 
 logger = logging.getLogger("vp_search.cli")
