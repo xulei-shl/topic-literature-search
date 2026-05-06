@@ -297,23 +297,38 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         dismiss_dialog.assert_called_once()
 
     def test_select_rows_on_current_page_uses_precise_range_for_partial_page(self) -> None:
-        checkbox_group = FakeCheckboxGroup(10)
-        select_all = FakeLocator(count_value=0)
-        page = FakePage({"input[name='selectArticleAll']": select_all})
+        row_checkboxes = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(10)]
+        select_all = FakeLocator(attributes={"name": "selectArticleAll"})
+        page_size_active = FakeLocator(attributes={"data-count": "10"})
+        page = FakePage(
+            {
+                "#selectPageSize a.active[data-count]": page_size_active,
+                ".search-list input[type='checkbox']": FakeLocatorGroup([select_all, *row_checkboxes]),
+                "input[name='selectArticleAll']": select_all,
+            }
+        )
         self.interactor.page = page
+        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 1})
+        checkbox_items = self.interactor._current_page_checkbox_items()
 
         with (
-            patch.object(self.interactor, "_result_checkbox_locator", return_value=checkbox_group),
             patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
+            patch.object(self.interactor, "_extract_selected_count", return_value=0),
         ):
-            self.interactor._select_rows_on_current_page(2, 3, 10)
+            self.interactor._select_rows_on_current_page(
+                checkbox_items=checkbox_items,
+                row_offset=2,
+                page_target_count=3,
+                row_count=len(checkbox_items),
+                selected_before_page=0,
+            )
 
         self.assertEqual(
             ensure_checkbox_checked.call_args_list,
             [
-                call(checkbox_group.items[2], selector="result_checkbox[2]"),
-                call(checkbox_group.items[3], selector="result_checkbox[3]"),
-                call(checkbox_group.items[4], selector="result_checkbox[4]"),
+                call(row_checkboxes[2], selector="result_checkbox[2]"),
+                call(row_checkboxes[3], selector="result_checkbox[3]"),
+                call(row_checkboxes[4], selector="result_checkbox[4]"),
             ],
         )
 
@@ -324,13 +339,18 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.interactor.page = page
 
         with (
-            patch.object(self.interactor, "_result_checkbox_locator", return_value=checkbox_group),
-            patch.object(self.interactor, "_extract_selected_count", side_effect=[50, 120, 50]),
+            patch.object(self.interactor, "_extract_selected_count", side_effect=[120, 50]),
             patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
             patch.object(self.interactor, "_disable_checkbox") as disable_checkbox,
             patch.object(self.interactor, "_select_rows_incrementally") as select_rows_incrementally,
         ):
-            self.interactor._select_rows_on_current_page(0, 50, 50)
+            self.interactor._select_rows_on_current_page(
+                checkbox_items=checkbox_group.items,
+                row_offset=0,
+                page_target_count=50,
+                row_count=50,
+                selected_before_page=50,
+            )
 
         ensure_checkbox_checked.assert_called_once_with(
             select_all,
@@ -341,7 +361,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             checkbox_items=checkbox_group.items,
             row_offset=0,
             page_target_count=50,
-            selected_before_page=50,
+            selected_before_page=0,
         )
 
     def test_select_rows_on_current_page_allows_select_all_after_previous_page_selected(self) -> None:
@@ -351,24 +371,26 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.interactor.page = page
 
         with (
-            patch.object(self.interactor, "_result_checkbox_locator", return_value=checkbox_group),
-            patch.object(self.interactor, "_extract_selected_count", side_effect=[50, 100]),
+            patch.object(self.interactor, "_extract_selected_count", return_value=100),
             patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
         ):
-            self.interactor._select_rows_on_current_page(0, 50, 50)
+            self.interactor._select_rows_on_current_page(
+                checkbox_items=checkbox_group.items,
+                row_offset=0,
+                page_target_count=50,
+                row_count=50,
+                selected_before_page=50,
+            )
 
         ensure_checkbox_checked.assert_called_once_with(
             select_all,
             selector="input[name='selectArticleAll']",
         )
 
-    def test_select_rows_incrementally_stops_after_selected_count_reaches_target(self) -> None:
+    def test_select_rows_incrementally_checks_exact_target_range(self) -> None:
         checkbox_group = FakeCheckboxGroup(5)
 
-        with (
-            patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
-            patch.object(self.interactor, "_extract_selected_count", side_effect=[51, 53]),
-        ):
+        with patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked:
             self.interactor._select_rows_incrementally(
                 checkbox_items=checkbox_group.items,
                 row_offset=0,
@@ -381,6 +403,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             [
                 call(checkbox_group.items[0], selector="result_checkbox[0]"),
                 call(checkbox_group.items[1], selector="result_checkbox[1]"),
+                call(checkbox_group.items[2], selector="result_checkbox[2]"),
             ],
         )
 
@@ -402,15 +425,24 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             patch.object(self.interactor, "_wait_for_results_ready"),
             patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
             patch.object(self.interactor, "_select_rows_on_current_page") as select_rows_on_current_page,
-            patch.object(self.interactor, "_extract_selected_count", side_effect=[50, 100]),
+            patch.object(self.interactor, "_extract_selected_count", side_effect=[0, 50, 50, 100]),
             patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
         ):
             selection = self.interactor._select_batch_results(export_limit=100, row_offset=0)
 
-        self.assertEqual(
-            select_rows_on_current_page.call_args_list,
-            [call(0, 50, 50), call(0, 50, 50)],
-        )
+        self.assertEqual(select_rows_on_current_page.call_count, 2)
+        first_call = select_rows_on_current_page.call_args_list[0].kwargs
+        second_call = select_rows_on_current_page.call_args_list[1].kwargs
+        self.assertEqual(len(first_call["checkbox_items"]), 50)
+        self.assertEqual(first_call["row_offset"], 0)
+        self.assertEqual(first_call["page_target_count"], 50)
+        self.assertEqual(first_call["row_count"], 50)
+        self.assertEqual(first_call["selected_before_page"], 0)
+        self.assertEqual(len(second_call["checkbox_items"]), 50)
+        self.assertEqual(second_call["row_offset"], 0)
+        self.assertEqual(second_call["page_target_count"], 50)
+        self.assertEqual(second_call["row_count"], 50)
+        self.assertEqual(second_call["selected_before_page"], 50)
         goto_next_results_page.assert_called_once()
         self.assertEqual(selection["selected_count"], 100)
         self.assertEqual(selection["page_row_count"], 50)
@@ -427,6 +459,25 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.assertEqual(len(checkbox_items), 50)
         self.assertIs(checkbox_items[0], all_checkbox_group.items[50])
         self.assertIs(checkbox_items[-1], all_checkbox_group.items[99])
+
+    def test_current_page_checkbox_items_filters_select_all_from_broad_selector(self) -> None:
+        select_all = FakeLocator(attributes={"name": "selectArticleAll"})
+        row_checkboxes = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(50)]
+        page_size_active = FakeLocator(attributes={"data-count": "50"})
+        self.interactor.page = FakePage(
+            {
+                "#selectPageSize a.active[data-count]": page_size_active,
+                ".search-list input[type='checkbox']": FakeLocatorGroup([select_all, *row_checkboxes]),
+            }
+        )
+        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 1})
+
+        checkbox_items = self.interactor._current_page_checkbox_items()
+
+        self.assertEqual(len(checkbox_items), 50)
+        self.assertNotIn(select_all, checkbox_items)
+        self.assertIs(checkbox_items[0], row_checkboxes[0])
+        self.assertIs(checkbox_items[-1], row_checkboxes[-1])
 
     def test_open_export_page_retries_after_expanding_batch_menu(self) -> None:
         current_page = FakePage({})

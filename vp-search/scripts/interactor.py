@@ -41,6 +41,8 @@ class VpSearchInteractor:
         ".search-list input[type='checkbox']",
         ".result-list input[type='checkbox']",
     ]
+    RESULT_ROW_CHECKBOX_NAMES = {"selectArticle"}
+    RESULT_SELECT_ALL_NAMES = {"selectArticleAll"}
     RESULTS_PAGER_SELECTORS = ["#headerpager", "#footerpager"]
     RESULTS_READY_SELECTORS = [
         "#headerpager",
@@ -982,20 +984,8 @@ class VpSearchInteractor:
                 row_count=current_row_count,
                 selected_before_page=selected_before_page,
             )
-            page_actual_selected = self._extract_selected_count(0)
-            if page_actual_selected > 0:
-                expected_selected = selected_count + page_target_count
-                if page_actual_selected >= expected_selected:
-                    selected_count = selected_count + page_target_count
-                elif page_actual_selected > selected_count:
-                    actual_increase = page_actual_selected - selected_count
-                    logger.debug("实际选中数量与预期不符，调整: actual_increase=%s, expected=%s", actual_increase, page_target_count)
-                    selected_count = page_actual_selected
-                    page_target_count = actual_increase
-                else:
-                    selected_count = selected_count + page_target_count
-            else:
-                selected_count = selected_count + page_target_count
+            page_actual_selected = self._extract_selected_count(selected_count + page_target_count)
+            selected_count = page_actual_selected
             remaining = export_limit - selected_count
             current_row_offset += page_target_count
             logger.debug(
@@ -1055,11 +1045,27 @@ class VpSearchInteractor:
             page_target_count,
             row_count,
         )
+
+        if row_offset == 0 and page_target_count < row_count:
+            logger.debug(
+                "部分页目标，跳过页级全选，仅逐条勾选: page_target_count=%s, row_count=%s",
+                page_target_count,
+                row_count,
+            )
+            current_page_selected = self._extract_selected_count(0)
+            if current_page_selected >= row_count * 0.8:
+                logger.debug(
+                    "页面已有全选状态，需要清除后再逐条勾选: current=%s, row_count=%s",
+                    current_page_selected,
+                    row_count,
+                )
+                self._clear_page_selection(checkbox_items)
+
         self._select_rows_incrementally(
             checkbox_items=checkbox_items,
             row_offset=row_offset,
             page_target_count=page_target_count,
-            selected_before_page=selected_before_page,
+            selected_before_page=0,
         )
 
     def _try_select_all_on_current_page(self, expected_increase: int, selected_before_page: int) -> bool:
@@ -1126,18 +1132,9 @@ class VpSearchInteractor:
         page_target_count: int,
         selected_before_page: int,
     ) -> None:
-        """逐条勾选当前页记录，并根据页面已选数量动态收敛。"""
-        target_selected_count = selected_before_page + page_target_count
-        current_selected_count = selected_before_page
+        """逐条勾选当前页记录，页内不再逐条读取已选数量。"""
+        del selected_before_page
         for index in range(row_offset, row_offset + page_target_count):
-            if current_selected_count >= target_selected_count:
-                logger.debug(
-                    "逐条勾选已达到目标数量，提前结束: current_selected=%s, target_selected=%s",
-                    current_selected_count,
-                    target_selected_count,
-                )
-                return
-
             if index >= len(checkbox_items):
                 logger.debug(
                     "复选框索引超出范围: index=%s, len=%s",
@@ -1165,29 +1162,69 @@ class VpSearchInteractor:
                         time.sleep(0.3)
                     else:
                         raise
-            page_actual_selected = self._extract_selected_count(0)
-            if page_actual_selected > 0:
-                actual_increase = page_actual_selected - selected_before_page
-                if actual_increase > 0:
-                    expected_remaining = target_selected_count - current_selected_count
-                    if actual_increase >= expected_remaining:
-                        logger.debug(
-                            "逐条勾选已达到目标数量: index=%s, page_actual=%s, target=%s",
-                            index,
-                            page_actual_selected,
-                            target_selected_count,
+
+    def _rollback_excess_selection(
+        self,
+        target_count: int,
+        checkbox_items: list[Locator],
+        max_uncheck_count: int,
+    ) -> None:
+        """回滚多余的选中项，只保留目标数量。"""
+        current_selected = self._extract_selected_count(0)
+        if current_selected <= target_count:
+            logger.debug("当前选中数量未超过目标，无需回滚: current=%s, target=%s", current_selected, target_count)
+            return
+
+        excess_count = current_selected - target_count
+        logger.debug(
+            "开始回滚多余的选中项: current_selected=%s, target_count=%s, excess_count=%s",
+            current_selected,
+            target_count,
+            excess_count,
+        )
+
+        uncheck_count = 0
+        for index in range(len(checkbox_items)):
+            if uncheck_count >= excess_count or uncheck_count >= max_uncheck_count:
+                break
+            checkbox = checkbox_items[index]
+            if self._is_checkbox_checked(checkbox, None):
+                try:
+                    self._ensure_checkbox_unchecked(checkbox, selector=f"result_checkbox[{index}]")
+                    uncheck_count += 1
+                    current_selected = self._extract_selected_count(0)
+                    if current_selected <= target_count:
+                        logger.debug("回滚完成，当前选中数量已达到目标: %s", current_selected)
+                        break
+                except Exception as exc:
+                    logger.debug("取消选中失败: index=%s, error=%s", index, exc)
+
+        logger.debug("回滚完成: 取消选中数量=%s, 当前选中=%s", uncheck_count, self._extract_selected_count(0))
+
+    def _clear_page_selection(self, checkbox_items: list[Locator]) -> None:
+        """清除当前页所有选中项。"""
+        for checkbox in checkbox_items:
+            if self._is_checkbox_checked(checkbox, None):
+                try:
+                    click_target = self._resolve_checkbox_click_target(checkbox)
+                    if click_target is not None:
+                        click_target.evaluate(
+                            """
+                            (el) => {
+                                el.classList.remove('layui-form-checked');
+                                const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+                                el.dispatchEvent(event);
+                            }
+                            """
                         )
-                        return
-                    current_selected_count = page_actual_selected
-            else:
-                current_selected_count += 1
-            logger.debug(
-                "逐条勾选后数量校验: index=%s, current_selected=%s, target_selected=%s, page_actual=%s",
-                index,
-                current_selected_count,
-                target_selected_count,
-                page_actual_selected,
-            )
+                        if not self._is_checkbox_checked(checkbox, click_target):
+                            continue
+                    checkbox.uncheck(force=True, timeout=self._action_timeout_ms())
+                except Exception as exc:
+                    logger.debug("清除选中项失败: error=%s", exc)
+
+        time.sleep(0.2)
+        logger.debug("页面选中状态已清除: 当前选中=%s", self._extract_selected_count(0))
 
     def _result_checkbox_locator(self) -> Locator:
         for selector in self.RESULT_CHECKBOX_SELECTORS:
@@ -1203,20 +1240,41 @@ class VpSearchInteractor:
         summary = self.parser.parse_results_summary()
         current_page = summary.get("current_page", 1)
         page_size = self._current_results_page_size()
+        paged_items = self._slice_checkbox_items_by_current_page(checkbox_locator=checkbox_locator, total_count=total_count)
+        if paged_items:
+            filtered_items = self._filter_result_row_checkbox_items(paged_items)
+            if len(filtered_items) < page_size:
+                try:
+                    current_page_number = int(current_page or 1)
+                except Exception:
+                    current_page_number = 1
+                raw_index = max((current_page_number - 1) * page_size, 0) + len(paged_items)
+                while raw_index < total_count and len(filtered_items) < page_size:
+                    candidate = checkbox_locator.nth(raw_index)
+                    if self._is_result_row_checkbox(candidate):
+                        filtered_items.append(candidate)
+                    raw_index += 1
+            logger.debug(
+                "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
+                total_count,
+                len(filtered_items),
+                current_page,
+                page_size,
+            )
+            logger.debug("按当前页码切分复选框成功: total_count=%s, page_items=%s", total_count, len(filtered_items))
+            return filtered_items
+
+        checkbox_items = self._filter_result_row_checkboxes(checkbox_locator=checkbox_locator, total_count=total_count)
         logger.debug(
-            "获取当前页复选框: total_count=%s, current_page=%s, page_size=%s",
+            "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
             total_count,
+            len(checkbox_items),
             current_page,
             page_size,
         )
-        paged_items = self._slice_checkbox_items_by_current_page(checkbox_locator=checkbox_locator, total_count=total_count)
-        if paged_items:
-            logger.debug("按当前页码切分复选框成功: total_count=%s, page_items=%s", total_count, len(paged_items))
-            return paged_items
 
         visible_items: list[Locator] = []
-        for index in range(total_count):
-            checkbox = checkbox_locator.nth(index)
+        for checkbox in checkbox_items:
             click_target = self._resolve_checkbox_click_target(checkbox)
             if click_target is not None:
                 if self._is_locator_visible(click_target):
@@ -1224,8 +1282,47 @@ class VpSearchInteractor:
                 continue
             if self._is_locator_visible(checkbox):
                 visible_items.append(checkbox)
-        logger.debug("筛选当前页可见复选框: total_count=%s, visible_count=%s", total_count, len(visible_items))
+        logger.debug("筛选当前页可见复选框: total_count=%s, visible_count=%s", len(checkbox_items), len(visible_items))
         return visible_items
+
+    def _filter_result_row_checkboxes(self, checkbox_locator: Locator, total_count: int) -> list[Locator]:
+        """过滤掉页级全选等非结果行复选框。"""
+        checkbox_items = [checkbox_locator.nth(index) for index in range(total_count)]
+        return self._filter_result_row_checkbox_items(checkbox_items)
+
+    def _filter_result_row_checkbox_items(self, checkbox_items: list[Locator]) -> list[Locator]:
+        """过滤当前候选集合中的页级全选控件。"""
+        filtered_items: list[Locator] = []
+        skipped_indices: list[int] = []
+        for index, checkbox in enumerate(checkbox_items):
+            if self._is_result_row_checkbox(checkbox):
+                filtered_items.append(checkbox)
+                continue
+            skipped_indices.append(index)
+        if skipped_indices:
+            logger.debug(
+                "跳过非结果行复选框: skipped_count=%s, sample_indices=%s",
+                len(skipped_indices),
+                skipped_indices[:5],
+            )
+        return filtered_items
+
+    def _is_result_row_checkbox(self, checkbox: Locator) -> bool:
+        """判断复选框是否属于结果行，而非页级全选。"""
+        try:
+            name = (checkbox.get_attribute("name") or "").strip()
+        except Exception:
+            name = ""
+        try:
+            data_name = (checkbox.get_attribute("data-name") or "").strip()
+        except Exception:
+            data_name = ""
+
+        if name in self.RESULT_SELECT_ALL_NAMES or data_name in self.RESULT_SELECT_ALL_NAMES:
+            return False
+        if name in self.RESULT_ROW_CHECKBOX_NAMES or data_name in self.RESULT_ROW_CHECKBOX_NAMES:
+            return True
+        return True
 
     def _slice_checkbox_items_by_current_page(self, checkbox_locator: Locator, total_count: int) -> list[Locator]:
         """按当前页码与每页条数切出当前页复选框。"""
@@ -1641,10 +1738,10 @@ class VpSearchInteractor:
         finally:
             self._cleanup_export_page(export_page)
 
-def _open_export_page(self, timeout: Optional[float] = None, already_at_target: bool = False) -> Page:
+    def _open_export_page(self, timeout: Optional[float] = None, already_at_target: bool = False) -> Page:
         existing_pages = list(self.page.context.pages)
         if not self._click_export_entry():
-            raise ValidationError("未找到"导出题录"入口")
+            raise ValidationError('未找到"导出题录"入口')
 
         effective_timeout = 5.0 if already_at_target else (timeout or self._page_change_timeout_seconds())
         deadline = time.time() + effective_timeout
