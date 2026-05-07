@@ -43,6 +43,10 @@ class VpCheckboxListMixin:
             current_page_number = int(summary.get("current_page") or 1)
         except Exception:
             current_page_number = 1
+        try:
+            total_pages = int(summary.get("total_pages") or 0)
+        except Exception:
+            total_pages = 0
         page_size = self._current_results_page_size()
         paged_items = self._slice_checkbox_items_by_current_page(
             checkbox_locator=checkbox_locator,
@@ -51,7 +55,7 @@ class VpCheckboxListMixin:
             page_size=page_size,
         )
         if paged_items:
-            # 第 2 页及以后按页码切片通常已是纯结果行，直接复用以减少逐项属性探测。
+            # 后续页完整切到一整页时，优先直接复用，避免逐项探测带来额外耗时。
             if current_page_number > 1 and len(paged_items) == page_size:
                 logger.debug(
                     "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
@@ -63,42 +67,74 @@ class VpCheckboxListMixin:
                 logger.debug("按当前页码切分复选框成功: total_count=%s, page_items=%s", total_count, len(paged_items))
                 return paged_items
             filtered_items = self._filter_result_row_checkbox_items(paged_items)
-            if len(filtered_items) < page_size:
-                raw_index = max((current_page_number - 1) * page_size, 0) + len(paged_items)
-                while raw_index < total_count and len(filtered_items) < page_size:
-                    candidate = checkbox_locator.nth(raw_index)
-                    if self._is_result_row_checkbox(candidate):
-                        filtered_items.append(candidate)
-                    raw_index += 1
+            if self._is_reliable_page_slice(
+                filtered_items=filtered_items,
+                current_page=current_page_number,
+                total_pages=total_pages,
+                page_size=page_size,
+            ):
+                logger.debug(
+                    "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
+                    total_count,
+                    len(filtered_items),
+                    current_page_number,
+                    page_size,
+                )
+                logger.debug("按当前页码切分复选框成功: total_count=%s, page_items=%s", total_count, len(filtered_items))
+                return filtered_items
             logger.debug(
-                "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
-                total_count,
-                len(filtered_items),
+                "按页码切分结果不可信，准备回退可见性筛选: current_page=%s, total_pages=%s, page_size=%s, sliced_count=%s, filtered_count=%s",
                 current_page_number,
+                total_pages,
                 page_size,
+                len(paged_items),
+                len(filtered_items),
             )
-            logger.debug("按当前页码切分复选框成功: total_count=%s, page_items=%s", total_count, len(filtered_items))
-            return filtered_items
 
-        checkbox_items = self._filter_result_row_checkboxes(checkbox_locator=checkbox_locator, total_count=total_count)
-        logger.debug(
-            "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
-            total_count,
-            len(checkbox_items),
-            current_page_number,
-            page_size,
+        visible_items = self._collect_visible_result_row_checkboxes(
+            checkbox_locator=checkbox_locator,
+            total_count=total_count,
+            page_size=page_size,
         )
+        logger.debug("筛选当前页可见复选框: total_count=%s, visible_count=%s", total_count, len(visible_items))
+        return visible_items
 
+    def _is_reliable_page_slice(
+        self,
+        filtered_items: list[Locator],
+        current_page: int,
+        total_pages: int,
+        page_size: int,
+    ) -> bool:
+        """判断按页码切出的候选集合是否足够可信。"""
+        if not filtered_items:
+            return False
+        if len(filtered_items) >= page_size:
+            return True
+        if total_pages > 0 and current_page >= total_pages:
+            return True
+        return False
+
+    def _collect_visible_result_row_checkboxes(
+        self,
+        checkbox_locator: Locator,
+        total_count: int,
+        page_size: int,
+    ) -> list[Locator]:
+        """回退到可见性扫描，找到当前页结果后立即停止。"""
         visible_items: list[Locator] = []
-        for checkbox in checkbox_items:
-            click_target = self._resolve_checkbox_click_target(checkbox)
+        for index in range(total_count):
+            candidate = checkbox_locator.nth(index)
+            if not self._is_result_row_checkbox(candidate):
+                continue
+            click_target = self._resolve_checkbox_click_target(candidate)
             if click_target is not None:
                 if self._is_locator_visible(click_target):
-                    visible_items.append(checkbox)
-                continue
-            if self._is_locator_visible(checkbox):
-                visible_items.append(checkbox)
-        logger.debug("筛选当前页可见复选框: total_count=%s, visible_count=%s", len(checkbox_items), len(visible_items))
+                    visible_items.append(candidate)
+            elif self._is_locator_visible(candidate):
+                visible_items.append(candidate)
+            if page_size > 0 and len(visible_items) >= page_size:
+                break
         return visible_items
 
     def _filter_result_row_checkboxes(self, checkbox_locator: Locator, total_count: int) -> list[Locator]:

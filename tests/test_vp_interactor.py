@@ -427,6 +427,31 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             selector="input[name='selectArticleAll']",
         )
 
+    def test_select_rows_on_current_page_skips_select_all_for_incomplete_page_sample(self) -> None:
+        checkbox_group = FakeCheckboxGroup(3)
+        page_size_active = FakeLocator(attributes={"data-count": "50"})
+        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
+
+        with (
+            patch.object(self.interactor, "_try_select_all_on_current_page") as try_select_all_on_current_page,
+            patch.object(self.interactor, "_select_rows_incrementally") as select_rows_incrementally,
+        ):
+            self.interactor._select_rows_on_current_page(
+                checkbox_items=checkbox_group.items,
+                row_offset=0,
+                page_target_count=3,
+                row_count=3,
+                selected_before_page=300,
+            )
+
+        try_select_all_on_current_page.assert_not_called()
+        select_rows_incrementally.assert_called_once_with(
+            checkbox_items=checkbox_group.items,
+            row_offset=0,
+            page_target_count=3,
+            selected_before_page=0,
+        )
+
     def test_select_rows_incrementally_checks_exact_target_range(self) -> None:
         checkbox_group = FakeCheckboxGroup(5)
 
@@ -581,6 +606,31 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.assertEqual(len(checkbox_items), 50)
         self.assertIs(checkbox_items[0], all_checkbox_group.items[100])
         self.assertIs(checkbox_items[-1], all_checkbox_group.items[149])
+
+    def test_current_page_checkbox_items_falls_back_when_middle_page_slice_is_incomplete(self) -> None:
+        all_checkbox_group = FakeCheckboxGroup(304)
+        all_checkbox_group.items[303].attributes = {"name": "selectArticleAll"}
+        visible_items = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(50)]
+        page_size_active = FakeLocator(attributes={"data-count": "50"})
+        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
+        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 7, "total_pages": 100})
+
+        with (
+            patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
+            patch.object(
+                self.interactor,
+                "_collect_visible_result_row_checkboxes",
+                return_value=visible_items,
+            ) as collect_visible_result_row_checkboxes,
+        ):
+            checkbox_items = self.interactor._current_page_checkbox_items()
+
+        self.assertIs(checkbox_items, visible_items)
+        collect_visible_result_row_checkboxes.assert_called_once_with(
+            checkbox_locator=all_checkbox_group,
+            total_count=304,
+            page_size=50,
+        )
 
     def test_current_page_checkbox_items_filters_select_all_from_broad_selector(self) -> None:
         select_all = FakeLocator(attributes={"name": "selectArticleAll"})

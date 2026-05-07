@@ -220,7 +220,12 @@ class VpSelectionMixin:
         selected_before_page: int,
     ) -> None:
         strategy_started_at = time.perf_counter()
-        if row_offset == 0 and page_target_count == row_count:
+        current_page_size = self.PREFERRED_RESULTS_PAGE_SIZE
+        try:
+            current_page_size = self._current_results_page_size()
+        except Exception as exc:
+            logger.debug("读取当前分页大小失败，使用默认值继续: error=%s", exc)
+        if row_offset == 0 and page_target_count == row_count and row_count >= current_page_size:
             logger.debug(
                 "当前页满足整页勾选条件，准备尝试页级全选: row_count=%s, selected_before_page=%s",
                 row_count,
@@ -248,6 +253,12 @@ class VpSelectionMixin:
                 "部分页目标，跳过页级全选，仅逐条勾选: page_target_count=%s, row_count=%s",
                 page_target_count,
                 row_count,
+            )
+        if row_offset == 0 and page_target_count == row_count and row_count < current_page_size:
+            logger.debug(
+                "当前页候选数量小于分页大小，跳过页级全选保护: row_count=%s, current_page_size=%s",
+                row_count,
+                current_page_size,
             )
 
         self._select_rows_incrementally(
