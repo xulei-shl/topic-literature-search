@@ -113,6 +113,13 @@ def build_summary_output_filename(query: str, fallback: str = "search") -> str:
     return f"{timestamp}-{slug}-merged.xlsx"
 
 
+def build_summary_report_output_filename(query: str, fallback: str = "search") -> str:
+    """生成汇总文本报告文件名。"""
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    slug = build_output_slug(query, fallback)[:40]
+    return f"{timestamp}-{slug}-report.txt"
+
+
 def build_export_file_path(
     output_dir: Path,
     query: str,

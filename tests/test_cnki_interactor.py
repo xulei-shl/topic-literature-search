@@ -320,10 +320,66 @@ class CnkiInteractorPaginationTestCase(unittest.TestCase):
 
         self.interactor.page = SimpleNamespace(locator=locator)
 
-        with patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked:
+        with (
+            patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
+            patch.object(self.interactor, "_count_checked_rows", return_value=2),
+            patch.object(self.interactor, "_find_unchecked_row_indexes", return_value=[]),
+        ):
             self.interactor._select_rows_on_current_page(row_offset=0, page_target_count=2, row_count=2)
 
         ensure_checkbox_checked.assert_called_once_with(select_all_checkbox, selector="#selectCheckAll1")
+
+    def test_select_batch_results_tolerates_page_shortfall_in_full_export_mode(self) -> None:
+        """全量导出模式下不应为了补足缺口继续跨页凑满批次目标。"""
+        rows = [FakeLocator() for _ in range(50)]
+
+        def locator(selector: str):
+            if selector == ".result-table-list tbody tr":
+                return FakeLocatorGroup(rows)
+            raise AssertionError(f"unexpected selector: {selector}")
+
+        self.interactor.page = SimpleNamespace(locator=locator)
+
+        with (
+            patch.object(self.interactor, "_wait_for_results_ready"),
+            patch.object(self.interactor, "_select_rows_on_current_page", side_effect=[47, 50]),
+            patch.object(self.interactor, "_current_results_page_number", side_effect=[1, 2]),
+            patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
+        ):
+            result = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=False)
+
+        self.assertEqual(result["selected_count"], 97)
+        self.assertEqual(result["next_row_offset"], 50)
+        self.assertEqual(result["page_row_count"], 50)
+        self.assertEqual(result["start_page"], 1)
+        self.assertEqual(result["end_page"], 2)
+        goto_next_results_page.assert_called_once()
+
+    def test_select_batch_results_keeps_topping_up_in_strict_mode(self) -> None:
+        """限定数量模式下应继续向后补足目标数量。"""
+        rows = [FakeLocator() for _ in range(50)]
+
+        def locator(selector: str):
+            if selector == ".result-table-list tbody tr":
+                return FakeLocatorGroup(rows)
+            raise AssertionError(f"unexpected selector: {selector}")
+
+        self.interactor.page = SimpleNamespace(locator=locator)
+
+        with (
+            patch.object(self.interactor, "_wait_for_results_ready"),
+            patch.object(self.interactor, "_select_rows_on_current_page", side_effect=[47, 50, 3]),
+            patch.object(self.interactor, "_current_results_page_number", side_effect=[1, 2, 3]),
+            patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
+        ):
+            result = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=True)
+
+        self.assertEqual(result["selected_count"], 100)
+        self.assertEqual(result["next_row_offset"], 3)
+        self.assertEqual(result["page_row_count"], 50)
+        self.assertEqual(result["start_page"], 1)
+        self.assertEqual(result["end_page"], 3)
+        self.assertEqual(goto_next_results_page.call_count, 2)
 
     def test_restore_results_position_advances_until_target_page(self) -> None:
         """恢复执行前应顺序翻页到进度文件记录页码。"""

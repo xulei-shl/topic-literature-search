@@ -99,6 +99,7 @@ class FakeFlow(BaseAdvancedExportFlow):
         self.temp_dir = temp_dir
         self.progress_snapshots: list[dict] = []
         self.selected_batches: list[int] = []
+        self.strict_target_calls: list[bool] = []
         self.raise_on_export = False
 
     def _prepare_progress_store(self, progress_file, cli_params):
@@ -169,12 +170,15 @@ class FakeFlow(BaseAdvancedExportFlow):
     def _clear_selected_results(self) -> None:
         return None
 
-    def _select_batch_results(self, export_limit: int, row_offset: int):
+    def _select_batch_results(self, export_limit: int, row_offset: int, strict_target: bool):
         self.selected_batches.append(export_limit)
+        self.strict_target_calls.append(strict_target)
         return {
             "selected_count": export_limit,
             "next_row_offset": row_offset + export_limit,
             "page_row_count": export_limit,
+            "start_page": 1,
+            "end_page": 1,
         }
 
     def _export_selected_results_for_batch(self, query: str, batch_index: int, output_dir: Path, batch_selection):
@@ -243,12 +247,40 @@ class AdvancedExportFlowTestCase(unittest.TestCase):
                 }
             )
 
+            self.assertTrue(Path(result["report_file"]).exists())
+            self.assertTrue(Path(result["batch_report_files"][0]).exists())
+            batch_report_text = Path(result["batch_report_files"][0]).read_text(encoding="utf-8")
+            self.assertIn("页码范围: 1", batch_report_text)
+
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["exported"], 2)
         self.assertTrue(result["final_file_path"].endswith(".xlsx"))
+        self.assertTrue(result["report_file"].endswith(".txt"))
+        self.assertEqual(len(result["batch_report_files"]), 1)
         self.assertEqual(flow.selected_batches, [2])
+        self.assertEqual(flow.strict_target_calls, [True])
         self.assertEqual(flow.progress_snapshots[-1]["status"], "success")
         self.assertEqual(flow.progress_snapshots[-1]["next_batch_index"], 2)
+
+    def test_full_export_uses_non_strict_batch_target(self) -> None:
+        """全量导出模式应按页窗口推进，而不是强制补足批次目标。"""
+        with TemporaryDirectory() as temp_dir:
+            flow = FakeFlow(total=3, temp_dir=Path(temp_dir))
+
+            result = flow.run_advanced_export(
+                cli_params={
+                    "query": "测试主题",
+                    "date_from": None,
+                    "date_to": None,
+                    "core_only": False,
+                    "max_download": None,
+                }
+            )
+
+            self.assertTrue(Path(result["report_file"]).exists())
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(flow.strict_target_calls, [False])
 
     def test_exception_flow_writes_failed_snapshot(self) -> None:
         with TemporaryDirectory() as temp_dir:

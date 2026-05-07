@@ -20,9 +20,13 @@ _interactor_module = load_script_module(
     "vp_search_interactor",
     "vp_search_interactor_module",
 )
+_cli_module = load_script_module(SCRIPT_DIR, "cli", "vp_cli_module")
+_utils_module = load_script_module(SCRIPT_DIR, "utils", "vp_utils_module")
 _result_parser_module = load_script_module(SCRIPT_DIR, "result_parser", "vp_result_parser_module")
 
 VpSearchInteractor = _interactor_module.VpSearchInteractor
+VpCliMain = _cli_module.main
+print_human_readable = _utils_module.print_human_readable
 TimeoutError = VpSearchInteractor._wait_for_any_selector.__globals__["TimeoutError"]
 ValidationError = VpSearchInteractor._prepare_progress_store.__globals__["ValidationError"]
 ResultParser = _result_parser_module.ResultParser
@@ -464,7 +468,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             patch.object(self.interactor, "_extract_selected_count", side_effect=[0, 50, 50, 100]),
             patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
         ):
-            selection = self.interactor._select_batch_results(export_limit=100, row_offset=0)
+            selection = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=True)
 
         self.assertEqual(select_rows_on_current_page.call_count, 2)
         first_call = select_rows_on_current_page.call_args_list[0].kwargs
@@ -482,6 +486,68 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         goto_next_results_page.assert_called_once()
         self.assertEqual(selection["selected_count"], 100)
         self.assertEqual(selection["page_row_count"], 50)
+
+    def test_select_batch_results_tolerates_page_shortfall_in_full_export_mode(self) -> None:
+        """全量导出模式下不应为了补足缺口继续跨页追数。"""
+        checkbox_items = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(50)]
+        current_pages = iter([1, 2])
+
+        with (
+            patch.object(self.interactor, "_wait_for_results_ready"),
+            patch.object(self.interactor, "_current_page_checkbox_items", side_effect=[checkbox_items, checkbox_items]),
+            patch.object(self.interactor, "_select_rows_on_current_page") as select_rows_on_current_page,
+            patch.object(self.interactor, "_extract_selected_count", side_effect=[0, 47, 47, 97]),
+            patch.object(
+                self.interactor,
+                "parser",
+                SimpleNamespace(parse_results_summary=lambda: {"current_page": next(current_pages)}),
+            ),
+            patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
+            patch.object(INTERACTOR_TIME, "sleep", return_value=None),
+        ):
+            selection = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=False)
+
+        self.assertEqual(select_rows_on_current_page.call_count, 2)
+        self.assertEqual(selection["selected_count"], 97)
+        self.assertEqual(selection["next_row_offset"], 50)
+        self.assertEqual(selection["page_row_count"], 50)
+        self.assertFalse(selection["already_at_target"])
+        self.assertEqual(selection["start_page"], 1)
+        self.assertEqual(selection["end_page"], 2)
+        goto_next_results_page.assert_called_once()
+
+    def test_select_batch_results_keeps_topping_up_in_strict_mode(self) -> None:
+        """限定数量模式下应继续翻页直到补足目标数。"""
+        checkbox_items = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(50)]
+        current_pages = iter([1, 2, 3])
+
+        with (
+            patch.object(self.interactor, "_wait_for_results_ready"),
+            patch.object(
+                self.interactor,
+                "_current_page_checkbox_items",
+                side_effect=[checkbox_items, checkbox_items, checkbox_items],
+            ),
+            patch.object(self.interactor, "_select_rows_on_current_page") as select_rows_on_current_page,
+            patch.object(self.interactor, "_extract_selected_count", side_effect=[0, 47, 47, 97, 97, 100]),
+            patch.object(
+                self.interactor,
+                "parser",
+                SimpleNamespace(parse_results_summary=lambda: {"current_page": next(current_pages)}),
+            ),
+            patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
+            patch.object(INTERACTOR_TIME, "sleep", return_value=None),
+        ):
+            selection = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=True)
+
+        self.assertEqual(select_rows_on_current_page.call_count, 3)
+        self.assertEqual(selection["selected_count"], 100)
+        self.assertEqual(selection["next_row_offset"], 3)
+        self.assertEqual(selection["page_row_count"], 50)
+        self.assertTrue(selection["already_at_target"])
+        self.assertEqual(selection["start_page"], 1)
+        self.assertEqual(selection["end_page"], 3)
+        self.assertEqual(goto_next_results_page.call_count, 2)
 
     def test_current_page_checkbox_items_prefers_page_slice(self) -> None:
         all_checkbox_group = FakeCheckboxGroup(304)
@@ -1201,6 +1267,70 @@ class VpInteractorProgressTestCase(unittest.TestCase):
         page_context = self.interactor._safe_progress_page_context()
 
         self.assertEqual(page_context, cached_context)
+
+
+class VpCliOutputTestCase(unittest.TestCase):
+    """验证维普 CLI 输出与结果透出。"""
+
+    def test_print_human_readable_shows_summary_report_path(self) -> None:
+        data = {
+            "result_type": "advanced_export",
+            "query": "新青年",
+            "status": "success",
+            "total": 120,
+            "selected": 100,
+            "exported": 100,
+            "planned_download": 100,
+            "exported_batches": 1,
+            "batch_count": 1,
+            "date_range": "2020 ~ 2025",
+            "core_only": True,
+            "url": "https://example.com/results",
+            "final_file_path": "F:/temp/final.xlsx",
+            "report_file": "F:/temp/report.txt",
+            "progress_file": "F:/temp/progress.json",
+            "resumed_from_progress": False,
+        }
+
+        with patch("builtins.print") as mock_print:
+            print_human_readable(data)
+
+        mock_print.assert_any_call("报告: F:/temp/report.txt")
+
+    def test_cli_main_exposes_report_files_in_saved_files(self) -> None:
+        result = {
+            "result_type": "advanced_export",
+            "output_dir": "F:/temp",
+            "file_path": "F:/temp/final.xlsx",
+            "progress_file": "F:/temp/progress.json",
+            "report_file": "F:/temp/report.txt",
+            "batch_report_files": ["F:/temp/batch-1-report.txt"],
+        }
+        args = SimpleNamespace(command="advanced-search", debug=False)
+        config = SimpleNamespace(save_results=True, json_only=False, ensure_output_dir=lambda _result: Path("F:/temp"))
+
+        with (
+            patch.object(_cli_module, "create_parser", return_value=SimpleNamespace(parse_args=lambda: args)),
+            patch.object(_cli_module, "setup_logging"),
+            patch.object(_cli_module, "build_config", return_value=config),
+            patch.object(_cli_module, "run_command", return_value=result),
+            patch.object(_cli_module, "save_results", return_value="F:/temp/result.json"),
+            patch.object(_cli_module, "print_human_readable") as print_human_readable_mock,
+        ):
+            exit_code = VpCliMain()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(
+            result["saved_files"],
+            {
+                "json": "F:/temp/result.json",
+                "export": "F:/temp/final.xlsx",
+                "progress": "F:/temp/progress.json",
+                "report": "F:/temp/report.txt",
+                "batch_reports": ["F:/temp/batch-1-report.txt"],
+            },
+        )
+        print_human_readable_mock.assert_called_once_with(result)
 
 
 if __name__ == "__main__":

@@ -40,13 +40,21 @@ class VpSelectionMixin:
         except Exception as exc:
             logger.debug("清除已选文献失败: %s", exc)
 
-    def _select_batch_results(self, export_limit: int, row_offset: int) -> Dict[str, Any]:
+    def _select_batch_results(
+        self,
+        export_limit: int,
+        row_offset: int,
+        strict_target: bool,
+    ) -> Dict[str, Any]:
         remaining = export_limit
+        covered_count = 0
         selected_count = 0
         current_row_offset = row_offset
         current_row_count = 0
+        start_page = 0
+        end_page = 0
 
-        while remaining > 0:
+        while remaining > 0 if strict_target else covered_count < export_limit:
             page_prepare_started_at = time.perf_counter()
             self._wait_for_results_ready()
             logger.debug(
@@ -83,11 +91,13 @@ class VpSelectionMixin:
                     int((time.perf_counter() - retry_started_at) * 1000),
                 )
             summary = self.parser.parse_results_summary()
-            current_page = summary.get("current_page", "unknown")
+            current_page = self._coerce_current_results_page(summary)
             logger.debug(
-                "批量勾选循环: export_limit=%s, selected_count=%s, remaining=%s, row_offset=%s, row_count=%s, current_page=%s",
+                "批量勾选循环: strict_target=%s, export_limit=%s, selected_count=%s, covered_count=%s, remaining=%s, row_offset=%s, row_count=%s, current_page=%s",
+                strict_target,
                 export_limit,
                 selected_count,
+                covered_count,
                 remaining,
                 current_row_offset,
                 current_row_count,
@@ -98,8 +108,11 @@ class VpSelectionMixin:
                 break
 
             if current_row_offset >= current_row_count:
-                if remaining <= 0:
+                if strict_target and remaining <= 0:
                     logger.debug("已达成目标数量，无需翻页: remaining=%s", remaining)
+                    break
+                if not strict_target and covered_count >= export_limit:
+                    logger.debug("当前批次目标窗口已覆盖完成，无需翻页: covered_count=%s", covered_count)
                     break
                 logger.debug(
                     "当前页剩余记录不足，准备翻页继续: row_offset=%s, row_count=%s",
@@ -118,8 +131,16 @@ class VpSelectionMixin:
                 current_row_offset = 0
                 continue
 
-            page_target_count = min(current_row_count - current_row_offset, remaining)
-            selected_before_page = self._extract_selected_count(0)
+            if current_page > 0:
+                if start_page <= 0:
+                    start_page = current_page
+                end_page = current_page
+
+            page_target_count = min(
+                current_row_count - current_row_offset,
+                remaining if strict_target else export_limit - covered_count,
+            )
+            selected_before_page = self._extract_selected_count(selected_count)
             page_select_started_at = time.perf_counter()
             self._select_rows_on_current_page(
                 checkbox_items=checkbox_items,
@@ -135,20 +156,26 @@ class VpSelectionMixin:
                 page_target_count,
                 int((time.perf_counter() - page_select_started_at) * 1000),
             )
-            page_actual_selected = self._extract_selected_count(selected_count + page_target_count)
+            page_actual_selected = self._extract_selected_count(selected_before_page + page_target_count)
+            covered_count += page_target_count
             selected_count = page_actual_selected
-            remaining = export_limit - selected_count
+            if strict_target:
+                remaining = export_limit - selected_count
             current_row_offset += page_target_count
             logger.debug(
-                "当前页勾选完成: page_target_count=%s, selected_count=%s, remaining=%s, next_row_offset=%s, page_actual_selected=%s",
+                "当前页勾选完成: strict_target=%s, page_target_count=%s, selected_count=%s, covered_count=%s, remaining=%s, next_row_offset=%s, page_actual_selected=%s",
+                strict_target,
                 page_target_count,
                 selected_count,
+                covered_count,
                 remaining,
                 current_row_offset,
                 page_actual_selected,
             )
 
-            if remaining <= 0:
+            if strict_target and remaining <= 0:
+                break
+            if not strict_target and covered_count >= export_limit:
                 break
             if current_row_offset < current_row_count:
                 continue
@@ -172,7 +199,17 @@ class VpSelectionMixin:
             "next_row_offset": current_row_offset,
             "page_row_count": current_row_count,
             "already_at_target": already_at_target,
+            "start_page": start_page,
+            "end_page": end_page,
         }
+
+    def _coerce_current_results_page(self, summary: Dict[str, Any]) -> int:
+        """将结果页摘要中的页码安全转换为整数。"""
+        try:
+            return int(summary.get("current_page") or 0)
+        except (TypeError, ValueError) as exc:
+            logger.debug("解析当前页码失败: summary=%s, error=%s", summary, exc)
+            return 0
 
     def _select_rows_on_current_page(
         self,

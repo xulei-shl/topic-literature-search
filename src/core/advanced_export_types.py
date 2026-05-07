@@ -24,6 +24,8 @@ class BatchSelectionResult(TypedDict, total=False):
     page_row_count: int
     already_at_target: bool
     restore_results_page: bool
+    start_page: int
+    end_page: int
 
 
 class ExportBatchFiles(TypedDict):
@@ -54,6 +56,8 @@ class AdvancedExportResult(TypedDict):
     final_file_path: str
     output_dir: str
     intermediate_files: list[str]
+    batch_report_files: list[str]
+    report_file: str
     progress_file: str
     resumed_from_progress: bool
 

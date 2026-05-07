@@ -38,13 +38,21 @@ class CnkiSelectionMixin:
         except Exception as exc:
             logger.debug("清除已选文献失败: %s", exc)
 
-    def _select_batch_results(self, export_limit: int, row_offset: int) -> Dict[str, Any]:
+    def _select_batch_results(
+        self,
+        export_limit: int,
+        row_offset: int,
+        strict_target: bool,
+    ) -> Dict[str, Any]:
         remaining = export_limit
+        covered_count = 0
         selected_count = 0
         current_row_offset = row_offset
         current_row_count = 0
+        start_page = 0
+        end_page = 0
 
-        while remaining > 0:
+        while remaining > 0 if strict_target else covered_count < export_limit:
             self._wait_for_results_ready()
             row_locator = self.page.locator(".result-table-list tbody tr")
             current_row_count = row_locator.count()
@@ -57,12 +65,36 @@ class CnkiSelectionMixin:
                 current_row_offset = 0
                 continue
 
-            page_target_count = min(current_row_count - current_row_offset, remaining)
-            self._select_rows_on_current_page(current_row_offset, page_target_count, current_row_count)
-            selected_count = self._extract_selected_count(selected_count + page_target_count)
-            remaining = export_limit - selected_count
+            current_page = self._current_results_page_number()
+            if start_page <= 0:
+                start_page = current_page
+            end_page = current_page
+            page_target_count = min(
+                current_row_count - current_row_offset,
+                remaining if strict_target else export_limit - covered_count,
+            )
+            page_selected_count = self._select_rows_on_current_page(
+                current_row_offset,
+                page_target_count,
+                current_row_count,
+            )
+            covered_count += page_target_count
+            selected_count += page_selected_count
+            if strict_target:
+                remaining = export_limit - selected_count
+            logger.info(
+                "当前页勾选完成: strict_target=%s, row_offset=%s, target=%s, actual=%s, covered=%s, selected=%s",
+                strict_target,
+                current_row_offset,
+                page_target_count,
+                page_selected_count,
+                covered_count,
+                selected_count,
+            )
             current_row_offset += page_target_count
-            if remaining <= 0:
+            if strict_target and remaining <= 0:
+                break
+            if not strict_target and covered_count >= export_limit:
                 break
 
             if current_row_offset < current_row_count:
@@ -78,20 +110,47 @@ class CnkiSelectionMixin:
             "selected_count": selected_count,
             "next_row_offset": current_row_offset,
             "page_row_count": current_row_count,
+            "start_page": start_page,
+            "end_page": end_page,
         }
 
-    def _select_rows_on_current_page(self, row_offset: int, page_target_count: int, row_count: int) -> None:
+    def _select_rows_on_current_page(self, row_offset: int, page_target_count: int, row_count: int) -> int:
         checkbox_locator = self.page.locator(".result-table-list tbody input.cbItem")
         if row_offset == 0 and page_target_count == row_count and self.page.locator("#selectCheckAll1").count() > 0:
             self._ensure_checkbox_checked(
                 self.page.locator("#selectCheckAll1").first,
                 selector="#selectCheckAll1",
             )
-            return
+        else:
+            for index in range(row_offset, row_offset + page_target_count):
+                checkbox = checkbox_locator.nth(index)
+                self._ensure_checkbox_checked(checkbox, selector=f".result-table-list tbody input.cbItem[{index}]")
 
-        for index in range(row_offset, row_offset + page_target_count):
-            checkbox = checkbox_locator.nth(index)
-            self._ensure_checkbox_checked(checkbox, selector=f".result-table-list tbody input.cbItem[{index}]")
+        selected_count = self._count_checked_rows(checkbox_locator, row_offset, page_target_count)
+        if selected_count >= page_target_count:
+            return selected_count
+
+        missing_indexes = self._find_unchecked_row_indexes(checkbox_locator, row_offset, page_target_count)
+        if missing_indexes:
+            logger.warning(
+                "当前页批量勾选后存在缺口，尝试页内补勾: row_offset=%s, target=%s, missing=%s",
+                row_offset,
+                page_target_count,
+                len(missing_indexes),
+            )
+            for index in missing_indexes:
+                checkbox = checkbox_locator.nth(index)
+                self._ensure_checkbox_checked(checkbox, selector=f".result-table-list tbody input.cbItem[{index}]")
+            selected_count = self._count_checked_rows(checkbox_locator, row_offset, page_target_count)
+
+        if selected_count < page_target_count:
+            logger.warning(
+                "当前页补勾后仍未达标，将保留缺口继续处理: row_offset=%s, target=%s, actual=%s",
+                row_offset,
+                page_target_count,
+                selected_count,
+            )
+        return selected_count
 
     def _ensure_checkbox_checked(self, checkbox: Locator, selector: str = "") -> None:
         """稳定勾选复选框，必要时退回 JS 兜底。"""
@@ -145,3 +204,35 @@ class CnkiSelectionMixin:
             return default_value
         text = locator.inner_text().replace(",", "").replace("，", "").strip()
         return int(text) if text.isdigit() else default_value
+
+    def _count_checked_rows(self, checkbox_locator: Locator, row_offset: int, page_target_count: int) -> int:
+        """统计目标区间内实际勾选数量。"""
+        selected_count = 0
+        for index in range(row_offset, row_offset + page_target_count):
+            if self._is_checkbox_checked(checkbox_locator.nth(index)):
+                selected_count += 1
+        return selected_count
+
+    def _find_unchecked_row_indexes(self, checkbox_locator: Locator, row_offset: int, page_target_count: int) -> list[int]:
+        """返回目标区间内仍未勾选的下标。"""
+        unchecked_indexes: list[int] = []
+        for index in range(row_offset, row_offset + page_target_count):
+            if not self._is_checkbox_checked(checkbox_locator.nth(index)):
+                unchecked_indexes.append(index)
+        return unchecked_indexes
+
+    def _is_checkbox_checked(self, checkbox: Locator) -> bool:
+        """安全读取复选框勾选状态。"""
+        try:
+            return bool(checkbox.is_checked())
+        except Exception as exc:
+            logger.debug("读取复选框勾选状态失败: %s", exc)
+            return False
+
+    def _current_results_page_number(self) -> int:
+        """返回当前结果页页码。"""
+        try:
+            return int(self.parser.parse_results_summary()["current_page"])
+        except Exception as exc:
+            logger.debug("读取当前结果页页码失败: %s", exc)
+            return 0

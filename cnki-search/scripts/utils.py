@@ -39,6 +39,8 @@ def print_human_readable(data: Dict[str, Any]) -> None:
         print(f"URL: {data.get('url', '')}")
         if data.get("final_file_path"):
             print(f"文件: {data.get('final_file_path')}")
+        if data.get("report_file"):
+            print(f"报告: {data.get('report_file')}")
         if data.get("progress_file"):
             print(f"进度文件: {data.get('progress_file')}")
         if data.get("resumed_from_progress"):

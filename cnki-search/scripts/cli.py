@@ -119,6 +119,10 @@ def main() -> int:
             result["saved_files"] = {"json": json_path}
             if result.get("file_path"):
                 result["saved_files"]["export"] = result["file_path"]
+            if result.get("report_file"):
+                result["saved_files"]["report"] = result["report_file"]
+            if result.get("batch_report_files"):
+                result["saved_files"]["batch_reports"] = result["batch_report_files"]
             if result.get("progress_file"):
                 result["saved_files"]["progress"] = result["progress_file"]
 

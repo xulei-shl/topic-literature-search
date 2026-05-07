@@ -16,7 +16,11 @@ from src.core.advanced_export_types import (
     ResumeRuntime,
     SearchParams,
 )
-from src.utils.result_output import build_batch_output_filename, build_summary_output_filename
+from src.utils.result_output import (
+    build_batch_output_filename,
+    build_summary_output_filename,
+    build_summary_report_output_filename,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -101,12 +105,15 @@ class BaseAdvancedExportFlow(ABC):
                 output_dir=output_dir,
                 final_file_path="",
                 intermediate_files=[],
+                batch_report_files=[],
+                report_file="",
                 progress_file=str(progress_store.file_path),
                 resumed_from_progress=resume_data is not None,
                 status="no_results",
             )
 
         batch_count = ceil(planned_download / self.EXPORT_BATCH_SIZE)
+        strict_batch_target = resolved_params.get("max_download") is not None
         self._prepare_results_page_for_export(planned_download=planned_download, total=total)
 
         progress_runtime = self._build_resume_runtime(
@@ -122,6 +129,8 @@ class BaseAdvancedExportFlow(ABC):
         next_batch_index = int(progress_runtime["next_batch_index"])
         intermediate_files: list[str] = []
         enriched_batch_files = list(progress_runtime["enriched_batch_files"])
+        batch_report_files: list[str] = []
+        batch_page_ranges: list[str] = []
 
         self._restore_results_position(int(progress_runtime["current_page"]))
         self._save_progress_snapshot_for_flow(
@@ -146,7 +155,11 @@ class BaseAdvancedExportFlow(ABC):
                     break
 
                 self._clear_selected_results()
-                batch_selection = self._select_batch_results(batch_target, current_row_offset)
+                batch_selection = self._select_batch_results(
+                    batch_target,
+                    current_row_offset,
+                    strict_target=strict_batch_target,
+                )
                 batch_selection["restore_results_page"] = exported_total + batch_target < planned_download
                 batch_download_started_at = time.perf_counter()
                 batch_files = self._export_selected_results_for_batch(
@@ -197,11 +210,28 @@ class BaseAdvancedExportFlow(ABC):
                     output_path=enriched_path,
                 )
 
+                batch_page_range = self._format_batch_page_range(batch_selection)
+                batch_report_path = self._write_batch_report(
+                    search_params=resolved_params,
+                    output_dir=output_dir,
+                    total=total,
+                    batch_count=batch_count,
+                    batch_index=batch_index,
+                    batch_target=batch_target,
+                    batch_selection=batch_selection,
+                    page_range=batch_page_range,
+                    exported_file=str(enriched_file),
+                    progress_file=str(progress_store.file_path),
+                )
+
                 exported_total += int(batch_selection["selected_count"])
                 exported_batches += 1
                 current_row_offset = self._prepare_next_batch_cursor(batch_selection)
                 enriched_batch_files.append(Path(enriched_file))
-                intermediate_files.extend([cleaned_excel_file, batch_files["txt"], enriched_file])
+                batch_report_files.append(batch_report_path)
+                if batch_page_range:
+                    batch_page_ranges.append(batch_page_range)
+                intermediate_files.extend([cleaned_excel_file, batch_files["txt"], enriched_file, batch_report_path])
                 self._save_progress_snapshot_for_flow(
                     progress_store=progress_store,
                     status="running",
@@ -252,9 +282,23 @@ class BaseAdvancedExportFlow(ABC):
             raise
 
         final_file_path = ""
+        report_file_path = ""
         if enriched_batch_files:
             final_file = output_dir / build_summary_output_filename(query=query)
             final_file_path = self.export_processor.merge_batch_excels(enriched_batch_files, final_file)
+            report_file_path = self._write_summary_report(
+                search_params=resolved_params,
+                output_dir=output_dir,
+                total=total,
+                planned_download=planned_download,
+                batch_count=batch_count,
+                exported_batches=exported_batches,
+                exported_total=exported_total,
+                final_file_path=final_file_path,
+                progress_file=str(progress_store.file_path),
+                page_ranges=batch_page_ranges,
+            )
+            intermediate_files.append(report_file_path)
 
         self._save_progress_snapshot_for_flow(
             progress_store=progress_store,
@@ -280,6 +324,8 @@ class BaseAdvancedExportFlow(ABC):
             output_dir=output_dir,
             final_file_path=final_file_path,
             intermediate_files=intermediate_files,
+            batch_report_files=batch_report_files,
+            report_file=report_file_path,
             progress_file=str(progress_store.file_path),
             resumed_from_progress=resume_data is not None,
             status="success",
@@ -304,6 +350,8 @@ class BaseAdvancedExportFlow(ABC):
         output_dir: Path,
         final_file_path: str,
         intermediate_files: list[str],
+        batch_report_files: list[str],
+        report_file: str,
         progress_file: str,
         resumed_from_progress: bool,
         status: str,
@@ -332,9 +380,133 @@ class BaseAdvancedExportFlow(ABC):
             "final_file_path": final_file_path,
             "output_dir": str(output_dir),
             "intermediate_files": intermediate_files,
+            "batch_report_files": batch_report_files,
+            "report_file": report_file,
             "progress_file": progress_file,
             "resumed_from_progress": resumed_from_progress,
         }
+
+    def _write_batch_report(
+        self,
+        search_params: SearchParams,
+        output_dir: Path,
+        total: int,
+        batch_count: int,
+        batch_index: int,
+        batch_target: int,
+        batch_selection: BatchSelectionResult,
+        page_range: str,
+        exported_file: str,
+        progress_file: str,
+    ) -> str:
+        """生成单批次执行报告。"""
+        report_path = output_dir / build_batch_output_filename(
+            query=str(search_params["query"]).strip(),
+            batch_index=batch_index,
+            kind="report",
+            suffix=".txt",
+        )
+        report_lines = self._build_report_lines(
+            search_params=search_params,
+            status="success",
+            total=total,
+            selected=int(batch_selection["selected_count"]),
+            exported=int(batch_selection["selected_count"]),
+            planned_download=batch_target,
+            batch_progress=f"{batch_index} / {batch_count}",
+            url=self.page.url,
+            file_path=exported_file,
+            progress_file=progress_file,
+            page_range=page_range,
+        )
+        report_path.write_text("\n".join(report_lines) + "\n", encoding="utf-8")
+        return str(report_path)
+
+    def _write_summary_report(
+        self,
+        search_params: SearchParams,
+        output_dir: Path,
+        total: int,
+        planned_download: int,
+        batch_count: int,
+        exported_batches: int,
+        exported_total: int,
+        final_file_path: str,
+        progress_file: str,
+        page_ranges: list[str],
+    ) -> str:
+        """生成任务汇总文本报告。"""
+        report_path = output_dir / build_summary_report_output_filename(query=str(search_params["query"]).strip())
+        page_range = page_ranges[0] if len(page_ranges) == 1 else ""
+        report_lines = self._build_report_lines(
+            search_params=search_params,
+            status="success",
+            total=total,
+            selected=exported_total,
+            exported=exported_total,
+            planned_download=planned_download,
+            batch_progress=f"{exported_batches} / {batch_count}",
+            url=self.page.url,
+            file_path=final_file_path,
+            progress_file=progress_file,
+            page_range=page_range,
+        )
+        report_path.write_text("\n".join(report_lines) + "\n", encoding="utf-8")
+        return str(report_path)
+
+    def _build_report_lines(
+        self,
+        search_params: SearchParams,
+        status: str,
+        total: int,
+        selected: int,
+        exported: int,
+        planned_download: int,
+        batch_progress: str,
+        url: str,
+        file_path: str,
+        progress_file: str,
+        page_range: str,
+    ) -> list[str]:
+        """构造文本报告内容。"""
+        lines = [
+            f"检索词: {str(search_params['query']).strip()}",
+            f"状态: {status}",
+            f"总数: {total}",
+            f"选中: {selected}",
+            f"导出: {exported}",
+            f"计划导出: {planned_download}",
+            f"批次数: {batch_progress}",
+        ]
+        date_range = self._format_date_range(
+            search_params.get("date_from"),
+            search_params.get("date_to"),
+        )
+        if date_range:
+            lines.append(f"日期范围: {date_range}")
+        lines.append(f"核心: {'是' if bool(search_params.get('core_only')) else '否'}")
+        if page_range:
+            lines.append(f"页码范围: {page_range}")
+        lines.extend(
+            [
+                f"URL: {url}",
+                f"文件: {file_path}",
+                f"进度文件: {progress_file}",
+            ]
+        )
+        return lines
+
+    def _format_batch_page_range(self, batch_selection: BatchSelectionResult) -> str:
+        """格式化批次页码范围。"""
+        start_page = int(batch_selection.get("start_page") or 0)
+        end_page = int(batch_selection.get("end_page") or 0)
+        if start_page <= 0 and end_page <= 0:
+            return ""
+        if start_page <= 0:
+            return str(end_page)
+        if end_page <= 0 or end_page == start_page:
+            return str(start_page)
+        return f"{start_page}-{end_page}"
 
     @abstractmethod
     def _prepare_progress_store(self, progress_file: Optional[Path], cli_params: SearchParams):
@@ -395,7 +567,12 @@ class BaseAdvancedExportFlow(ABC):
         """清空当前已选结果。"""
 
     @abstractmethod
-    def _select_batch_results(self, export_limit: int, row_offset: int) -> BatchSelectionResult:
+    def _select_batch_results(
+        self,
+        export_limit: int,
+        row_offset: int,
+        strict_target: bool,
+    ) -> BatchSelectionResult:
         """勾选当前批次结果。"""
 
     @abstractmethod
