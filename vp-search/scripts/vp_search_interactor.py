@@ -75,6 +75,15 @@ class VpSearchInteractor(
         ".export-op a:has-text('导出题录')",
         "a:has-text('导出题录')",
     ]
+    EXPORT_ENTRY_MENU_SELECTORS = [
+        ".layui-layer a:has-text('导出题录')",
+        ".layui-layer span:has-text('导出题录')",
+        ".layui-layer li:has-text('导出题录')",
+        ".layui-menu-body-panel a:has-text('导出题录')",
+        ".layui-menu-body-panel span:has-text('导出题录')",
+        ".dropdown-menu a:has-text('导出题录')",
+        ".dropdown-menu span:has-text('导出题录')",
+    ]
     EXPORT_PAGE_READY_SELECTORS = [
         "#dateType li[data-type='excel']",
         "#dateType li[data-type='abstract']",

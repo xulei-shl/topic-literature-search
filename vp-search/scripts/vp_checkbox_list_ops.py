@@ -39,15 +39,13 @@ class VpCheckboxListMixin:
         checkbox_locator = self._result_checkbox_locator()
         total_count = checkbox_locator.count()
         summary = self.parser.parse_results_summary()
-        try:
-            current_page_number = int(summary.get("current_page") or 1)
-        except Exception:
-            current_page_number = 1
+        current_page_number = self._resolve_current_results_page_number(summary)
         try:
             total_pages = int(summary.get("total_pages") or 0)
         except Exception:
             total_pages = 0
         page_size = self._current_results_page_size()
+        slice_start_index = max((current_page_number - 1) * page_size, 0) if page_size > 0 else 0
         paged_items = self._slice_checkbox_items_by_current_page(
             checkbox_locator=checkbox_locator,
             total_count=total_count,
@@ -55,18 +53,31 @@ class VpCheckboxListMixin:
             page_size=page_size,
         )
         if paged_items:
-            # 后续页完整切到一整页时，优先直接复用，避免逐项探测带来额外耗时。
-            if current_page_number > 1 and len(paged_items) == page_size:
+            # 后续页命中整页切片时，仍需先剔除页级全选框，避免部分页目标误触发整页全选。
+            filtered_items = self._filter_result_row_checkbox_items(paged_items)
+            if len(filtered_items) < page_size:
+                filtered_items = self._top_up_page_slice_rows(
+                    checkbox_locator=checkbox_locator,
+                    total_count=total_count,
+                    filtered_items=filtered_items,
+                    next_index=slice_start_index + len(paged_items),
+                    page_size=page_size,
+                )
+            if self._is_reliable_page_slice(
+                filtered_items=filtered_items,
+                current_page=current_page_number,
+                total_pages=total_pages,
+                page_size=page_size,
+            ):
                 logger.debug(
                     "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
                     total_count,
-                    len(paged_items),
+                    len(filtered_items),
                     current_page_number,
                     page_size,
                 )
-                logger.debug("按当前页码切分复选框成功: total_count=%s, page_items=%s", total_count, len(paged_items))
-                return paged_items
-            filtered_items = self._filter_result_row_checkbox_items(paged_items)
+                logger.debug("按当前页码切分复选框成功: total_count=%s, page_items=%s", total_count, len(filtered_items))
+                return filtered_items
             if self._is_reliable_page_slice(
                 filtered_items=filtered_items,
                 current_page=current_page_number,
@@ -98,6 +109,41 @@ class VpCheckboxListMixin:
         )
         logger.debug("筛选当前页可见复选框: total_count=%s, visible_count=%s", total_count, len(visible_items))
         return visible_items
+
+    def _resolve_current_results_page_number(self, summary: dict[str, object]) -> int:
+        """综合 DOM 摘要与最近一次已知页码，解析当前页码。"""
+        try:
+            parsed_page = int(summary.get("current_page") or 1)
+        except Exception:
+            parsed_page = 1
+
+        known_page = int(getattr(self, "_known_results_page", 0) or 0)
+        if parsed_page >= known_page:
+            setattr(self, "_known_results_page", parsed_page)
+            return parsed_page
+        return known_page if known_page > 0 else parsed_page
+
+    def _top_up_page_slice_rows(
+        self,
+        checkbox_locator: Locator,
+        total_count: int,
+        filtered_items: list[Locator],
+        next_index: int,
+        page_size: int,
+    ) -> list[Locator]:
+        """当页码切片混入页级控件时，顺延补齐当前页结果行。"""
+        topped_up_items = list(filtered_items)
+        if page_size <= 0 or len(topped_up_items) >= page_size:
+            return topped_up_items
+
+        for index in range(max(next_index, 0), total_count):
+            candidate = checkbox_locator.nth(index)
+            if not self._is_result_row_checkbox(candidate):
+                continue
+            topped_up_items.append(candidate)
+            if len(topped_up_items) >= page_size:
+                break
+        return topped_up_items
 
     def _is_reliable_page_slice(
         self,

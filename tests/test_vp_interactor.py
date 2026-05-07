@@ -330,7 +330,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
 
         with (
             patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
-            patch.object(self.interactor, "_extract_selected_count", return_value=0),
+            patch.object(self.interactor, "_count_checked_rows", return_value=3),
         ):
             self.interactor._select_rows_on_current_page(
                 checkbox_items=checkbox_items,
@@ -355,6 +355,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         with (
             patch.object(self.interactor, "_clear_page_selection") as clear_page_selection,
             patch.object(self.interactor, "_select_rows_incrementally") as select_rows_incrementally,
+            patch.object(self.interactor, "_count_checked_rows", return_value=3),
         ):
             self.interactor._select_rows_on_current_page(
                 checkbox_items=checkbox_group.items,
@@ -383,6 +384,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
             patch.object(self.interactor, "_disable_checkbox") as disable_checkbox,
             patch.object(self.interactor, "_select_rows_incrementally") as select_rows_incrementally,
+            patch.object(self.interactor, "_count_checked_rows", return_value=50),
         ):
             self.interactor._select_rows_on_current_page(
                 checkbox_items=checkbox_group.items,
@@ -435,6 +437,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         with (
             patch.object(self.interactor, "_try_select_all_on_current_page") as try_select_all_on_current_page,
             patch.object(self.interactor, "_select_rows_incrementally") as select_rows_incrementally,
+            patch.object(self.interactor, "_count_checked_rows", return_value=3),
         ):
             self.interactor._select_rows_on_current_page(
                 checkbox_items=checkbox_group.items,
@@ -489,8 +492,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         with (
             patch.object(self.interactor, "_wait_for_results_ready"),
             patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
-            patch.object(self.interactor, "_select_rows_on_current_page") as select_rows_on_current_page,
-            patch.object(self.interactor, "_extract_selected_count", side_effect=[0, 50, 50, 100]),
+            patch.object(self.interactor, "_select_rows_on_current_page", side_effect=[50, 50]) as select_rows_on_current_page,
             patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
         ):
             selection = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=True)
@@ -520,8 +522,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         with (
             patch.object(self.interactor, "_wait_for_results_ready"),
             patch.object(self.interactor, "_current_page_checkbox_items", side_effect=[checkbox_items, checkbox_items]),
-            patch.object(self.interactor, "_select_rows_on_current_page") as select_rows_on_current_page,
-            patch.object(self.interactor, "_extract_selected_count", side_effect=[0, 47, 47, 97]),
+            patch.object(self.interactor, "_select_rows_on_current_page", side_effect=[47, 50]) as select_rows_on_current_page,
             patch.object(
                 self.interactor,
                 "parser",
@@ -553,8 +554,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                 "_current_page_checkbox_items",
                 side_effect=[checkbox_items, checkbox_items, checkbox_items],
             ),
-            patch.object(self.interactor, "_select_rows_on_current_page") as select_rows_on_current_page,
-            patch.object(self.interactor, "_extract_selected_count", side_effect=[0, 47, 47, 97, 97, 100]),
+            patch.object(self.interactor, "_select_rows_on_current_page", side_effect=[47, 50, 3]) as select_rows_on_current_page,
             patch.object(
                 self.interactor,
                 "parser",
@@ -587,7 +587,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.assertIs(checkbox_items[0], all_checkbox_group.items[50])
         self.assertIs(checkbox_items[-1], all_checkbox_group.items[99])
 
-    def test_current_page_checkbox_items_skips_per_item_filter_for_later_page_slice(self) -> None:
+    def test_current_page_checkbox_items_skips_visible_scan_for_later_page_slice(self) -> None:
         all_checkbox_group = FakeCheckboxGroup(304)
         page_size_active = FakeLocator(attributes={"data-count": "50"})
         self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
@@ -597,8 +597,8 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
             patch.object(
                 self.interactor,
-                "_filter_result_row_checkbox_items",
-                side_effect=AssertionError("后续页切片不应逐项过滤"),
+                "_collect_visible_result_row_checkboxes",
+                side_effect=AssertionError("后续页整页切片不应回退到可见性扫描"),
             ),
         ):
             checkbox_items = self.interactor._current_page_checkbox_items()
@@ -606,6 +606,33 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.assertEqual(len(checkbox_items), 50)
         self.assertIs(checkbox_items[0], all_checkbox_group.items[100])
         self.assertIs(checkbox_items[-1], all_checkbox_group.items[149])
+
+    def test_current_page_checkbox_items_filters_select_all_from_later_page_slice(self) -> None:
+        all_checkbox_group = FakeCheckboxGroup(304)
+        page_size_active = FakeLocator(attributes={"data-count": "50"})
+        page_three_start = 100
+        select_all = all_checkbox_group.items[page_three_start]
+        select_all.attributes = {"name": "selectArticleAll"}
+        replacement_row = FakeLocator(attributes={"name": "selectArticle"})
+        all_checkbox_group.items[page_three_start + 49] = replacement_row
+        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
+        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 3, "total_pages": 100})
+
+        with (
+            patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
+            patch.object(
+                self.interactor,
+                "_collect_visible_result_row_checkboxes",
+                side_effect=AssertionError("后续页单个全选框混入时不应回退到可见性扫描"),
+            ),
+        ):
+            checkbox_items = self.interactor._current_page_checkbox_items()
+
+        self.assertEqual(len(checkbox_items), 50)
+        self.assertNotIn(select_all, checkbox_items)
+        self.assertIs(checkbox_items[0], all_checkbox_group.items[101])
+        self.assertIn(replacement_row, checkbox_items)
+        self.assertIs(checkbox_items[-1], all_checkbox_group.items[150])
 
     def test_current_page_checkbox_items_falls_back_when_middle_page_slice_is_incomplete(self) -> None:
         all_checkbox_group = FakeCheckboxGroup(304)
@@ -672,7 +699,10 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                 return False
             if selectors == self.interactor.BATCH_ACTION_MENU_SELECTORS:
                 return True
-            if selectors == self.interactor.EXPORT_ENTRY_SELECTORS and len(selector_calls) == 3:
+            combined_export_selectors = list(self.interactor.EXPORT_ENTRY_SELECTORS) + list(
+                self.interactor.EXPORT_ENTRY_MENU_SELECTORS
+            )
+            if selectors == combined_export_selectors and len(selector_calls) == 3:
                 page_context = self.interactor.page.context.pages
                 page_context.append(export_page)
                 return True
@@ -681,7 +711,10 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         def has_visible_selector(selectors: list[str], page=None) -> bool:
             del page
             nonlocal visible_calls
-            if selectors != self.interactor.EXPORT_ENTRY_SELECTORS:
+            combined_export_selectors = list(self.interactor.EXPORT_ENTRY_SELECTORS) + list(
+                self.interactor.EXPORT_ENTRY_MENU_SELECTORS
+            )
+            if selectors != combined_export_selectors:
                 return False
             visible_calls += 1
             return visible_calls >= 2
@@ -699,7 +732,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             [
                 self.interactor.EXPORT_ENTRY_SELECTORS,
                 self.interactor.BATCH_ACTION_MENU_SELECTORS,
-                self.interactor.EXPORT_ENTRY_SELECTORS,
+                list(self.interactor.EXPORT_ENTRY_SELECTORS) + list(self.interactor.EXPORT_ENTRY_MENU_SELECTORS),
             ],
         )
         self.assertEqual(visible_calls, 2)
@@ -786,7 +819,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         export_page = FakePage({})
         with TemporaryDirectory() as temp_dir:
             with (
-                patch.object(self.interactor, "_capture_export_download_by_option", return_value=None),
+                patch.object(self.interactor, "_select_export_type") as select_export_type,
                 patch.object(self.interactor, "_wait_for_export_type_selected") as wait_for_export_type_selected,
                 patch.object(
                     self.interactor,
@@ -805,21 +838,22 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                 )
 
         self.assertTrue(result.endswith(".txt"))
+        select_export_type.assert_called_once_with(export_page=export_page, export_type="abstract", force_reclick=False)
         wait_for_export_type_selected.assert_called_once_with(export_page=export_page, export_type="abstract")
         capture_export_download_by_confirm.assert_called_once_with(export_page=export_page, kind="reference")
 
-    def test_download_from_export_page_prefers_auto_download_from_excel_tab(self) -> None:
+    def test_download_from_export_page_switches_excel_tab_then_confirms(self) -> None:
         export_page = FakePage({})
 
         with TemporaryDirectory() as temp_dir:
             with (
+                patch.object(self.interactor, "_select_export_type") as select_export_type,
+                patch.object(self.interactor, "_wait_for_export_type_selected") as wait_for_export_type_selected,
                 patch.object(
                     self.interactor,
-                    "_capture_export_download_by_option",
+                    "_capture_export_download_by_confirm",
                     return_value=FakeDownload("vp-export.xls"),
-                ),
-                patch.object(self.interactor, "_wait_for_export_type_selected") as wait_for_export_type_selected,
-                patch.object(self.interactor, "_capture_export_download_by_confirm") as capture_by_confirm,
+                ) as capture_by_confirm,
             ):
                 result = self.interactor._download_from_export_page(
                     export_page=export_page,
@@ -832,17 +866,22 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                 )
 
         self.assertTrue(result.endswith(".xls"))
-        wait_for_export_type_selected.assert_not_called()
-        capture_by_confirm.assert_not_called()
+        select_export_type.assert_called_once_with(export_page=export_page, export_type="excel", force_reclick=False)
+        wait_for_export_type_selected.assert_called_once_with(export_page=export_page, export_type="excel")
+        capture_by_confirm.assert_called_once_with(export_page=export_page, kind="metadata")
 
     def test_download_from_export_page_rejects_non_excel_metadata_download(self) -> None:
         export_page = FakePage({})
 
         with TemporaryDirectory() as temp_dir:
-            with patch.object(
-                self.interactor,
-                "_capture_export_download_by_option",
-                return_value=FakeDownload("vp-reference.txt"),
+            with (
+                patch.object(self.interactor, "_select_export_type"),
+                patch.object(self.interactor, "_wait_for_export_type_selected"),
+                patch.object(
+                    self.interactor,
+                    "_capture_export_download_by_confirm",
+                    side_effect=[FakeDownload("vp-reference.txt"), FakeDownload("vp-reference.txt")],
+                ),
             ):
                 with self.assertRaises(ValidationError):
                     self.interactor._download_from_export_page(
@@ -854,6 +893,46 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                         kind="metadata",
                         default_name="vp-export.xls",
                     )
+
+    def test_download_from_export_page_retries_excel_after_wrong_txt_download(self) -> None:
+        export_page = FakePage({})
+
+        with TemporaryDirectory() as temp_dir:
+            with (
+                patch.object(self.interactor, "_select_export_type") as select_export_type,
+                patch.object(self.interactor, "_wait_for_export_type_selected") as wait_for_export_type_selected,
+                patch.object(
+                    self.interactor,
+                    "_capture_export_download_by_confirm",
+                    side_effect=[FakeDownload("vp-reference.txt"), FakeDownload("vp-export.xls")],
+                ) as capture_by_confirm,
+            ):
+                result = self.interactor._download_from_export_page(
+                    export_page=export_page,
+                    selectors=["li[data-type='excel']", "li[data-type='excel'] a"],
+                    output_dir=Path(temp_dir),
+                    query="新青年",
+                    batch_index=1,
+                    kind="metadata",
+                    default_name="vp-export.xls",
+                )
+
+        self.assertTrue(result.endswith(".xls"))
+        self.assertEqual(
+            select_export_type.call_args_list,
+            [
+                call(export_page=export_page, export_type="excel", force_reclick=False),
+                call(export_page=export_page, export_type="excel", force_reclick=True),
+            ],
+        )
+        self.assertEqual(
+            wait_for_export_type_selected.call_args_list,
+            [
+                call(export_page=export_page, export_type="excel"),
+                call(export_page=export_page, export_type="excel"),
+            ],
+        )
+        self.assertEqual(capture_by_confirm.call_count, 2)
 
     def test_ensure_checkbox_checked_prefers_layui_wrapper(self) -> None:
         checkbox = FakeLocator(checked=False)
@@ -1013,6 +1092,16 @@ class VpInteractorPaginationTestCase(unittest.TestCase):
         ):
             with self.assertRaises(TimeoutError):
                 self.interactor._goto_next_results_page()
+
+    def test_is_results_page_advanced_requires_real_page_advance(self) -> None:
+        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 1})
+        setattr(self.interactor, "_last_results_title_before_page_turn", "标题A")
+
+        with patch.object(self.interactor, "_first_result_title", return_value="标题B"):
+            result = self.interactor._is_results_page_advanced(previous_current_page=1, target_page=2)
+
+        self.assertFalse(result)
+        self.assertEqual(getattr(self.interactor, "_known_results_page", 0), 0)
 
     def test_wait_for_results_page_advanced_reuses_single_summary_per_poll(self) -> None:
         summaries = iter(

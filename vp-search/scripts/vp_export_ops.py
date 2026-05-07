@@ -88,18 +88,25 @@ class VpExportMixin:
             )
 
     def _open_export_page(self, timeout: Optional[float] = None, already_at_target: bool = False) -> Page:
+        del already_at_target
         existing_pages = list(self.page.context.pages)
+        previous_url = self.page.url
         if not self._click_export_entry():
             raise ValidationError('未找到"导出题录"入口')
 
-        effective_timeout = 5.0 if already_at_target else (timeout or self._page_change_timeout_seconds())
+        effective_timeout = timeout or self._page_change_timeout_seconds()
+        export_page_opened = False
         deadline = time.time() + effective_timeout
         while time.time() < deadline:
-            export_page = self._find_ready_export_page(existing_pages)
+            export_page = self._find_ready_export_page(existing_pages, previous_url=previous_url)
             if export_page is not None:
                 return export_page
+            if self._has_export_page_opened(existing_pages, previous_url=previous_url):
+                export_page_opened = True
             time.sleep(self._page_change_poll_interval_seconds())
-        raise TimeoutError("等待导出页面打开超时")
+        if export_page_opened:
+            raise TimeoutError("导出页已打开，但关键元素未就绪")
+        raise TimeoutError("已点击导出题录，但未检测到导出页打开")
 
     def _click_export_entry(self) -> bool:
         """点击导出题录入口。"""
@@ -107,7 +114,9 @@ class VpExportMixin:
             return True
 
         if self._wait_export_entry_after_expanding_batch_menu():
-            return self._click_first_available(self.EXPORT_ENTRY_SELECTORS)
+            return self._click_first_available(
+                list(self.EXPORT_ENTRY_SELECTORS) + list(self.EXPORT_ENTRY_MENU_SELECTORS)
+            )
         return False
 
     def _wait_export_entry_after_expanding_batch_menu(self) -> bool:
@@ -117,25 +126,49 @@ class VpExportMixin:
 
         deadline = time.time() + self._page_change_timeout_seconds()
         while time.time() < deadline:
-            if self._has_visible_selector(self.EXPORT_ENTRY_SELECTORS):
+            if self._has_visible_selector(
+                list(self.EXPORT_ENTRY_SELECTORS) + list(self.EXPORT_ENTRY_MENU_SELECTORS)
+            ):
                 return True
             time.sleep(self._action_poll_interval_seconds())
         logger.debug("批量处理菜单已展开，但等待导出题录入口出现超时")
         return False
 
-    def _find_ready_export_page(self, existing_pages: list[Page]) -> Optional[Page]:
+    def _find_ready_export_page(self, existing_pages: list[Page], previous_url: str = "") -> Optional[Page]:
         """返回已经进入导出界面的页面。"""
         for opened_page in self.page.context.pages:
             if opened_page in existing_pages:
                 continue
-            if self._is_export_page(opened_page):
+            self._wait_export_page_dom_ready(opened_page)
+            if self._is_export_page_ready(opened_page):
                 return opened_page
 
-        if self._is_export_page(self.page):
+        if previous_url and self.page.url != previous_url:
+            self._wait_export_page_dom_ready(self.page)
+            if self._is_export_page_ready(self.page):
+                return self.page
+
+        if self._is_export_page_ready(self.page):
             return self.page
         return None
 
-    def _is_export_page(self, target_page: Page) -> bool:
+    def _has_export_page_opened(self, existing_pages: list[Page], previous_url: str = "") -> bool:
+        """判断导出页是否已经打开，但可能仍未就绪。"""
+        for opened_page in self.page.context.pages:
+            if opened_page not in existing_pages:
+                return True
+        if previous_url and self.page.url != previous_url:
+            return True
+        return self._is_export_page_ready(self.page)
+
+    def _wait_export_page_dom_ready(self, export_page: Page) -> None:
+        """等待导出页 DOM 基本可用。"""
+        try:
+            export_page.wait_for_load_state("domcontentloaded", timeout=self._locator_wait_timeout_ms())
+        except Exception:
+            pass
+
+    def _is_export_page_ready(self, target_page: Page) -> bool:
         """判断当前页面是否已经进入导出界面。"""
         for selector in self.EXPORT_PAGE_READY_SELECTORS:
             locator = target_page.locator(selector).first
@@ -177,32 +210,71 @@ class VpExportMixin:
         default_name: str,
     ) -> str:
         download_started_at = time.perf_counter()
-        download = self._capture_export_download_by_option(export_page=export_page, selectors=selectors, kind=kind)
-        if download is None:
-            export_type = self._infer_export_type(selectors)
+        export_type = self._infer_export_type(selectors)
+        last_error: Optional[ValidationError] = None
+        for attempt in range(1, 3):
             if export_type:
+                self._select_export_type(
+                    export_page=export_page,
+                    export_type=export_type,
+                    force_reclick=attempt > 1,
+                )
                 self._wait_for_export_type_selected(export_page=export_page, export_type=export_type)
-            download = self._capture_export_download_by_confirm(export_page=export_page, kind=kind)
+                time.sleep(max(self._action_poll_interval_seconds(), 0.2))
 
-        suggested_name = download.suggested_filename or default_name
-        self._validate_export_download_kind(kind=kind, suggested_name=suggested_name)
-        file_path = self._build_export_file_path(
-            output_dir=output_dir,
-            query=query,
-            batch_index=batch_index,
-            kind=kind,
-            suggested_name=suggested_name,
-        )
-        save_started_at = time.perf_counter()
-        download.save_as(str(file_path))
-        logger.debug(
-            "导出文件已保存: kind=%s, path=%s, save_elapsed_ms=%s, total_elapsed_ms=%s",
-            kind,
-            file_path,
-            int((time.perf_counter() - save_started_at) * 1000),
-            int((time.perf_counter() - download_started_at) * 1000),
-        )
-        return str(file_path)
+            download = self._capture_export_download_by_confirm(export_page=export_page, kind=kind)
+            suggested_name = download.suggested_filename or default_name
+            try:
+                self._validate_export_download_kind(kind=kind, suggested_name=suggested_name)
+            except ValidationError as exc:
+                last_error = exc
+                if attempt >= 2:
+                    raise
+                logger.warning(
+                    "导出结果类型与目标不一致，准备重试: kind=%s, export_type=%s, file=%s, attempt=%s/2",
+                    kind,
+                    export_type,
+                    suggested_name,
+                    attempt,
+                )
+                continue
+
+            file_path = self._build_export_file_path(
+                output_dir=output_dir,
+                query=query,
+                batch_index=batch_index,
+                kind=kind,
+                suggested_name=suggested_name,
+            )
+            save_started_at = time.perf_counter()
+            download.save_as(str(file_path))
+            logger.debug(
+                "导出文件已保存: kind=%s, path=%s, save_elapsed_ms=%s, total_elapsed_ms=%s",
+                kind,
+                file_path,
+                int((time.perf_counter() - save_started_at) * 1000),
+                int((time.perf_counter() - download_started_at) * 1000),
+            )
+            return str(file_path)
+
+        if last_error is not None:
+            raise last_error
+        raise ValidationError(f"导出失败: {kind}")
+
+    def _select_export_type(self, export_page: Page, export_type: str, force_reclick: bool = False) -> None:
+        """切换导出类型标签。"""
+        selector = f"#dateType li[data-type='{export_type}']"
+        locator = export_page.locator(selector).first
+        if locator.count() == 0:
+            raise ValidationError(f"未找到导出类型标签: {export_type}")
+
+        class_name = (locator.get_attribute("class") or "").strip()
+        if "layui-this" in class_name.split() and not force_reclick:
+            return
+        try:
+            locator.click(timeout=self._action_timeout_ms())
+        except Exception:
+            locator.evaluate("(element) => element.click()")
 
     def _capture_export_download_by_option(self, export_page: Page, selectors: list[str], kind: str):
         """优先捕获点击导出类型时触发的自动下载。"""

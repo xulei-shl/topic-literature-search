@@ -244,6 +244,7 @@ class VpNavigationMixin:
         previous_page = summary["page"]
         previous_current_page = int(summary.get("current_page") or 1)
         previous_title = self._first_result_title()
+        setattr(self, "_last_results_title_before_page_turn", previous_title)
         last_error: Optional[Exception] = None
 
         for attempt in range(1, self.NEXT_PAGE_MAX_RETRIES + 1):
@@ -285,6 +286,7 @@ class VpNavigationMixin:
                     current_summary = self.parser.parse_results_summary()
                 current_page = current_summary["page"]
                 current_current_page = int(current_summary.get("current_page") or 0)
+                self._mark_known_results_page(max(current_current_page, target_page))
                 logger.debug(
                     "结果页翻页完成: previous_page=%s, current_page=%s, target_page=%s, elapsed_ms=%s",
                     previous_page,
@@ -326,6 +328,9 @@ class VpNavigationMixin:
             current_current_page = int(self.parser.parse_results_summary().get("current_page") or 0)
         except Exception:
             return False
+        if current_current_page >= target_page and current_current_page > previous_current_page:
+            self._mark_known_results_page(current_current_page)
+            return True
         return current_current_page >= target_page and current_current_page > previous_current_page
 
     def _wait_for_results_page_advanced(
@@ -352,6 +357,7 @@ class VpNavigationMixin:
                 current_page = current_summary["page"]
                 current_current_page = int(current_summary.get("current_page") or 0)
                 if current_current_page >= target_page and current_current_page > previous_current_page:
+                    self._mark_known_results_page(current_current_page)
                     logger.debug(
                         "检测到结果页页码已推进: previous_page=%s, current_page=%s, target_page=%s",
                         previous_page,
@@ -370,7 +376,7 @@ class VpNavigationMixin:
                     current_title = self._first_result_title()
                     if current_title != previous_title:
                         logger.debug(
-                            "检测到结果页状态变化但页码未推进，继续等待: previous_page=%s, current_page=%s, target_page=%s",
+                            "检测到结果首条已变化但页码未推进，继续等待: previous_page=%s, current_page=%s, target_page=%s",
                             previous_page,
                             current_page,
                             target_page,
@@ -383,6 +389,11 @@ class VpNavigationMixin:
         except Exception:
             current_page = ""
         raise TimeoutError(f"等待翻页完成超时: previous_page={previous_page}, current_page={current_page}, target_page={target_page}")
+
+    def _mark_known_results_page(self, page_number: int) -> None:
+        """记录最近一次已确认推进到的结果页码。"""
+        if page_number > 0:
+            setattr(self, "_known_results_page", page_number)
 
     def _wait_for_results_changed(
         self,
