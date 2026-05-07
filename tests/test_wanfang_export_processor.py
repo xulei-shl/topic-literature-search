@@ -99,6 +99,51 @@ class ExportResultProcessorTestCase(unittest.TestCase):
         self.assertEqual(rows[1], (1, "文章一", "张三", "[1]引文一"))
         self.assertEqual(rows[2], (2, "文章二", "李四", "[2]引文二"))
 
+    def test_sanitize_and_enrich_supports_mixed_headers(self) -> None:
+        """应支持混合表头并避免把第二段表头当成数据行。"""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            raw_excel_path = temp_path / "mixed.xls"
+            cleaned_excel_path = temp_path / "mixed_cleaned.xlsx"
+            txt_path = temp_path / "mixed.txt"
+            output_path = temp_path / "mixed_enriched.xlsx"
+
+            raw_excel_path.write_text(
+                """
+                <table>
+                    <tr><td>期刊</td><td></td><td></td></tr>
+                    <tr><td></td><td>序号</td><td>题名</td><td>作者</td><td>刊名</td><td>摘要</td></tr>
+                    <tr><td></td><td>1</td><td>期刊文章一</td><td>张三</td><td>刊名甲</td><td>摘要甲</td></tr>
+                    <tr><td></td><td>序号</td><td>题名</td><td>作者</td><td>授予学位</td><td>学位授予单位</td><td>导师</td><td>学位年度</td><td>摘要</td></tr>
+                    <tr><td></td><td>2</td><td>学位论文二</td><td>李四</td><td>硕士</td><td>某大学</td><td>王老师</td><td>2024</td><td>摘要乙</td></tr>
+                </table>
+                """,
+                encoding="utf-8",
+            )
+            txt_path.write_text("[1]引文一\n[2]引文二", encoding="utf-8")
+
+            self.processor.sanitize_export_excel(raw_excel_path, cleaned_excel_path)
+            result_path = self.processor.enrich_batch_excel(cleaned_excel_path, txt_path, output_path)
+
+            workbook = openpyxl.load_workbook(result_path)
+            sheet = workbook.active
+            rows = list(sheet.iter_rows(values_only=True))
+
+        headers = rows[0]
+        first_data = rows[1]
+        second_data = rows[2]
+
+        self.assertEqual(len(rows), 3)
+        self.assertIn("刊名", headers)
+        self.assertIn("授予学位", headers)
+        self.assertIn("学位授予单位", headers)
+        self.assertEqual(first_data[headers.index("题名")], "期刊文章一")
+        self.assertEqual(first_data[headers.index("参考格式")], "[1]引文一")
+        self.assertEqual(second_data[headers.index("题名")], "学位论文二")
+        self.assertEqual(second_data[headers.index("授予学位")], "硕士")
+        self.assertEqual(second_data[headers.index("学位授予单位")], "某大学")
+        self.assertEqual(second_data[headers.index("参考格式")], "[2]引文二")
+
     def test_merge_batch_excels_keeps_order(self) -> None:
         """应按批次顺序合并结果。"""
         with TemporaryDirectory() as temp_dir:

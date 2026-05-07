@@ -14,7 +14,25 @@ from exceptions import ExportProcessingError
 logger = logging.getLogger("wanfang_search.export_processor")
 
 REFERENCE_COLUMN = "参考格式"
-HEADER_KEYWORDS = ("序号", "题名", "作者")
+HEADER_KEYWORDS = (
+    "序号",
+    "题名",
+    "作者",
+    "作者单位",
+    "刊名",
+    "ISSN",
+    "页码",
+    "摘要",
+    "关键词",
+    "DOI",
+    "CN",
+    "核心类型",
+    "中图分类号",
+    "授予学位",
+    "学位授予单位",
+    "导师",
+    "学位年度",
+)
 
 
 class ExportResultProcessor:
@@ -133,35 +151,44 @@ class ExportResultProcessor:
             rows = rows[1:]
             removed_first_row = True
 
-        header_row = self._find_header_row(rows)
-        if not header_row:
-            raise ExportProcessingError("未识别到万方导出表头")
-
-        header_start = self._first_non_empty_index(header_row)
-        normalized_header = self._normalize_header(header_row[header_start:])
-
+        current_header: list[str] = []
+        current_header_start = 0
+        all_columns: list[str] = []
         records: list[dict[str, Any]] = []
+
         for row_values in rows:
-            trimmed_row = self._slice_row(row_values, header_start, len(normalized_header))
+            if self._looks_like_type_label_row(row_values):
+                continue
+
+            if self._is_header_row(row_values):
+                current_header_start = self._first_non_empty_index(row_values)
+                current_header = self._normalize_header(row_values[current_header_start:])
+                all_columns = self._merge_columns(all_columns, current_header)
+                continue
+
+            if not current_header:
+                continue
+
+            trimmed_row = self._slice_row(row_values, current_header_start, len(current_header))
             if self._is_empty_row(trimmed_row):
                 continue
-            if self._is_duplicate_header_row(trimmed_row, normalized_header):
-                continue
 
-            record = {
-                normalized_header[index]: trimmed_row[index] if index < len(trimmed_row) else ""
-                for index in range(len(normalized_header))
-                if normalized_header[index]
-            }
+            record = self._build_record(current_header, trimmed_row)
             if self._is_empty_record(record):
                 continue
             records.append(record)
 
+        if not all_columns:
+            raise ExportProcessingError("未识别到万方导出表头")
+
         sanitized = pd.DataFrame(records)
         if sanitized.empty:
-            sanitized = pd.DataFrame(columns=[header for header in normalized_header if header])
+            sanitized = pd.DataFrame(columns=all_columns)
         else:
-            sanitized = sanitized.reindex(columns=[header for header in normalized_header if header]).fillna("")
+            for column in all_columns:
+                if column not in sanitized.columns:
+                    sanitized[column] = ""
+            sanitized = sanitized.reindex(columns=all_columns).fillna("")
 
         logger.debug(
             "XLS 清理: 原始行数=%s, 清理后行数=%s, 删除首行=%s",
@@ -171,18 +198,13 @@ class ExportResultProcessor:
         )
         return sanitized
 
-    def _find_header_row(self, rows: list[list[str]]) -> list[str]:
-        for row_values in rows:
-            normalized = [value for value in row_values if value]
-            if len(normalized) < 2:
-                continue
-            if any(keyword in normalized for keyword in HEADER_KEYWORDS):
-                return row_values
-        for row_values in rows:
-            normalized = [value for value in row_values if value]
-            if len(normalized) >= 2:
-                return row_values
-        return []
+    def _is_header_row(self, row_values: list[str]) -> bool:
+        """判断当前行是否为万方导出的分段表头。"""
+        normalized = [self._normalize_cell(value) for value in row_values if self._normalize_cell(value)]
+        if "题名" not in normalized:
+            return False
+        matched_keywords = [value for value in normalized if value in HEADER_KEYWORDS]
+        return len(matched_keywords) >= 2
 
     def _normalize_header(self, header_values: list[str]) -> list[str]:
         return [self._normalize_cell(value) for value in header_values if self._normalize_cell(value)]
@@ -192,10 +214,6 @@ class ExportResultProcessor:
         if len(sliced) < expected_length:
             sliced = sliced + [""] * (expected_length - len(sliced))
         return sliced[:expected_length]
-
-    def _is_duplicate_header_row(self, row_values: list[str], header_row: list[str]) -> bool:
-        normalized_row = [self._normalize_cell(value) for value in row_values if self._normalize_cell(value)]
-        return normalized_row == header_row
 
     def _looks_like_type_label_row(self, row_values: list[str]) -> bool:
         non_empty_values = [value for value in row_values if value]
@@ -232,6 +250,24 @@ class ExportResultProcessor:
 
     def _is_empty_record(self, record: dict[str, Any]) -> bool:
         return not any(str(value).strip() for value in record.values())
+
+    def _build_record(self, headers: list[str], row_values: list[str]) -> dict[str, Any]:
+        """按当前分段表头构建一条统一记录。"""
+        record: dict[str, Any] = {}
+        for index, header in enumerate(headers):
+            if not header:
+                continue
+            record[header] = row_values[index] if index < len(row_values) else ""
+        return record
+
+    def _merge_columns(self, existing_columns: list[str], current_headers: list[str]) -> list[str]:
+        """按首次出现顺序维护统一列集合。"""
+        merged = existing_columns.copy()
+        for header in current_headers:
+            if not header or header in merged:
+                continue
+            merged.append(header)
+        return merged
 
     def _read_excel_via_com(self, excel_path: Path) -> pd.DataFrame:
         excel = None
