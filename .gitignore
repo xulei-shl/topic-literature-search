@@ -69,6 +69,9 @@ htmlcov/
 !*.csv.example
 !*.xlsx.example
 
+# Session data (generated)
+session/
+
 # Temporary
 *.tmp
 temp/
