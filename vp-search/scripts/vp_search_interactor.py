@@ -84,6 +84,12 @@ class VpSearchInteractor(
         ".dropdown-menu a:has-text('导出题录')",
         ".dropdown-menu span:has-text('导出题录')",
     ]
+    EXPORT_BATCH_DIALOG_SELECTORS = [
+        "button#allExport.behavior-exporttitle",
+        "button#allExport",
+        ".layui-layer button:has-text('导出全部')",
+        "button:has-text('导出全部')",
+    ]
     EXPORT_PAGE_READY_SELECTORS = [
         "#dateType li[data-type='excel']",
         "#dateType li[data-type='abstract']",
@@ -99,6 +105,8 @@ class VpSearchInteractor(
     BATCH_ACTION_MENU_SELECTORS = [
         "span.behavior-allDowns",
         ".behavior-allDowns",
+        "a[href='javascript:batch();']",
+        "a:has-text('批量处理')",
         "span.btn-hover:has-text('批量处理')",
         "span:has-text('批量处理')",
     ]

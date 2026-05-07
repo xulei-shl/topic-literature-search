@@ -737,6 +737,61 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         )
         self.assertEqual(visible_calls, 2)
 
+    def test_open_export_page_retries_after_batch_dialog_export_button(self) -> None:
+        current_page = FakePage({})
+        export_page = FakePage(
+            {
+                "#dateType li[data-type='excel']": FakeLocator(),
+                "#dateType li[data-type='abstract']": FakeLocator(),
+            },
+            url="https://example.com/export",
+        )
+        self.interactor.page = current_page
+
+        selector_calls: list[list[str]] = []
+        direct_visible_calls = 0
+        dialog_visible_calls = 0
+
+        def click_first_available(selectors: list[str], page=None) -> bool:
+            del page
+            selector_calls.append(selectors)
+            if selectors == self.interactor.EXPORT_ENTRY_SELECTORS and len(selector_calls) == 1:
+                return False
+            if selectors == self.interactor.BATCH_ACTION_MENU_SELECTORS:
+                return True
+            if selectors == self.interactor.EXPORT_BATCH_DIALOG_SELECTORS:
+                page_context = self.interactor.page.context.pages
+                page_context.append(export_page)
+                return True
+            return False
+
+        def has_visible_selector(selectors: list[str], page=None) -> bool:
+            del page
+            nonlocal direct_visible_calls, dialog_visible_calls
+            combined_export_selectors = list(self.interactor.EXPORT_ENTRY_SELECTORS) + list(
+                self.interactor.EXPORT_ENTRY_MENU_SELECTORS
+            )
+            if selectors == combined_export_selectors:
+                direct_visible_calls += 1
+                return False
+            if selectors == self.interactor.EXPORT_BATCH_DIALOG_SELECTORS:
+                dialog_visible_calls += 1
+                return dialog_visible_calls >= 2
+            return False
+
+        with (
+            patch.object(self.interactor, "_click_first_available", side_effect=click_first_available),
+            patch.object(self.interactor, "_has_visible_selector", side_effect=has_visible_selector),
+            patch.object(INTERACTOR_TIME, "sleep", return_value=None),
+        ):
+            result = self.interactor._open_export_page(timeout=1)
+
+        self.assertIs(result, export_page)
+        self.assertEqual(selector_calls[0], self.interactor.EXPORT_ENTRY_SELECTORS)
+        self.assertEqual(selector_calls[1], self.interactor.BATCH_ACTION_MENU_SELECTORS)
+        self.assertEqual(selector_calls[2], self.interactor.EXPORT_BATCH_DIALOG_SELECTORS)
+        self.assertGreaterEqual(dialog_visible_calls, 2)
+
     def test_open_export_page_returns_current_page_when_same_tab_is_ready(self) -> None:
         current_page = FakePage(
             {
@@ -842,18 +897,17 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         wait_for_export_type_selected.assert_called_once_with(export_page=export_page, export_type="abstract")
         capture_export_download_by_confirm.assert_called_once_with(export_page=export_page, kind="reference")
 
-    def test_download_from_export_page_switches_excel_tab_then_confirms(self) -> None:
+    def test_download_from_export_page_switches_excel_tab_then_auto_downloads(self) -> None:
         export_page = FakePage({})
 
         with TemporaryDirectory() as temp_dir:
             with (
-                patch.object(self.interactor, "_select_export_type") as select_export_type,
-                patch.object(self.interactor, "_wait_for_export_type_selected") as wait_for_export_type_selected,
                 patch.object(
                     self.interactor,
-                    "_capture_export_download_by_confirm",
+                    "_capture_export_download_by_option",
                     return_value=FakeDownload("vp-export.xls"),
-                ) as capture_by_confirm,
+                ) as capture_by_option,
+                patch.object(self.interactor, "_capture_export_download_by_confirm") as capture_by_confirm,
             ):
                 result = self.interactor._download_from_export_page(
                     export_page=export_page,
@@ -866,17 +920,23 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                 )
 
         self.assertTrue(result.endswith(".xls"))
-        select_export_type.assert_called_once_with(export_page=export_page, export_type="excel", force_reclick=False)
-        wait_for_export_type_selected.assert_called_once_with(export_page=export_page, export_type="excel")
-        capture_by_confirm.assert_called_once_with(export_page=export_page, kind="metadata")
+        capture_by_option.assert_called_once_with(
+            export_page=export_page,
+            selectors=["li[data-type='excel']", "li[data-type='excel'] a"],
+            kind="metadata",
+        )
+        capture_by_confirm.assert_not_called()
 
     def test_download_from_export_page_rejects_non_excel_metadata_download(self) -> None:
         export_page = FakePage({})
 
         with TemporaryDirectory() as temp_dir:
             with (
-                patch.object(self.interactor, "_select_export_type"),
-                patch.object(self.interactor, "_wait_for_export_type_selected"),
+                patch.object(
+                    self.interactor,
+                    "_capture_export_download_by_option",
+                    side_effect=[FakeDownload("vp-reference.txt"), FakeDownload("vp-reference.txt")],
+                ),
                 patch.object(
                     self.interactor,
                     "_capture_export_download_by_confirm",
@@ -899,12 +959,43 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
 
         with TemporaryDirectory() as temp_dir:
             with (
+                patch.object(
+                    self.interactor,
+                    "_capture_export_download_by_option",
+                    side_effect=[FakeDownload("vp-reference.txt"), FakeDownload("vp-export.xls")],
+                ) as capture_by_option,
+                patch.object(self.interactor, "_capture_export_download_by_confirm") as capture_by_confirm,
+            ):
+                result = self.interactor._download_from_export_page(
+                    export_page=export_page,
+                    selectors=["li[data-type='excel']", "li[data-type='excel'] a"],
+                    output_dir=Path(temp_dir),
+                    query="新青年",
+                    batch_index=1,
+                    kind="metadata",
+                    default_name="vp-export.xls",
+                )
+
+        self.assertTrue(result.endswith(".xls"))
+        self.assertEqual(capture_by_option.call_count, 2)
+        capture_by_confirm.assert_not_called()
+
+    def test_download_from_export_page_falls_back_to_confirm_when_excel_auto_download_not_triggered(self) -> None:
+        export_page = FakePage({})
+
+        with TemporaryDirectory() as temp_dir:
+            with (
+                patch.object(
+                    self.interactor,
+                    "_capture_export_download_by_option",
+                    return_value=None,
+                ) as capture_by_option,
                 patch.object(self.interactor, "_select_export_type") as select_export_type,
                 patch.object(self.interactor, "_wait_for_export_type_selected") as wait_for_export_type_selected,
                 patch.object(
                     self.interactor,
                     "_capture_export_download_by_confirm",
-                    side_effect=[FakeDownload("vp-reference.txt"), FakeDownload("vp-export.xls")],
+                    return_value=FakeDownload("vp-export.xls"),
                 ) as capture_by_confirm,
             ):
                 result = self.interactor._download_from_export_page(
@@ -918,21 +1009,14 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                 )
 
         self.assertTrue(result.endswith(".xls"))
-        self.assertEqual(
-            select_export_type.call_args_list,
-            [
-                call(export_page=export_page, export_type="excel", force_reclick=False),
-                call(export_page=export_page, export_type="excel", force_reclick=True),
-            ],
+        capture_by_option.assert_called_once_with(
+            export_page=export_page,
+            selectors=["li[data-type='excel']", "li[data-type='excel'] a"],
+            kind="metadata",
         )
-        self.assertEqual(
-            wait_for_export_type_selected.call_args_list,
-            [
-                call(export_page=export_page, export_type="excel"),
-                call(export_page=export_page, export_type="excel"),
-            ],
-        )
-        self.assertEqual(capture_by_confirm.call_count, 2)
+        select_export_type.assert_called_once_with(export_page=export_page, export_type="excel", force_reclick=False)
+        wait_for_export_type_selected.assert_called_once_with(export_page=export_page, export_type="excel")
+        capture_by_confirm.assert_called_once_with(export_page=export_page, kind="metadata")
 
     def test_ensure_checkbox_checked_prefers_layui_wrapper(self) -> None:
         checkbox = FakeLocator(checked=False)

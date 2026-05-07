@@ -113,25 +113,22 @@ class VpExportMixin:
         if self._click_first_available(self.EXPORT_ENTRY_SELECTORS):
             return True
 
-        if self._wait_export_entry_after_expanding_batch_menu():
-            return self._click_first_available(
-                list(self.EXPORT_ENTRY_SELECTORS) + list(self.EXPORT_ENTRY_MENU_SELECTORS)
-            )
-        return False
+        return self._click_export_entry_after_batch_action()
 
-    def _wait_export_entry_after_expanding_batch_menu(self) -> bool:
-        """展开批量处理菜单后等待导出入口真正出现。"""
+    def _click_export_entry_after_batch_action(self) -> bool:
+        """点击批量处理后进入导出入口。"""
+        combined_export_selectors = list(self.EXPORT_ENTRY_SELECTORS) + list(self.EXPORT_ENTRY_MENU_SELECTORS)
         if not self._click_first_available(self.BATCH_ACTION_MENU_SELECTORS):
             return False
 
         deadline = time.time() + self._page_change_timeout_seconds()
         while time.time() < deadline:
-            if self._has_visible_selector(
-                list(self.EXPORT_ENTRY_SELECTORS) + list(self.EXPORT_ENTRY_MENU_SELECTORS)
-            ):
-                return True
+            if self._has_visible_selector(combined_export_selectors):
+                return self._click_first_available(combined_export_selectors)
+            if self._has_visible_selector(self.EXPORT_BATCH_DIALOG_SELECTORS):
+                return self._click_first_available(self.EXPORT_BATCH_DIALOG_SELECTORS)
             time.sleep(self._action_poll_interval_seconds())
-        logger.debug("批量处理菜单已展开，但等待导出题录入口出现超时")
+        logger.debug("批量处理已触发，但未找到导出题录或导出全部入口")
         return False
 
     def _find_ready_export_page(self, existing_pages: list[Page], previous_url: str = "") -> Optional[Page]:
@@ -213,16 +210,32 @@ class VpExportMixin:
         export_type = self._infer_export_type(selectors)
         last_error: Optional[ValidationError] = None
         for attempt in range(1, 3):
-            if export_type:
-                self._select_export_type(
+            download = None
+            if export_type and self._should_auto_download_by_export_type(export_type=export_type, kind=kind):
+                download = self._capture_export_download_by_option(
                     export_page=export_page,
-                    export_type=export_type,
-                    force_reclick=attempt > 1,
+                    selectors=selectors,
+                    kind=kind,
                 )
-                self._wait_for_export_type_selected(export_page=export_page, export_type=export_type)
-                time.sleep(max(self._action_poll_interval_seconds(), 0.2))
-
-            download = self._capture_export_download_by_confirm(export_page=export_page, kind=kind)
+                if download is None:
+                    self._select_export_type(
+                        export_page=export_page,
+                        export_type=export_type,
+                        force_reclick=attempt > 1,
+                    )
+                    self._wait_for_export_type_selected(export_page=export_page, export_type=export_type)
+                    time.sleep(max(self._action_poll_interval_seconds(), 0.2))
+                    download = self._capture_export_download_by_confirm(export_page=export_page, kind=kind)
+            else:
+                if export_type:
+                    self._select_export_type(
+                        export_page=export_page,
+                        export_type=export_type,
+                        force_reclick=attempt > 1,
+                    )
+                    self._wait_for_export_type_selected(export_page=export_page, export_type=export_type)
+                    time.sleep(max(self._action_poll_interval_seconds(), 0.2))
+                download = self._capture_export_download_by_confirm(export_page=export_page, kind=kind)
             suggested_name = download.suggested_filename or default_name
             try:
                 self._validate_export_download_kind(kind=kind, suggested_name=suggested_name)
@@ -260,6 +273,10 @@ class VpExportMixin:
         if last_error is not None:
             raise last_error
         raise ValidationError(f"导出失败: {kind}")
+
+    def _should_auto_download_by_export_type(self, export_type: str, kind: str) -> bool:
+        """判断当前导出类型是否应在切换标签时直接触发下载。"""
+        return export_type == "excel" and kind == "metadata"
 
     def _select_export_type(self, export_page: Page, export_type: str, force_reclick: bool = False) -> None:
         """切换导出类型标签。"""
