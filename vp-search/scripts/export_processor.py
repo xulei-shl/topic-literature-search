@@ -21,6 +21,7 @@ class ExportResultProcessor:
 
     def sanitize_export_excel(self, excel_path: Path, output_path: Path) -> str:
         """清理导出表格中的重复表头并重新保存。"""
+        logger.info("开始清理导出表格", extra={"excel_path": str(excel_path), "output_path": str(output_path)})
         dataframe = self._sanitize_export_dataframe(self._read_export_table(excel_path))
         output_path.parent.mkdir(parents=True, exist_ok=True)
         dataframe.to_excel(output_path, index=False, engine="openpyxl")
@@ -46,6 +47,10 @@ class ExportResultProcessor:
 
     def enrich_batch_excel(self, excel_path: Path, txt_path: Path, output_path: Path) -> str:
         """为批次 Excel 回填参考格式列。"""
+        logger.info(
+            "开始回填参考格式",
+            extra={"excel_path": str(excel_path), "txt_path": str(txt_path), "output_path": str(output_path)},
+        )
         dataframe = self._read_clean_excel(excel_path)
         references = self.parse_reference_txt(txt_path)
         if len(dataframe.index) != len(references):

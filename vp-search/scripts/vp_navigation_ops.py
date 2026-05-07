@@ -238,6 +238,7 @@ class VpNavigationMixin:
             next_link.evaluate("(element) => element.click()")
 
     def _goto_next_results_page(self) -> bool:
+        navigation_started_at = time.perf_counter()
         previous_url = self.page.url
         summary = self.parser.parse_results_summary()
         previous_page = summary["page"]
@@ -273,21 +274,23 @@ class VpNavigationMixin:
 
             try:
                 self._click_next_page_link(next_link, attempt)
-                self._wait_for_results_page_advanced(
+                current_summary = self._wait_for_results_page_advanced(
                     previous_current_page=previous_current_page,
                     target_page=target_page,
                     previous_url=previous_url,
                     previous_page=previous_page,
                     previous_title=previous_title,
                 )
-                current_summary = self.parser.parse_results_summary()
+                if current_summary is None:
+                    current_summary = self.parser.parse_results_summary()
                 current_page = current_summary["page"]
                 current_current_page = int(current_summary.get("current_page") or 0)
                 logger.debug(
-                    "结果页翻页完成: previous_page=%s, current_page=%s, target_page=%s",
+                    "结果页翻页完成: previous_page=%s, current_page=%s, target_page=%s, elapsed_ms=%s",
                     previous_page,
                     current_page,
                     target_page,
+                    int((time.perf_counter() - navigation_started_at) * 1000),
                 )
                 if current_current_page < target_page:
                     raise TimeoutError(f"结果页页码未推进到目标页: current={current_current_page}, target={target_page}")
@@ -333,7 +336,7 @@ class VpNavigationMixin:
         previous_page: str,
         previous_title: str,
         timeout: Optional[float] = None,
-    ) -> None:
+    ) -> Optional[Dict[str, Any]]:
         """等待结果页页码真正推进到目标页。"""
         deadline = time.time() + (timeout or self._page_change_timeout_seconds())
         logger.debug(
@@ -345,23 +348,33 @@ class VpNavigationMixin:
         while time.time() < deadline:
             self._ensure_captcha_cleared()
             try:
-                if self._is_results_page_advanced(previous_current_page=previous_current_page, target_page=target_page):
-                    current_page = self.parser.parse_results_summary()["page"]
+                current_summary = self.parser.parse_results_summary()
+                current_page = current_summary["page"]
+                current_current_page = int(current_summary.get("current_page") or 0)
+                if current_current_page >= target_page and current_current_page > previous_current_page:
                     logger.debug(
                         "检测到结果页页码已推进: previous_page=%s, current_page=%s, target_page=%s",
                         previous_page,
                         current_page,
                         target_page,
                     )
-                    return
-                if self._has_results_state_changed(previous_url, previous_page, previous_title):
-                    current_page = self.parser.parse_results_summary()["page"]
+                    return current_summary
+                if self.page.url != previous_url or current_page != previous_page:
                     logger.debug(
                         "检测到结果页状态变化但页码未推进，继续等待: previous_page=%s, current_page=%s, target_page=%s",
                         previous_page,
                         current_page,
                         target_page,
                     )
+                else:
+                    current_title = self._first_result_title()
+                    if current_title != previous_title:
+                        logger.debug(
+                            "检测到结果页状态变化但页码未推进，继续等待: previous_page=%s, current_page=%s, target_page=%s",
+                            previous_page,
+                            current_page,
+                            target_page,
+                        )
             except Exception as exc:
                 logger.debug("等待结果页翻页完成时状态刷新中，继续等待: %s", exc)
             time.sleep(self._page_change_poll_interval_seconds())

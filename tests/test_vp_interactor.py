@@ -345,6 +345,29 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             ],
         )
 
+    def test_select_rows_on_current_page_partial_page_does_not_clear_current_page_selection(self) -> None:
+        checkbox_group = FakeCheckboxGroup(10)
+
+        with (
+            patch.object(self.interactor, "_clear_page_selection") as clear_page_selection,
+            patch.object(self.interactor, "_select_rows_incrementally") as select_rows_incrementally,
+        ):
+            self.interactor._select_rows_on_current_page(
+                checkbox_items=checkbox_group.items,
+                row_offset=0,
+                page_target_count=3,
+                row_count=10,
+                selected_before_page=100,
+            )
+
+        clear_page_selection.assert_not_called()
+        select_rows_incrementally.assert_called_once_with(
+            checkbox_items=checkbox_group.items,
+            row_offset=0,
+            page_target_count=3,
+            selected_before_page=0,
+        )
+
     def test_select_rows_on_current_page_falls_back_when_select_all_count_is_abnormal(self) -> None:
         checkbox_group = FakeCheckboxGroup(50)
         select_all = FakeLocator()
@@ -473,6 +496,26 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.assertIs(checkbox_items[0], all_checkbox_group.items[50])
         self.assertIs(checkbox_items[-1], all_checkbox_group.items[99])
 
+    def test_current_page_checkbox_items_skips_per_item_filter_for_later_page_slice(self) -> None:
+        all_checkbox_group = FakeCheckboxGroup(304)
+        page_size_active = FakeLocator(attributes={"data-count": "50"})
+        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
+        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 3})
+
+        with (
+            patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
+            patch.object(
+                self.interactor,
+                "_filter_result_row_checkbox_items",
+                side_effect=AssertionError("后续页切片不应逐项过滤"),
+            ),
+        ):
+            checkbox_items = self.interactor._current_page_checkbox_items()
+
+        self.assertEqual(len(checkbox_items), 50)
+        self.assertIs(checkbox_items[0], all_checkbox_group.items[100])
+        self.assertIs(checkbox_items[-1], all_checkbox_group.items[149])
+
     def test_current_page_checkbox_items_filters_select_all_from_broad_selector(self) -> None:
         select_all = FakeLocator(attributes={"name": "selectArticleAll"})
         row_checkboxes = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(50)]
@@ -504,6 +547,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.interactor.page = current_page
 
         selector_calls: list[list[str]] = []
+        visible_calls = 0
 
         def click_first_available(selectors: list[str], page=None) -> bool:
             del page
@@ -518,7 +562,19 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                 return True
             return False
 
-        with patch.object(self.interactor, "_click_first_available", side_effect=click_first_available):
+        def has_visible_selector(selectors: list[str], page=None) -> bool:
+            del page
+            nonlocal visible_calls
+            if selectors != self.interactor.EXPORT_ENTRY_SELECTORS:
+                return False
+            visible_calls += 1
+            return visible_calls >= 2
+
+        with (
+            patch.object(self.interactor, "_click_first_available", side_effect=click_first_available),
+            patch.object(self.interactor, "_has_visible_selector", side_effect=has_visible_selector),
+            patch.object(INTERACTOR_TIME, "sleep", return_value=None),
+        ):
             result = self.interactor._open_export_page(timeout=1)
 
         self.assertIs(result, export_page)
@@ -530,6 +586,7 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                 self.interactor.EXPORT_ENTRY_SELECTORS,
             ],
         )
+        self.assertEqual(visible_calls, 2)
 
     def test_open_export_page_returns_current_page_when_same_tab_is_ready(self) -> None:
         current_page = FakePage(
@@ -571,6 +628,43 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.assertEqual(current_page.go_back_calls, [1000])
         self.assertEqual(current_page.close_calls, 0)
         wait_for_results_ready.assert_called_once()
+
+    def test_cleanup_export_page_skips_restore_when_disabled(self) -> None:
+        current_page = FakePage({})
+        self.interactor.page = current_page
+
+        with patch.object(self.interactor, "_wait_for_results_ready") as wait_for_results_ready:
+            self.interactor._cleanup_export_page(current_page, restore_results_page=False)
+
+        self.assertEqual(current_page.go_back_calls, [])
+        self.assertEqual(current_page.close_calls, 0)
+        wait_for_results_ready.assert_not_called()
+
+    def test_export_selected_results_for_batch_uses_restore_flag(self) -> None:
+        with (
+            patch.object(self.interactor, "_cache_progress_page_context") as cache_progress_page_context,
+            patch.object(
+                self.interactor,
+                "_export_selected_results",
+                return_value={"excel": "metadata.xls", "txt": "reference.txt"},
+            ) as export_selected_results,
+        ):
+            result = self.interactor._export_selected_results_for_batch(
+                query="新青年",
+                batch_index=1,
+                output_dir=Path("F:/temp"),
+                batch_selection={"already_at_target": True, "restore_results_page": False},
+            )
+
+        self.assertEqual(result, {"excel": "metadata.xls", "txt": "reference.txt"})
+        cache_progress_page_context.assert_called_once()
+        export_selected_results.assert_called_once_with(
+            "新青年",
+            1,
+            Path("F:/temp"),
+            already_at_target=True,
+            restore_results_page=False,
+        )
 
     def test_download_from_export_page_uses_confirm_button_when_option_has_no_auto_download(self) -> None:
         export_page = FakePage({})
@@ -803,6 +897,44 @@ class VpInteractorPaginationTestCase(unittest.TestCase):
         ):
             with self.assertRaises(TimeoutError):
                 self.interactor._goto_next_results_page()
+
+    def test_wait_for_results_page_advanced_reuses_single_summary_per_poll(self) -> None:
+        summaries = iter(
+            [
+                {"page": "1/10", "current_page": 1},
+                {"page": "2/10", "current_page": 2},
+            ]
+        )
+        parse_call_count = 0
+
+        def parse_results_summary():
+            nonlocal parse_call_count
+            parse_call_count += 1
+            return next(summaries)
+
+        self.interactor.parser = SimpleNamespace(parse_results_summary=parse_results_summary)
+
+        with (
+            patch.object(self.interactor, "_ensure_captcha_cleared"),
+            patch.object(
+                self.interactor,
+                "_first_result_title",
+                side_effect=AssertionError("页码文本已变化时不应额外读取标题"),
+            ),
+            patch.object(INTERACTOR_TIME, "sleep", return_value=None),
+            patch.object(INTERACTOR_TIME, "time", side_effect=[0.0, 0.1, 0.2]),
+        ):
+            summary = self.interactor._wait_for_results_page_advanced(
+                previous_current_page=1,
+                target_page=2,
+                previous_url="https://example.com/results",
+                previous_page="1/10",
+                previous_title="标题A",
+                timeout=1,
+            )
+
+        self.assertEqual(summary, {"page": "2/10", "current_page": 2})
+        self.assertEqual(parse_call_count, 2)
 
     def test_find_next_page_link_skips_disabled_header_and_uses_footer(self) -> None:
         header_next = FakeLocator(text="下一页", class_name="layui-laypage-next layui-disabled")
@@ -1052,6 +1184,23 @@ class VpInteractorProgressTestCase(unittest.TestCase):
         self.assertEqual(state["runtime"]["current_row_offset"], 10)
         self.assertEqual(state["runtime"]["enriched_batch_files"], [str(batch_file.resolve())])
         self.assertEqual(state["last_error"]["type"], "RuntimeError")
+
+    def test_safe_progress_page_context_uses_cached_results_context(self) -> None:
+        def raise_not_results():
+            raise RuntimeError("当前页面不是结果页")
+
+        cached_context = {
+            "current_page": 3,
+            "page_text": "3/10",
+            "url": "https://example.com/results?page=3",
+        }
+        self.interactor._last_results_page_context = cached_context
+        self.interactor.page = SimpleNamespace(url="https://example.com/export")
+        self.interactor.parser = SimpleNamespace(parse_results_summary=raise_not_results)
+
+        page_context = self.interactor._safe_progress_page_context()
+
+        self.assertEqual(page_context, cached_context)
 
 
 if __name__ == "__main__":

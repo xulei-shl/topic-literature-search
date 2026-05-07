@@ -47,15 +47,41 @@ class VpSelectionMixin:
         current_row_count = 0
 
         while remaining > 0:
+            page_prepare_started_at = time.perf_counter()
             self._wait_for_results_ready()
+            logger.debug(
+                "结果页已就绪，准备采集当前页复选框: row_offset=%s, wait_elapsed_ms=%s",
+                current_row_offset,
+                int((time.perf_counter() - page_prepare_started_at) * 1000),
+            )
+            settle_started_at = time.perf_counter()
             time.sleep(0.5)
+            logger.debug(
+                "结果页固定稳定等待完成: row_offset=%s, elapsed_ms=%s",
+                current_row_offset,
+                int((time.perf_counter() - settle_started_at) * 1000),
+            )
+            checkbox_collect_started_at = time.perf_counter()
             checkbox_items = self._current_page_checkbox_items()
             current_row_count = len(checkbox_items)
+            logger.debug(
+                "当前页复选框采集完成: row_offset=%s, row_count=%s, elapsed_ms=%s",
+                current_row_offset,
+                current_row_count,
+                int((time.perf_counter() - checkbox_collect_started_at) * 1000),
+            )
             if current_row_count == 0:
                 logger.debug("当前页未获取到复选框，可能页面未加载完成，重试")
+                retry_started_at = time.perf_counter()
                 time.sleep(1)
                 checkbox_items = self._current_page_checkbox_items()
                 current_row_count = len(checkbox_items)
+                logger.debug(
+                    "当前页复选框二次采集完成: row_offset=%s, row_count=%s, elapsed_ms=%s",
+                    current_row_offset,
+                    current_row_count,
+                    int((time.perf_counter() - retry_started_at) * 1000),
+                )
             summary = self.parser.parse_results_summary()
             current_page = summary.get("current_page", "unknown")
             logger.debug(
@@ -80,20 +106,34 @@ class VpSelectionMixin:
                     current_row_offset,
                     current_row_count,
                 )
+                page_turn_started_at = time.perf_counter()
                 if not self._goto_next_results_page():
                     logger.debug("翻页失败或不存在下一页，结束本轮勾选")
                     break
+                logger.debug(
+                    "翻页成功，准备进入下一页勾选判定: previous_row_offset=%s, elapsed_ms=%s",
+                    current_row_offset,
+                    int((time.perf_counter() - page_turn_started_at) * 1000),
+                )
                 current_row_offset = 0
                 continue
 
             page_target_count = min(current_row_count - current_row_offset, remaining)
             selected_before_page = self._extract_selected_count(0)
+            page_select_started_at = time.perf_counter()
             self._select_rows_on_current_page(
                 checkbox_items=checkbox_items,
                 row_offset=current_row_offset,
                 page_target_count=page_target_count,
                 row_count=current_row_count,
                 selected_before_page=selected_before_page,
+            )
+            logger.debug(
+                "当前页勾选策略执行完成: current_page=%s, row_offset=%s, page_target_count=%s, elapsed_ms=%s",
+                current_page,
+                current_row_offset,
+                page_target_count,
+                int((time.perf_counter() - page_select_started_at) * 1000),
             )
             page_actual_selected = self._extract_selected_count(selected_count + page_target_count)
             selected_count = page_actual_selected
@@ -112,9 +152,14 @@ class VpSelectionMixin:
                 break
             if current_row_offset < current_row_count:
                 continue
+            page_turn_started_at = time.perf_counter()
             if not self._goto_next_results_page():
                 logger.debug("当前页已勾满但翻页失败或不存在下一页，结束本轮勾选")
                 break
+            logger.debug(
+                "当前页已勾满并翻页成功，准备进入下一页勾选判定: elapsed_ms=%s",
+                int((time.perf_counter() - page_turn_started_at) * 1000),
+            )
             current_row_offset = 0
 
         if selected_count <= 0:
@@ -137,6 +182,7 @@ class VpSelectionMixin:
         row_count: int,
         selected_before_page: int,
     ) -> None:
+        strategy_started_at = time.perf_counter()
         if row_offset == 0 and page_target_count == row_count:
             logger.debug(
                 "当前页满足整页勾选条件，准备尝试页级全选: row_count=%s, selected_before_page=%s",
@@ -147,7 +193,10 @@ class VpSelectionMixin:
                 expected_increase=page_target_count,
                 selected_before_page=selected_before_page,
             ):
-                logger.debug("当前页页级全选校验通过")
+                logger.debug(
+                    "当前页页级全选校验通过: elapsed_ms=%s",
+                    int((time.perf_counter() - strategy_started_at) * 1000),
+                )
                 return
 
         logger.debug(
@@ -163,20 +212,18 @@ class VpSelectionMixin:
                 page_target_count,
                 row_count,
             )
-            current_page_selected = self._extract_selected_count(0)
-            if current_page_selected >= row_count * 0.8:
-                logger.debug(
-                    "页面已有全选状态，需要清除后再逐条勾选: current=%s, row_count=%s",
-                    current_page_selected,
-                    row_count,
-                )
-                self._clear_page_selection(checkbox_items)
 
         self._select_rows_incrementally(
             checkbox_items=checkbox_items,
             row_offset=row_offset,
             page_target_count=page_target_count,
             selected_before_page=0,
+        )
+        logger.debug(
+            "当前页逐条勾选执行完成: row_offset=%s, page_target_count=%s, elapsed_ms=%s",
+            row_offset,
+            page_target_count,
+            int((time.perf_counter() - strategy_started_at) * 1000),
         )
 
     def _try_select_all_on_current_page(self, expected_increase: int, selected_before_page: int) -> bool:
@@ -245,6 +292,7 @@ class VpSelectionMixin:
     ) -> None:
         """逐条勾选当前页记录，页内不再逐条读取已选数量。"""
         del selected_before_page
+        incremental_started_at = time.perf_counter()
         for index in range(row_offset, row_offset + page_target_count):
             if index >= len(checkbox_items):
                 logger.debug(
@@ -273,6 +321,12 @@ class VpSelectionMixin:
                         time.sleep(0.3)
                     else:
                         raise
+        logger.debug(
+            "逐条勾选阶段完成: row_offset=%s, page_target_count=%s, elapsed_ms=%s",
+            row_offset,
+            page_target_count,
+            int((time.perf_counter() - incremental_started_at) * 1000),
+        )
 
     def _rollback_excess_selection(
         self,

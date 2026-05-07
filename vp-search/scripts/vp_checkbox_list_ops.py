@@ -39,16 +39,31 @@ class VpCheckboxListMixin:
         checkbox_locator = self._result_checkbox_locator()
         total_count = checkbox_locator.count()
         summary = self.parser.parse_results_summary()
-        current_page = summary.get("current_page", 1)
+        try:
+            current_page_number = int(summary.get("current_page") or 1)
+        except Exception:
+            current_page_number = 1
         page_size = self._current_results_page_size()
-        paged_items = self._slice_checkbox_items_by_current_page(checkbox_locator=checkbox_locator, total_count=total_count)
+        paged_items = self._slice_checkbox_items_by_current_page(
+            checkbox_locator=checkbox_locator,
+            total_count=total_count,
+            current_page=current_page_number,
+            page_size=page_size,
+        )
         if paged_items:
+            # 第 2 页及以后按页码切片通常已是纯结果行，直接复用以减少逐项属性探测。
+            if current_page_number > 1 and len(paged_items) == page_size:
+                logger.debug(
+                    "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
+                    total_count,
+                    len(paged_items),
+                    current_page_number,
+                    page_size,
+                )
+                logger.debug("按当前页码切分复选框成功: total_count=%s, page_items=%s", total_count, len(paged_items))
+                return paged_items
             filtered_items = self._filter_result_row_checkbox_items(paged_items)
             if len(filtered_items) < page_size:
-                try:
-                    current_page_number = int(current_page or 1)
-                except Exception:
-                    current_page_number = 1
                 raw_index = max((current_page_number - 1) * page_size, 0) + len(paged_items)
                 while raw_index < total_count and len(filtered_items) < page_size:
                     candidate = checkbox_locator.nth(raw_index)
@@ -59,7 +74,7 @@ class VpCheckboxListMixin:
                 "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
                 total_count,
                 len(filtered_items),
-                current_page,
+                current_page_number,
                 page_size,
             )
             logger.debug("按当前页码切分复选框成功: total_count=%s, page_items=%s", total_count, len(filtered_items))
@@ -70,7 +85,7 @@ class VpCheckboxListMixin:
             "获取当前页复选框: total_count=%s, filtered_count=%s, current_page=%s, page_size=%s",
             total_count,
             len(checkbox_items),
-            current_page,
+            current_page_number,
             page_size,
         )
 
@@ -125,17 +140,16 @@ class VpCheckboxListMixin:
             return True
         return True
 
-    def _slice_checkbox_items_by_current_page(self, checkbox_locator: Locator, total_count: int) -> list[Locator]:
+    def _slice_checkbox_items_by_current_page(
+        self,
+        checkbox_locator: Locator,
+        total_count: int,
+        current_page: int,
+        page_size: int,
+    ) -> list[Locator]:
         """按当前页码与每页条数切出当前页复选框。"""
         if total_count <= 0:
             return []
-
-        try:
-            current_page = int(self.parser.parse_results_summary().get("current_page") or 1)
-        except Exception:
-            current_page = 1
-
-        page_size = self._current_results_page_size()
         if page_size <= 0 or total_count <= page_size:
             return []
 

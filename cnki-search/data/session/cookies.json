@@ -161,22 +161,12 @@
   },
   {
     "name": "createtime-advInput",
-    "value": "2026-05-06%2016%3A25%3A09",
+    "value": "2026-05-06%2017%3A36%3A27",
     "domain": "kns.cnki.net",
     "path": "/",
-    "expires": 1778138709,
+    "expires": 1778142987,
     "httpOnly": false,
     "secure": false,
-    "sameSite": "None"
-  },
-  {
-    "name": "Ecp_session",
-    "value": "1",
-    "domain": ".cnki.net",
-    "path": "/",
-    "expires": -1,
-    "httpOnly": false,
-    "secure": true,
     "sameSite": "None"
   },
   {
@@ -184,7 +174,7 @@
     "value": "D7JBUN",
     "domain": ".cnki.net",
     "path": "/",
-    "expires": 1778657119,
+    "expires": 1778661398,
     "httpOnly": false,
     "secure": true,
     "sameSite": "None"
@@ -194,17 +184,17 @@
     "value": "{\"IsAutoLogin\":true,\"UserName\":\"xl_0527@163.com\",\"ShowName\":\"xl_0527%40163.com\",\"UserType\":\"jf\",\"BUserName\":\"\",\"BShowName\":\"\",\"BUserType\":\"\",\"r\":\"D7JBUN\",\"Members\":[]}",
     "domain": ".cnki.net",
     "path": "/",
-    "expires": 1778657119,
+    "expires": 1778661398,
     "httpOnly": false,
     "secure": true,
     "sameSite": "None"
   },
   {
     "name": "c_m_LinID",
-    "value": "LinID=WEEvREcwSlJHSldTTEYyRGxtRkFlUEFXUWxhQm5qM0xneFNZQmVsMFdJaz0=$9A4hF_YAuvQ5obgVAqNKPCYcEjKensW4IQMovwHtwkF4VYPoHbKxJw!!&ot=05%2F13%2F2026%2016%3A25%3A19",
+    "value": "LinID=WEEvREcwSlJHSldTTEYyRGxtRkFlUEFXUWxhQm5qM0xneFNZQmVsMFdJaz0=$9A4hF_YAuvQ5obgVAqNKPCYcEjKensW4IQMovwHtwkF4VYPoHbKxJw!!&ot=05%2F13%2F2026%2017%3A36%3A38",
     "domain": ".cnki.net",
     "path": "/",
-    "expires": 1778657119,
+    "expires": 1778661398,
     "httpOnly": false,
     "secure": true,
     "sameSite": "None"
@@ -214,7 +204,17 @@
     "value": "WEEvREcwSlJHSldTTEYyRGxtRkFlUEFXUWxhQm5qM0xneFNZQmVsMFdJaz0=$9A4hF_YAuvQ5obgVAqNKPCYcEjKensW4IQMovwHtwkF4VYPoHbKxJw!!",
     "domain": ".cnki.net",
     "path": "/",
-    "expires": 1778657119,
+    "expires": 1778661398,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "Ecp_session",
+    "value": "1",
+    "domain": ".cnki.net",
+    "path": "/",
+    "expires": -1,
     "httpOnly": false,
     "secure": true,
     "sameSite": "None"

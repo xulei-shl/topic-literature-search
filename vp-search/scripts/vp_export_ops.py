@@ -27,10 +27,30 @@ logger = logging.getLogger("vp_search.interactor")
 class VpExportMixin:
     """???????"""
 
-    def _export_selected_results(self, query: str, batch_index: int, output_dir: Path, already_at_target: bool = False) -> Dict[str, str]:
+    def _export_selected_results(
+        self,
+        query: str,
+        batch_index: int,
+        output_dir: Path,
+        already_at_target: bool = False,
+        restore_results_page: bool = True,
+    ) -> Dict[str, str]:
+        export_started_at = time.perf_counter()
+        logger.info(
+            "开始导出当前批次: batch=%s, already_at_target=%s, restore_results_page=%s",
+            batch_index,
+            already_at_target,
+            restore_results_page,
+        )
         export_page = self._open_export_page(already_at_target=already_at_target)
         try:
+            load_started_at = time.perf_counter()
             export_page.wait_for_load_state("domcontentloaded", timeout=self._navigation_timeout_ms())
+            logger.debug(
+                "导出页加载完成: batch=%s, elapsed_ms=%s",
+                batch_index,
+                int((time.perf_counter() - load_started_at) * 1000),
+            )
             excel_path = self._download_from_export_page(
                 export_page=export_page,
                 selectors=["li[data-type='excel']", "li[data-type='excel'] a"],
@@ -40,6 +60,7 @@ class VpExportMixin:
                 kind="metadata",
                 default_name="vp-export.xls",
             )
+            logger.info("元数据下载完成: batch=%s, path=%s", batch_index, excel_path)
             txt_path = self._download_from_export_page(
                 export_page=export_page,
                 selectors=["li[data-type='abstract']", "li[data-type='abstract'] a"],
@@ -49,9 +70,22 @@ class VpExportMixin:
                 kind="reference",
                 default_name="vp-reference.txt",
             )
+            logger.info("参考格式下载完成: batch=%s, path=%s", batch_index, txt_path)
+            logger.info(
+                "当前批次下载阶段完成，准备清理导出页并进入本地处理: batch=%s, elapsed_ms=%s",
+                batch_index,
+                int((time.perf_counter() - export_started_at) * 1000),
+            )
             return {"excel": excel_path, "txt": txt_path}
         finally:
-            self._cleanup_export_page(export_page)
+            cleanup_started_at = time.perf_counter()
+            self._cleanup_export_page(export_page, restore_results_page=restore_results_page)
+            logger.debug(
+                "导出页清理完成: batch=%s, restore_results_page=%s, elapsed_ms=%s",
+                batch_index,
+                restore_results_page,
+                int((time.perf_counter() - cleanup_started_at) * 1000),
+            )
 
     def _open_export_page(self, timeout: Optional[float] = None, already_at_target: bool = False) -> Page:
         existing_pages = list(self.page.context.pages)
@@ -72,9 +106,21 @@ class VpExportMixin:
         if self._click_first_available(self.EXPORT_ENTRY_SELECTORS):
             return True
 
-        if self._click_first_available(self.BATCH_ACTION_MENU_SELECTORS):
-            time.sleep(self._action_poll_interval_seconds())
+        if self._wait_export_entry_after_expanding_batch_menu():
             return self._click_first_available(self.EXPORT_ENTRY_SELECTORS)
+        return False
+
+    def _wait_export_entry_after_expanding_batch_menu(self) -> bool:
+        """展开批量处理菜单后等待导出入口真正出现。"""
+        if not self._click_first_available(self.BATCH_ACTION_MENU_SELECTORS):
+            return False
+
+        deadline = time.time() + self._page_change_timeout_seconds()
+        while time.time() < deadline:
+            if self._has_visible_selector(self.EXPORT_ENTRY_SELECTORS):
+                return True
+            time.sleep(self._action_poll_interval_seconds())
+        logger.debug("批量处理菜单已展开，但等待导出题录入口出现超时")
         return False
 
     def _find_ready_export_page(self, existing_pages: list[Page]) -> Optional[Page]:
@@ -102,9 +148,11 @@ class VpExportMixin:
                 continue
         return False
 
-    def _cleanup_export_page(self, export_page: Page) -> None:
+    def _cleanup_export_page(self, export_page: Page, restore_results_page: bool = True) -> None:
         """清理导出页面，避免误关闭结果页。"""
         if export_page is self.page:
+            if not restore_results_page:
+                return
             try:
                 export_page.go_back(timeout=self._navigation_timeout_ms())
                 export_page.wait_for_load_state("domcontentloaded", timeout=self._navigation_timeout_ms())
@@ -128,6 +176,7 @@ class VpExportMixin:
         kind: str,
         default_name: str,
     ) -> str:
+        download_started_at = time.perf_counter()
         download = self._capture_export_download_by_option(export_page=export_page, selectors=selectors, kind=kind)
         if download is None:
             export_type = self._infer_export_type(selectors)
@@ -144,7 +193,15 @@ class VpExportMixin:
             kind=kind,
             suggested_name=suggested_name,
         )
+        save_started_at = time.perf_counter()
         download.save_as(str(file_path))
+        logger.debug(
+            "导出文件已保存: kind=%s, path=%s, save_elapsed_ms=%s, total_elapsed_ms=%s",
+            kind,
+            file_path,
+            int((time.perf_counter() - save_started_at) * 1000),
+            int((time.perf_counter() - download_started_at) * 1000),
+        )
         return str(file_path)
 
     def _capture_export_download_by_option(self, export_page: Page, selectors: list[str], kind: str):

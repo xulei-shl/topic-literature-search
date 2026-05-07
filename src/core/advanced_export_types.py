@@ -23,6 +23,7 @@ class BatchSelectionResult(TypedDict, total=False):
     next_row_offset: int
     page_row_count: int
     already_at_target: bool
+    restore_results_page: bool
 
 
 class ExportBatchFiles(TypedDict):

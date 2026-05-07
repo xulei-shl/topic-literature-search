@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from abc import ABC, abstractmethod
 from math import ceil
 from pathlib import Path
@@ -146,11 +147,20 @@ class BaseAdvancedExportFlow(ABC):
 
                 self._clear_selected_results()
                 batch_selection = self._select_batch_results(batch_target, current_row_offset)
+                batch_selection["restore_results_page"] = exported_total + batch_target < planned_download
+                batch_download_started_at = time.perf_counter()
                 batch_files = self._export_selected_results_for_batch(
                     query=query,
                     batch_index=batch_index,
                     output_dir=output_dir,
                     batch_selection=batch_selection,
+                )
+                logger.info(
+                    "批次下载阶段结束，准备进入本地处理: batch=%s, elapsed_ms=%s, excel=%s, txt=%s",
+                    batch_index,
+                    int((time.perf_counter() - batch_download_started_at) * 1000),
+                    batch_files["excel"],
+                    batch_files["txt"],
                 )
 
                 cleaned_excel_path = output_dir / build_batch_output_filename(
@@ -159,6 +169,7 @@ class BaseAdvancedExportFlow(ABC):
                     kind=self.CLEANED_METADATA_KIND,
                     suffix=".xlsx",
                 )
+                logger.info("开始清理导出表格: batch=%s, excel=%s", batch_index, batch_files["excel"])
                 cleaned_excel_file = self.export_processor.sanitize_export_excel(
                     excel_path=Path(batch_files["excel"]),
                     output_path=cleaned_excel_path,
@@ -173,6 +184,12 @@ class BaseAdvancedExportFlow(ABC):
                     batch_index=batch_index,
                     kind=self.ENRICHED_BATCH_KIND,
                     suffix=".xlsx",
+                )
+                logger.info(
+                    "开始回填参考格式: batch=%s, excel=%s, txt=%s",
+                    batch_index,
+                    cleaned_excel_file,
+                    batch_files["txt"],
                 )
                 enriched_file = self.export_processor.enrich_batch_excel(
                     excel_path=Path(cleaned_excel_file),

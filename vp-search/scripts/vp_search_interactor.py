@@ -69,7 +69,12 @@ class VpSearchInteractor(
         "#selectPageSize",
         "input[name='selectArticleAll']",
     ]
-    EXPORT_ENTRY_SELECTORS = ["a.behavior-exporttitle", "a[data-key='export']"]
+    EXPORT_ENTRY_SELECTORS = [
+        "a.behavior-exporttitle",
+        "a[data-key='export']",
+        ".export-op a:has-text('导出题录')",
+        "a:has-text('导出题录')",
+    ]
     EXPORT_PAGE_READY_SELECTORS = [
         "#dateType li[data-type='excel']",
         "#dateType li[data-type='abstract']",
@@ -151,11 +156,13 @@ class VpSearchInteractor(
         batch_selection: BatchSelectionResult,
     ) -> Dict[str, str]:
         """按共享骨架导出当前批次。"""
+        self._cache_progress_page_context()
         return self._export_selected_results(
             query,
             batch_index,
             output_dir,
             already_at_target=bool(batch_selection.get("already_at_target")),
+            restore_results_page=bool(batch_selection.get("restore_results_page", True)),
         )
 
     def _save_progress_snapshot_for_flow(

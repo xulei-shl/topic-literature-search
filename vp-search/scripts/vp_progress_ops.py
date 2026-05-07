@@ -27,6 +27,22 @@ logger = logging.getLogger("vp_search.interactor")
 class VpProgressMixin:
     """??????????????"""
 
+    def _build_progress_page_context(self) -> Dict[str, Any]:
+        """提取当前结果页上下文。"""
+        summary = self.parser.parse_results_summary()
+        return {
+            "current_page": int(summary.get("current_page") or 1),
+            "page_text": summary.get("page", ""),
+            "url": self.page.url,
+        }
+
+    def _cache_progress_page_context(self) -> None:
+        """缓存最近一次可用的结果页上下文。"""
+        try:
+            self._last_results_page_context = self._build_progress_page_context()
+        except Exception as exc:
+            logger.debug("缓存结果页上下文失败: %s", exc)
+
     def _prepare_progress_store(
         self,
         progress_file: Optional[Path],
@@ -187,14 +203,14 @@ class VpProgressMixin:
     def _safe_progress_page_context(self) -> Dict[str, Any]:
         """尽量提取结果页上下文，用于进度留痕。"""
         try:
-            summary = self.parser.parse_results_summary()
-            return {
-                "current_page": int(summary.get("current_page") or 1),
-                "page_text": summary.get("page", ""),
-                "url": self.page.url,
-            }
+            page_context = self._build_progress_page_context()
+            self._last_results_page_context = page_context
+            return page_context
         except Exception as exc:
             logger.debug("提取进度页上下文失败: %s", exc)
+            cached_context = getattr(self, "_last_results_page_context", None)
+            if cached_context:
+                return dict(cached_context)
             return {
                 "current_page": 1,
                 "page_text": "",
