@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from win32com.client import DispatchEx
 
 from exceptions import ExportProcessingError
 
@@ -270,6 +269,8 @@ class ExportResultProcessor:
         return merged
 
     def _read_excel_via_com(self, excel_path: Path) -> pd.DataFrame:
+        from win32com.client import DispatchEx
+
         excel = None
         workbook = None
         temp_path = excel_path.with_name(f"{excel_path.stem}_tmp.xlsx")
