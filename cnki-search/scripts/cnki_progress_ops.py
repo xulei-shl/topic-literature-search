@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -137,13 +138,14 @@ class CnkiProgressMixin:
         exported_total: int,
         exported_batches: int,
         next_batch_index: int,
+        current_page: int,
         current_row_offset: int,
         enriched_batch_files: list[Path],
         final_file_path: str,
         error: Optional[BaseException] = None,
     ) -> None:
         """写入当前高级检索进度快照。"""
-        page_context = self._safe_progress_page_context()
+        page_context = self._build_resume_page_context(current_page)
         state: Dict[str, Any] = {
             "version": SearchProgressStore.VERSION,
             "status": status,
@@ -162,7 +164,7 @@ class CnkiProgressMixin:
                 "exported_total": exported_total,
                 "exported_batches": exported_batches,
                 "next_batch_index": next_batch_index,
-                "current_page": page_context["current_page"],
+                "current_page": current_page,
                 "page_text": page_context["page_text"],
                 "current_row_offset": current_row_offset,
                 "enriched_batch_files": [str(file_path.resolve()) for file_path in enriched_batch_files],
@@ -185,6 +187,26 @@ class CnkiProgressMixin:
             exported_batches,
             batch_count,
         )
+
+    def _build_resume_page_context(self, current_page: int) -> Dict[str, Any]:
+        """基于恢复游标构造进度页上下文。"""
+        page_context = self._safe_progress_page_context()
+        page_text = page_context.get("page_text", "")
+        total_pages = self._extract_total_pages(page_text)
+        return {
+            "current_page": current_page,
+            "page_text": f"{current_page}/{total_pages}" if total_pages > 0 else str(current_page),
+            "url": page_context.get("url", self.page.url if self.page else ""),
+        }
+
+    def _extract_total_pages(self, page_text: str) -> int:
+        """从页码文本中提取总页数。"""
+        if not page_text:
+            return 0
+        match = re.search(r"/\s*(\d+)", page_text)
+        if not match:
+            return 0
+        return int(match.group(1))
 
     def _safe_progress_page_context(self) -> Dict[str, Any]:
         """尽量提取结果页上下文，用于进度留痕。"""

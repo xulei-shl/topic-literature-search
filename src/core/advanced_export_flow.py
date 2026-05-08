@@ -91,6 +91,7 @@ class BaseAdvancedExportFlow(ABC):
                 exported_total=0,
                 exported_batches=0,
                 next_batch_index=1,
+                current_page=1,
                 current_row_offset=0,
                 enriched_batch_files=[],
                 final_file_path="",
@@ -123,6 +124,7 @@ class BaseAdvancedExportFlow(ABC):
             batch_count=batch_count,
             total=total,
         )
+        current_page = int(progress_runtime["current_page"])
         current_row_offset = int(progress_runtime["current_row_offset"])
         exported_total = int(progress_runtime["exported_total"])
         exported_batches = int(progress_runtime["exported_batches"])
@@ -132,7 +134,7 @@ class BaseAdvancedExportFlow(ABC):
         batch_report_files: list[str] = []
         batch_page_ranges: list[str] = []
 
-        self._restore_results_position(int(progress_runtime["current_page"]))
+        self._restore_results_position(current_page)
         self._save_progress_snapshot_for_flow(
             progress_store=progress_store,
             status="running",
@@ -143,6 +145,7 @@ class BaseAdvancedExportFlow(ABC):
             exported_total=exported_total,
             exported_batches=exported_batches,
             next_batch_index=next_batch_index,
+            current_page=current_page,
             current_row_offset=current_row_offset,
             enriched_batch_files=enriched_batch_files,
             final_file_path="",
@@ -226,7 +229,9 @@ class BaseAdvancedExportFlow(ABC):
 
                 exported_total += int(batch_selection["selected_count"])
                 exported_batches += 1
-                current_row_offset = self._prepare_next_batch_cursor(batch_selection)
+                next_resume_cursor = self._prepare_next_batch_cursor(batch_selection)
+                current_page = int(next_resume_cursor["current_page"])
+                current_row_offset = int(next_resume_cursor["current_row_offset"])
                 enriched_batch_files.append(Path(enriched_file))
                 batch_report_files.append(batch_report_path)
                 if batch_page_range:
@@ -242,6 +247,7 @@ class BaseAdvancedExportFlow(ABC):
                     exported_total=exported_total,
                     exported_batches=exported_batches,
                     next_batch_index=batch_index + 1,
+                    current_page=current_page,
                     current_row_offset=current_row_offset,
                     enriched_batch_files=enriched_batch_files,
                     final_file_path="",
@@ -257,6 +263,7 @@ class BaseAdvancedExportFlow(ABC):
                 exported_total=exported_total,
                 exported_batches=exported_batches,
                 next_batch_index=exported_batches + 1,
+                current_page=current_page,
                 current_row_offset=current_row_offset,
                 enriched_batch_files=enriched_batch_files,
                 final_file_path="",
@@ -274,6 +281,7 @@ class BaseAdvancedExportFlow(ABC):
                 exported_total=exported_total,
                 exported_batches=exported_batches,
                 next_batch_index=exported_batches + 1,
+                current_page=current_page,
                 current_row_offset=current_row_offset,
                 enriched_batch_files=enriched_batch_files,
                 final_file_path="",
@@ -310,6 +318,7 @@ class BaseAdvancedExportFlow(ABC):
             exported_total=exported_total,
             exported_batches=exported_batches,
             next_batch_index=batch_count + 1,
+            current_page=current_page,
             current_row_offset=current_row_offset,
             enriched_batch_files=enriched_batch_files,
             final_file_path=final_file_path,
@@ -335,9 +344,12 @@ class BaseAdvancedExportFlow(ABC):
         """在批量导出前执行站点级结果页预处理。"""
         del planned_download, total
 
-    def _prepare_next_batch_cursor(self, batch_selection: BatchSelectionResult) -> int:
-        """根据批次勾选结果计算下一批起始偏移量。"""
-        return int(batch_selection.get("next_row_offset") or 0)
+    def _prepare_next_batch_cursor(self, batch_selection: BatchSelectionResult) -> ResumeRuntime:
+        """根据批次勾选结果计算下一批恢复游标。"""
+        return {
+            "current_page": int(batch_selection.get("end_page") or 1),
+            "current_row_offset": int(batch_selection.get("next_row_offset") or 0),
+        }
 
     def _build_result_payload(
         self,
@@ -539,6 +551,7 @@ class BaseAdvancedExportFlow(ABC):
         exported_total: int,
         exported_batches: int,
         next_batch_index: int,
+        current_page: int,
         current_row_offset: int,
         enriched_batch_files: list[Path],
         final_file_path: str,

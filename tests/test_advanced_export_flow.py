@@ -101,6 +101,7 @@ class FakeFlow(BaseAdvancedExportFlow):
         self.selected_batches: list[int] = []
         self.strict_target_calls: list[bool] = []
         self.raise_on_export = False
+        self.resume_runtime_override = None
 
     def _prepare_progress_store(self, progress_file, cli_params):
         del cli_params
@@ -113,6 +114,8 @@ class FakeFlow(BaseAdvancedExportFlow):
 
     def _build_resume_runtime(self, resume_data, output_dir: Path, planned_download: int, batch_count: int, total: int):
         del resume_data, output_dir, planned_download, batch_count, total
+        if self.resume_runtime_override is not None:
+            return dict(self.resume_runtime_override)
         return {
             "exported_total": 0,
             "exported_batches": 0,
@@ -133,6 +136,7 @@ class FakeFlow(BaseAdvancedExportFlow):
         exported_total: int,
         exported_batches: int,
         next_batch_index: int,
+        current_page: int,
         current_row_offset: int,
         enriched_batch_files: list[Path],
         final_file_path: str,
@@ -148,6 +152,7 @@ class FakeFlow(BaseAdvancedExportFlow):
                 "exported_total": exported_total,
                 "exported_batches": exported_batches,
                 "next_batch_index": next_batch_index,
+                "current_page": current_page,
                 "current_row_offset": current_row_offset,
                 "enriched_batch_files": list(enriched_batch_files),
                 "final_file_path": final_file_path,
@@ -300,6 +305,35 @@ class AdvancedExportFlowTestCase(unittest.TestCase):
 
         self.assertEqual(flow.progress_snapshots[-1]["status"], "failed")
         self.assertEqual(flow.progress_snapshots[-1]["error"], "RuntimeError")
+
+    def test_exception_flow_keeps_last_committed_resume_cursor(self) -> None:
+        """批次失败时应保留上一次成功提交后的恢复游标。"""
+        with TemporaryDirectory() as temp_dir:
+            flow = FakeFlow(total=7625, temp_dir=Path(temp_dir))
+            flow.raise_on_export = True
+            flow.resume_runtime_override = {
+                "exported_total": 1000,
+                "exported_batches": 2,
+                "next_batch_index": 3,
+                "current_page": 21,
+                "current_row_offset": 0,
+                "enriched_batch_files": [],
+            }
+
+            with self.assertRaises(RuntimeError):
+                flow.run_advanced_export(
+                    cli_params={
+                        "query": "测试主题",
+                        "date_from": None,
+                        "date_to": None,
+                        "core_only": False,
+                        "max_download": None,
+                    }
+                )
+
+        self.assertEqual(flow.progress_snapshots[-1]["status"], "failed")
+        self.assertEqual(flow.progress_snapshots[-1]["current_page"], 21)
+        self.assertEqual(flow.progress_snapshots[-1]["current_row_offset"], 0)
 
 
 if __name__ == "__main__":

@@ -522,14 +522,25 @@ class VpSelectionMixin:
             return
         raise TimeoutError(f"未能完成复选框勾选: {selector or '<locator>'}")
 
-    def _prepare_next_batch_cursor(self, batch_selection: Dict[str, Any]) -> int:
-        next_row_offset = batch_selection["next_row_offset"]
-        page_row_count = batch_selection["page_row_count"]
+    def _prepare_next_batch_cursor(self, batch_selection: Dict[str, Any]) -> Dict[str, int]:
+        next_row_offset = int(batch_selection["next_row_offset"])
+        page_row_count = int(batch_selection["page_row_count"])
+        current_page = int(batch_selection.get("end_page") or self._coerce_current_results_page(self.parser.parse_results_summary()) or 1)
         if next_row_offset < page_row_count:
-            return next_row_offset
+            return {
+                "current_page": current_page,
+                "current_row_offset": next_row_offset,
+            }
         if self._goto_next_results_page():
-            return 0
-        return next_row_offset
+            advanced_page = self._coerce_current_results_page(self.parser.parse_results_summary())
+            return {
+                "current_page": advanced_page if advanced_page > 0 else current_page + 1,
+                "current_row_offset": 0,
+            }
+        return {
+            "current_page": current_page,
+            "current_row_offset": next_row_offset,
+        }
 
     def _count_checked_rows(
         self,

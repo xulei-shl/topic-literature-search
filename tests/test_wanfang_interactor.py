@@ -617,6 +617,7 @@ class WanfangInteractorProgressTestCase(unittest.TestCase):
                 exported_total=50,
                 exported_batches=1,
                 next_batch_index=2,
+                current_page=2,
                 current_row_offset=10,
                 enriched_batch_files=[batch_file],
                 final_file_path="",
@@ -631,6 +632,43 @@ class WanfangInteractorProgressTestCase(unittest.TestCase):
         self.assertEqual(state["runtime"]["current_row_offset"], 10)
         self.assertEqual(state["runtime"]["enriched_batch_files"], [str(batch_file.resolve())])
         self.assertEqual(state["last_error"]["type"], "RuntimeError")
+
+    def test_save_progress_snapshot_uses_resume_cursor_page_text(self) -> None:
+        """失败留痕时应写入恢复游标页，而不是现场浏览页。"""
+        with TemporaryDirectory() as temp_dir:
+            progress_path = Path(temp_dir) / "progress.json"
+            batch_file = Path(temp_dir) / "batch.xlsx"
+            batch_file.write_text("ok", encoding="utf-8")
+            output_dir = Path(temp_dir) / "outputs"
+            self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 30, "page": "30/153"})
+
+            from progress_store import SearchProgressStore
+
+            store = SearchProgressStore(progress_path)
+            self.interactor._save_progress_snapshot(
+                progress_store=store,
+                status="failed",
+                query="新青年",
+                date_from=None,
+                date_to="2025",
+                max_download=None,
+                output_dir=output_dir,
+                planned_download=7625,
+                batch_count=16,
+                exported_total=1000,
+                exported_batches=2,
+                next_batch_index=3,
+                current_page=21,
+                current_row_offset=0,
+                enriched_batch_files=[batch_file],
+                final_file_path="",
+                error=RuntimeError("导出失败"),
+            )
+
+            state = json.loads(progress_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(state["runtime"]["current_page"], 21)
+        self.assertEqual(state["runtime"]["page_text"], "21/153")
 
     def test_safe_progress_page_context_uses_cached_results_context(self) -> None:
         """非结果页场景应优先复用已缓存上下文。"""
@@ -649,6 +687,26 @@ class WanfangInteractorProgressTestCase(unittest.TestCase):
         page_context = self.interactor._safe_progress_page_context()
 
         self.assertEqual(page_context, cached_context)
+
+    def test_prepare_next_batch_cursor_advances_to_next_page_after_full_page(self) -> None:
+        """整页完成后应把恢复游标推进到下一页起点。"""
+        with patch.object(self.interactor, "_goto_next_results_page", return_value=True):
+            self.interactor._current_results_page_number = lambda: 36
+            cursor = self.interactor._prepare_next_batch_cursor(
+                {
+                    "next_row_offset": 50,
+                    "page_row_count": 50,
+                    "end_page": 35,
+                }
+            )
+
+        self.assertEqual(
+            cursor,
+            {
+                "current_page": 36,
+                "current_row_offset": 0,
+            },
+        )
 
 
 class WanfangResultParserTestCase(unittest.TestCase):

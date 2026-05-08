@@ -1459,6 +1459,7 @@ class VpInteractorProgressTestCase(unittest.TestCase):
                 exported_total=50,
                 exported_batches=1,
                 next_batch_index=2,
+                current_page=2,
                 current_row_offset=10,
                 enriched_batch_files=[batch_file],
                 final_file_path="",

@@ -201,16 +201,27 @@ class WanfangSelectionMixin:
 
         logger.warning("未能完成复选框勾选: %s", selector or "<locator>")
 
-    def _prepare_next_batch_cursor(self, batch_selection: Dict[str, Any]) -> int:
-        """根据批次勾选结果计算下一批起始偏移量。"""
-        next_row_offset = batch_selection["next_row_offset"]
-        page_row_count = batch_selection["page_row_count"]
+    def _prepare_next_batch_cursor(self, batch_selection: Dict[str, Any]) -> Dict[str, int]:
+        """根据批次勾选结果计算下一批恢复游标。"""
+        next_row_offset = int(batch_selection["next_row_offset"])
+        page_row_count = int(batch_selection["page_row_count"])
+        current_page = int(batch_selection.get("end_page") or self._current_results_page_number() or 1)
         if next_row_offset < page_row_count:
-            return next_row_offset
+            return {
+                "current_page": current_page,
+                "current_row_offset": next_row_offset,
+            }
 
         if self._goto_next_results_page():
-            return 0
-        return next_row_offset
+            advanced_page = self._current_results_page_number()
+            return {
+                "current_page": advanced_page if advanced_page > 0 else current_page + 1,
+                "current_row_offset": 0,
+            }
+        return {
+            "current_page": current_page,
+            "current_row_offset": next_row_offset,
+        }
 
     def _extract_selected_count(self, default_value: int) -> int:
         """从 DOM 中读取已选数量。"""
