@@ -98,12 +98,18 @@ class BrowserManager:
         if not self._page:
             raise BrowserError("浏览器尚未启动")
 
-        self._page.goto(self.config.home_url, timeout=self.config.navigation_timeout * 1000)
-        self._page.wait_for_load_state("domcontentloaded")
+        self._page.goto(
+            self.config.home_url,
+            timeout=self.config.navigation_timeout * 1000,
+            wait_until="domcontentloaded",
+        )
         storage_loaded = self.load_local_storage()
         if target_url and (storage_loaded or self._page.url != target_url):
-            self._page.goto(target_url, timeout=self.config.navigation_timeout * 1000)
-            self._page.wait_for_load_state("domcontentloaded")
+            self._page.goto(
+                target_url,
+                timeout=self.config.navigation_timeout * 1000,
+                wait_until="domcontentloaded",
+            )
 
     def save_session(self, page_type: Optional[str] = None, **extra_state: Any) -> None:
         """保存 cookies、localStorage 和状态。"""

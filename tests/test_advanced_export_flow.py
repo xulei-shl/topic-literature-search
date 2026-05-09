@@ -102,6 +102,9 @@ class FakeFlow(BaseAdvancedExportFlow):
         self.strict_target_calls: list[bool] = []
         self.raise_on_export = False
         self.resume_runtime_override = None
+        self.selection_results: list[dict] = []
+        self.export_call_count = 0
+        self.open_page_calls = 0
 
     def _prepare_progress_store(self, progress_file, cli_params):
         del cli_params
@@ -161,6 +164,7 @@ class FakeFlow(BaseAdvancedExportFlow):
         )
 
     def _open_advanced_search_page(self) -> None:
+        self.open_page_calls += 1
         return None
 
     def _fill_advanced_search_form_from_params(self, search_params) -> None:
@@ -178,6 +182,8 @@ class FakeFlow(BaseAdvancedExportFlow):
     def _select_batch_results(self, export_limit: int, row_offset: int, strict_target: bool):
         self.selected_batches.append(export_limit)
         self.strict_target_calls.append(strict_target)
+        if self.selection_results:
+            return dict(self.selection_results.pop(0))
         return {
             "selected_count": export_limit,
             "next_row_offset": row_offset + export_limit,
@@ -188,6 +194,7 @@ class FakeFlow(BaseAdvancedExportFlow):
 
     def _export_selected_results_for_batch(self, query: str, batch_index: int, output_dir: Path, batch_selection):
         del batch_selection
+        self.export_call_count += 1
         if self.raise_on_export:
             raise RuntimeError("导出失败")
         excel_path = output_dir / f"{query}-{batch_index}.xls"
@@ -334,6 +341,67 @@ class AdvancedExportFlowTestCase(unittest.TestCase):
         self.assertEqual(flow.progress_snapshots[-1]["status"], "failed")
         self.assertEqual(flow.progress_snapshots[-1]["current_page"], 21)
         self.assertEqual(flow.progress_snapshots[-1]["current_row_offset"], 0)
+
+    def test_reached_end_before_target_still_finishes_successfully(self) -> None:
+        """页码已到末尾时应正常结束并继续后置汇总流程。"""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            existing_batch = temp_path / "batch-1.xlsx"
+            existing_batch.write_text("history", encoding="utf-8")
+            flow = FakeFlow(total=1000, temp_dir=temp_path)
+            flow.resume_runtime_override = {
+                "exported_total": 500,
+                "exported_batches": 1,
+                "next_batch_index": 2,
+                "current_page": 120,
+                "current_row_offset": 50,
+                "enriched_batch_files": [existing_batch],
+            }
+            flow.selection_results = [
+                {
+                    "selected_count": 0,
+                    "next_row_offset": 50,
+                    "page_row_count": 50,
+                    "start_page": 0,
+                    "end_page": 120,
+                    "reached_end": True,
+                }
+            ]
+
+            result = flow.run_advanced_export(
+                cli_params={
+                    "query": "测试主题",
+                    "date_from": None,
+                    "date_to": None,
+                    "core_only": False,
+                    "max_download": 1000,
+                }
+            )
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["exported"], 500)
+        self.assertEqual(flow.export_call_count, 0)
+        self.assertTrue(result["final_file_path"].endswith(".xlsx"))
+        self.assertEqual(flow.progress_snapshots[-1]["status"], "success")
+
+    def test_reuse_current_search_page_should_skip_reopening_page(self) -> None:
+        """复用当前高级检索页时不应再次打开检索页。"""
+        with TemporaryDirectory() as temp_dir:
+            flow = FakeFlow(total=1, temp_dir=Path(temp_dir))
+
+            result = flow.run_advanced_export(
+                cli_params={
+                    "query": "测试主题",
+                    "date_from": None,
+                    "date_to": "1978",
+                    "core_only": False,
+                    "max_download": None,
+                },
+                reuse_current_search_page=True,
+            )
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(flow.open_page_calls, 0)
 
 
 if __name__ == "__main__":

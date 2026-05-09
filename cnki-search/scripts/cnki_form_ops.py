@@ -40,11 +40,8 @@ class CnkiFormMixin:
         self._ensure_advanced_condition_rows(2)
         self._set_advanced_condition(0, "主题", query)
         self._set_advanced_condition(1, "篇关摘", query, logic="OR")
-        if date_from:
-            self._set_input_value(["input[placeholder='起始年']", "input[placeholder*='起始']"], date_from)
-
-        if date_to:
-            self._set_input_value(["input[placeholder='结束年']", "input[placeholder*='结束']"], date_to)
+        self._set_year_input_value(["input[placeholder='起始年']", "input[placeholder*='起始']"], date_from or "")
+        self._set_year_input_value(["input[placeholder='结束年']", "input[placeholder*='结束']"], date_to or "")
 
         if include_no_fulltext:
             self._disable_checkbox("#onlyfulltext")
@@ -66,20 +63,73 @@ class CnkiFormMixin:
         self.browser_manager.restore_session(self.config.home_url)
         self._ensure_captcha_cleared()
 
+        current_page = self.page
+        existing_pages = list(current_page.context.pages)
         link = self.page.locator("#highSearch").first
         if link.count() == 0:
             raise ValidationError("首页未找到“高级检索”入口")
 
         link.click()
-        time.sleep(0.5)
-        self.page.goto(self.config.advanced_search_url, timeout=self.config.navigation_timeout * 1000)
-        self.page.wait_for_load_state("domcontentloaded")
+        target_page = self._resolve_advanced_search_target_page(current_page, existing_pages)
+        if target_page is not current_page:
+            self._activate_advanced_search_page(target_page)
+            self._close_redundant_context_pages(target_page)
+
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=self.config.navigation_timeout * 1000)
+        except Exception as exc:
+            logger.debug("点击高级检索入口后等待页面稳定失败，准备直接校验页面状态: %s", exc)
 
         if not self._is_advanced_search_page(self.page):
-            raise ValidationError("打开统一高级检索页面失败")
+            try:
+                self.page.goto(
+                    self.config.advanced_search_url,
+                    timeout=self.config.navigation_timeout * 1000,
+                    wait_until="domcontentloaded",
+                )
+            except Exception as exc:
+                logger.debug("直接打开高级检索页超时，准备校验当前页面是否已可操作: %s", exc)
+                if not self._is_advanced_search_page(self.page):
+                    raise
+
+        if not self._is_advanced_search_page(self.page):
+            raise NavigationStateError("打开统一高级检索页面失败")
 
         self.browser_manager._page = self.page
         self.parser = ResultParser(self.page)
+
+    def _resolve_advanced_search_target_page(self, current_page: Page, existing_pages: list[Page]) -> Page:
+        """在短窗口内判断高级检索是当前页跳转还是新开页签。"""
+        detected_page = self._detect_newly_opened_page(current_page, existing_pages)
+        return detected_page or current_page
+
+    def _detect_newly_opened_page(self, current_page: Page, existing_pages: list[Page]) -> Optional[Page]:
+        """检测点击高级检索后是否新开了页签。"""
+        deadline = time.time() + min(float(self.config.navigation_timeout), 1.0)
+        while time.time() < deadline:
+            for opened_page in current_page.context.pages:
+                if opened_page not in existing_pages:
+                    return opened_page
+            if self._is_advanced_search_page(current_page):
+                return None
+            time.sleep(0.2)
+        return None
+
+    def _activate_advanced_search_page(self, target_page: Page) -> None:
+        """切换当前交互页到新开的高级检索页。"""
+        self.page = target_page
+        self.browser_manager._page = target_page
+        self.parser = ResultParser(target_page)
+
+    def _close_redundant_context_pages(self, keep_page: Page) -> None:
+        """关闭除当前高级检索页之外的多余页签，避免逐年模式堆积页签。"""
+        for opened_page in list(keep_page.context.pages):
+            if opened_page is keep_page:
+                continue
+            try:
+                opened_page.close()
+            except Exception as exc:
+                logger.debug("关闭多余页签失败: %s", exc)
 
     def _is_advanced_search_page(self, target_page: Page) -> bool:
         selectors = ["#gradetxt", "input[placeholder='结束年']", "#onlyfulltext", "input.btn-search"]
@@ -180,3 +230,25 @@ class CnkiFormMixin:
 
     def _set_input_value(self, selectors: list[str], value: str) -> None:
         set_input_value(self._first_visible_locator(selectors), value)
+
+    def _set_year_input_value(self, selectors: list[str], value: str) -> None:
+        """为 CNKI 年份输入框写值，并同步站点脚本依赖的属性与事件。"""
+        locator = self._first_visible_locator(selectors)
+        locator.evaluate(
+            """
+            (element, inputValue) => {
+                const normalizedValue = inputValue || '';
+                element.removeAttribute('readonly');
+                element.focus();
+                element.value = normalizedValue;
+                element.setAttribute('value', normalizedValue);
+                element.setAttribute('txt', normalizedValue);
+                element.setAttribute('condition', normalizedValue ? `(${normalizedValue})` : '');
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+                element.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: '0' }));
+                element.dispatchEvent(new Event('change', { bubbles: true }));
+                element.dispatchEvent(new Event('blur', { bubbles: true }));
+            }
+            """,
+            value,
+        )

@@ -24,6 +24,8 @@ def print_human_readable(data: Dict[str, Any]) -> None:
     if result_type == "advanced_export":
         print(f"检索词: {data.get('query', '')}")
         print(f"状态: {data.get('status', '')}")
+        if data.get("yearly_mode"):
+            print("模式: 逐年导出")
         print(f"总数: {data.get('total', 0)}")
         print(f"选中: {data.get('selected', 0)}")
         print(f"导出: {data.get('exported', 0)}")
@@ -42,6 +44,11 @@ def print_human_readable(data: Dict[str, Any]) -> None:
             print(f"报告: {data.get('report_file')}")
         if data.get("progress_file"):
             print(f"进度文件: {data.get('progress_file')}")
+        if data.get("yearly_mode"):
+            executed_years = data.get("executed_years") or []
+            empty_years = data.get("empty_years") or []
+            print(f"执行年份: {', '.join(executed_years) if executed_years else '无'}")
+            print(f"无结果年份: {', '.join(empty_years) if empty_years else '无'}")
         if data.get("resumed_from_progress"):
             print("恢复模式: 是")
         return

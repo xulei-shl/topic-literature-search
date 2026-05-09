@@ -19,6 +19,7 @@ class WanfangPageMixin:
     RESULTS_READY_SELECTORS = (
         "span.total-number",
         "span.total-number span.mark-number",
+        "div.tip-content",
     )
 
     def _wait_for_selector(self, selector: str, timeout: Optional[int] = None) -> None:

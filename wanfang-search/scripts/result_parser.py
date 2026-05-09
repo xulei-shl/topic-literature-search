@@ -17,7 +17,7 @@ class ResultParser:
     def detect_page_type(self) -> str:
         """识别当前页面类型。"""
         url = self.page.url or ""
-        if self.page.query_selector("span.total-number"):
+        if self.page.query_selector("span.total-number") or self.page.query_selector("div.tip-content"):
             return "results"
         if "advanced-search" in url or self.page.query_selector("input.ivu-input.ivu-input-default"):
             return "advanced_search"

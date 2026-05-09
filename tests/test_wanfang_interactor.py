@@ -1,6 +1,7 @@
 """万方页面交互测试。"""
 
 import json
+import tempfile
 import sys
 import unittest
 from pathlib import Path
@@ -27,7 +28,8 @@ _result_parser_module = load_script_module(SCRIPT_DIR, "result_parser", "wanfang
 
 WanfangSearchInteractor = _interactor_module.WanfangSearchInteractor
 ValidationError = WanfangSearchInteractor._prepare_progress_store.__globals__["ValidationError"]
-TimeoutError = _exceptions_module.TimeoutError
+TimeoutError = WanfangSearchInteractor._wait_for_any_selector.__globals__["TimeoutError"]
+NavigationStateError = WanfangSearchInteractor._open_advanced_search_page.__globals__["NavigationStateError"]
 ResultParser = _result_parser_module.ResultParser
 print_human_readable = _utils_module.print_human_readable
 
@@ -43,6 +45,7 @@ class FakeLocator:
         attributes: dict[str, str] | None = None,
         children: dict[str, object] | None = None,
         on_click=None,
+        checked: bool = False,
     ) -> None:
         self.text = text
         self._count_value = count_value
@@ -50,6 +53,7 @@ class FakeLocator:
         self.attributes = attributes or {}
         self.children = children or {}
         self.on_click = on_click
+        self.checked = checked
         self.click_calls: list[dict[str, object]] = []
         self.scroll_calls = 0
         self.evaluate_calls: list[str] = []
@@ -76,6 +80,15 @@ class FakeLocator:
         self.click_calls.append(kwargs)
         if self.on_click is not None:
             self.on_click(self)
+
+    def check(self, force: bool = False, timeout: int = 0) -> None:
+        del force, timeout
+        self.checked = True
+        if self.on_click is not None:
+            self.on_click(self)
+
+    def is_checked(self) -> bool:
+        return self.checked
 
     def is_visible(self) -> bool:
         return self._count_value > 0
@@ -252,6 +265,83 @@ class WanfangInteractorSelectionTestCase(unittest.TestCase):
         self.assertEqual(result["end_page"], 3)
         self.assertEqual(goto_next_results_page.call_count, 2)
 
+    def test_select_batch_results_returns_reached_end_when_last_page_exhausted(self) -> None:
+        """续跑游标已在末页末尾时应按正常结束返回。"""
+        row_locator = FakeLocatorGroup([FakeLocator() for _ in range(50)])
+        self.interactor.page = FakePage({"div.normal-list": row_locator})
+
+        with (
+            patch.object(self.interactor, "_wait_for_results_ready"),
+            patch.object(self.interactor, "_goto_next_results_page", return_value=False) as goto_next_results_page,
+        ):
+            result = self.interactor._select_batch_results(export_limit=100, row_offset=50, strict_target=True)
+
+        self.assertEqual(result["selected_count"], 0)
+        self.assertEqual(result["next_row_offset"], 50)
+        self.assertEqual(result["page_row_count"], 50)
+        self.assertTrue(result["reached_end"])
+        goto_next_results_page.assert_called_once()
+
+    def test_select_rows_on_current_page_uses_row_state_when_selected_count_unavailable(self) -> None:
+        """页级全选校验应允许退回页内真实勾选状态。"""
+        row_inputs = [FakeLocator(checked=False), FakeLocator(checked=False)]
+        row_checkboxes = [
+            FakeLocator(
+                children={
+                    "input.ivu-checkbox-input": row_inputs[0],
+                    "span.ivu-checkbox": FakeLocator(class_name="ivu-checkbox"),
+                }
+            ),
+            FakeLocator(
+                children={
+                    "input.ivu-checkbox-input": row_inputs[1],
+                    "span.ivu-checkbox": FakeLocator(class_name="ivu-checkbox"),
+                }
+            ),
+        ]
+        checkbox_group = FakeLocatorGroup(row_checkboxes)
+        select_all_input = FakeLocator(checked=False)
+
+        def mark_all_checked(_locator: FakeLocator) -> None:
+            select_all_input.checked = True
+            for input_locator in row_inputs:
+                input_locator.checked = True
+
+        select_all_checkbox = FakeLocator(
+            children={
+                "input.ivu-checkbox-input": select_all_input,
+                "span.ivu-checkbox": FakeLocator(class_name="ivu-checkbox"),
+            },
+            on_click=mark_all_checked,
+        )
+        self.interactor.page = FakePage(
+            {
+                "div.normal-list div.wf-checkbox label.ivu-checkbox-wrapper": checkbox_group,
+                "div.top-check-bar div.wf-checkbox label.ivu-checkbox-wrapper": select_all_checkbox,
+            }
+        )
+
+        with patch("wanfang_selection_ops.time.sleep", lambda _seconds: None):
+            selected_count = self.interactor._select_rows_on_current_page(
+                row_offset=0,
+                page_target_count=2,
+                row_count=2,
+            )
+
+        self.assertEqual(selected_count, 2)
+        self.assertTrue(all(input_locator.checked for input_locator in row_inputs))
+
+    def test_is_checkbox_checked_prefers_input_state_over_wrapper_class(self) -> None:
+        """勾选状态判定应优先信任原生 input。"""
+        checkbox = FakeLocator(
+            children={
+                "input.ivu-checkbox-input": FakeLocator(checked=False),
+                "span.ivu-checkbox": FakeLocator(class_name="ivu-checkbox ivu-checkbox-checked"),
+            }
+        )
+
+        self.assertFalse(self.interactor._is_checkbox_checked(checkbox))
+
 
 class WanfangInteractorFormTestCase(unittest.TestCase):
     """验证高级检索表单定位逻辑。"""
@@ -301,7 +391,7 @@ class WanfangInteractorFormTestCase(unittest.TestCase):
             patch.object(self.interactor, "_ensure_advanced_condition_rows"),
             patch.object(self.interactor, "_set_advanced_condition") as set_advanced_condition,
             patch.object(self.interactor, "_disable_chinese_english_expansion"),
-            patch.object(self.interactor, "_select_date_year"),
+            patch.object(self.interactor, "_set_date_year") as set_date_year,
         ):
             self.interactor._fill_advanced_search_form(
                 query="新青年",
@@ -314,6 +404,54 @@ class WanfangInteractorFormTestCase(unittest.TestCase):
             [
                 call(0, "主题", "新青年", set_field=False),
                 call(1, "关键词", "新青年", logic="或", set_field=False),
+            ],
+        )
+        self.assertEqual(
+            set_date_year.call_args_list,
+            [
+                call("start", None),
+                call("end", None),
+            ],
+        )
+
+    def test_fill_advanced_search_form_clears_start_year_when_initial_date_from_missing(self) -> None:
+        """复用页面时未传起始年应显式恢复起始年份默认值。"""
+        with (
+            patch.object(self.interactor, "_ensure_advanced_condition_rows"),
+            patch.object(self.interactor, "_set_advanced_condition"),
+            patch.object(self.interactor, "_disable_chinese_english_expansion"),
+            patch.object(self.interactor, "_set_date_year") as set_date_year,
+        ):
+            self.interactor._fill_advanced_search_form(
+                query="新青年",
+                date_from=None,
+                date_to="1978",
+            )
+
+        self.assertEqual(
+            set_date_year.call_args_list,
+            [
+                call("start", None),
+                call("end", "1978"),
+            ],
+        )
+
+    def test_set_date_year_uses_default_options_for_empty_boundaries(self) -> None:
+        """空年份边界应写入页面默认项，避免沿用上一轮残留值。"""
+        trigger = FakeLocator()
+
+        with (
+            patch.object(self.interactor, "_get_date_select_trigger", return_value=trigger),
+            patch.object(self.interactor, "_select_ivu_option") as select_ivu_option,
+        ):
+            self.interactor._set_date_year("start", None)
+            self.interactor._set_date_year("end", None)
+
+        self.assertEqual(
+            select_ivu_option.call_args_list,
+            [
+                call(trigger=trigger, option_text="不限", label="起始年份", strict=True),
+                call(trigger=trigger, option_text="至今", label="结束年份", strict=True),
             ],
         )
 
@@ -330,6 +468,41 @@ class WanfangInteractorFormTestCase(unittest.TestCase):
             [{"timeout": 1000, "no_wait_after": True}],
         )
         dismiss_dialog.assert_called_once()
+
+    def test_open_advanced_search_page_uses_current_tab_advanced_search_url(self) -> None:
+        """万方高级检索应直接在当前页打开目标 URL，而不是点击首页入口新开页签。"""
+        restore_calls: list[str] = []
+        self.interactor.browser_manager = SimpleNamespace(
+            restore_session=lambda target_url: restore_calls.append(target_url),
+            is_captcha_visible=lambda _page: False,
+            _page=None,
+        )
+        self.interactor.config.advanced_search_url = "https://example.com/advanced-search"
+        self.interactor.page = FakePage(
+            {
+                "input.ivu-input.ivu-input-default": FakeLocator(),
+                "span.submit-btn": FakeLocator(),
+            },
+            url="https://example.com/advanced-search",
+        )
+
+        self.interactor._open_advanced_search_page()
+
+        self.assertEqual(restore_calls, ["https://example.com/advanced-search"])
+        self.assertIs(self.interactor.browser_manager._page, self.interactor.page)
+
+    def test_open_advanced_search_page_raises_navigation_state_error_when_target_not_ready(self) -> None:
+        """高级检索页未就绪时应抛出可自动续跑的导航状态异常。"""
+        self.interactor.browser_manager = SimpleNamespace(
+            restore_session=lambda target_url: None,
+            is_captcha_visible=lambda _page: False,
+            _page=None,
+        )
+        self.interactor.config.advanced_search_url = "https://example.com/advanced-search"
+        self.interactor.page = FakePage({}, url="https://example.com/advanced-search")
+
+        with self.assertRaises(NavigationStateError):
+            self.interactor._open_advanced_search_page()
 
     def test_select_ivu_option_uses_action_timeout_without_navigation_wait(self) -> None:
         """iView 下拉点击应使用动作超时并关闭默认导航等待。"""
@@ -437,6 +610,13 @@ class WanfangInteractorFormTestCase(unittest.TestCase):
 
         with patch("wanfang_page_ops.time.sleep", lambda _seconds: None):
             self.interactor._wait_for_results_page_size_applied(50)
+
+    def test_wait_for_results_ready_accepts_no_results_tip(self) -> None:
+        """无结果提示出现时也应视为结果页已完成加载。"""
+        self.interactor.page = FakePage({"div.tip-content": FakeLocator()})
+
+        with patch("wanfang_page_ops.time.sleep", lambda _seconds: None):
+            self.interactor._wait_for_results_ready()
 
 
 class WanfangInteractorExportTestCase(unittest.TestCase):
@@ -730,6 +910,316 @@ class WanfangResultParserTestCase(unittest.TestCase):
         self.assertEqual(summary["page"], "1/381")
         self.assertEqual(summary["current_page"], 1)
         self.assertEqual(summary["total_pages"], 381)
+
+    def test_parse_results_summary_supports_no_results_tip(self) -> None:
+        """无结果页应按 total=0 的结果页摘要返回。"""
+        page = FakePage(
+            {
+                "div.tip-content": FakeElement("没有命中的记录"),
+                "input.ivu-input.ivu-input-default": FakeElement(value="新青年"),
+            },
+            url="https://example.com/advanced-search",
+        )
+
+        summary = ResultParser(page).parse_results_summary()
+
+        self.assertEqual(summary["query"], "新青年")
+        self.assertEqual(summary["total"], 0)
+        self.assertEqual(summary["page"], "1/1")
+
+
+class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
+    """验证截至年份逐年导出编排。"""
+
+    def setUp(self) -> None:
+        config = SimpleNamespace(
+            page_timeout=1,
+            action_timeout=1,
+            page_change_timeout=1,
+            ensure_output_dir=lambda data=None: Path(tempfile.gettempdir()) / "wanfang-yearly-tests",
+            output_dir=None,
+        )
+        browser_manager = SimpleNamespace(is_captcha_visible=lambda page: False)
+        self.interactor = WanfangSearchInteractor(
+            page=FakePage({}, url="https://example.com/results"),
+            config=config,
+            browser_manager=browser_manager,
+        )
+
+    def test_advanced_search_dispatches_to_yearly_mode_when_date_to_without_limit(self) -> None:
+        """有截至年份且未限制数量时应切到逐年模式。"""
+        with (
+            patch.object(self.interactor, "_run_yearly_advanced_export", return_value={"status": "success"}) as yearly,
+            patch.object(self.interactor, "run_advanced_export", return_value={"status": "legacy"}) as legacy,
+        ):
+            result = self.interactor.advanced_search(
+                query="新青年",
+                date_from=None,
+                date_to="2025",
+                max_download=None,
+            )
+
+        self.assertEqual(result["status"], "success")
+        yearly.assert_called_once()
+        legacy.assert_not_called()
+
+    def test_advanced_search_keeps_legacy_mode_when_limit_present(self) -> None:
+        """指定下载数量时应保持旧的单次批量导出逻辑。"""
+        with (
+            patch.object(self.interactor, "_run_yearly_advanced_export", return_value={"status": "yearly"}) as yearly,
+            patch.object(self.interactor, "run_advanced_export", return_value={"status": "legacy"}) as legacy,
+        ):
+            result = self.interactor.advanced_search(
+                query="新青年",
+                date_from=None,
+                date_to="2025",
+                max_download=100,
+            )
+
+        self.assertEqual(result["status"], "legacy")
+        yearly.assert_not_called()
+        legacy.assert_called_once()
+
+    def test_build_yearly_export_tasks_uses_real_available_years(self) -> None:
+        """仅应基于页面真实可选年份构造任务。"""
+        tasks = self.interactor._build_yearly_export_tasks(
+            query="新青年",
+            available_years=["2026", "1980", "1979", "1978", "1949", "1915"],
+            date_from=None,
+            date_to="1980",
+        )
+
+        self.assertEqual(
+            [(item["date_from"], item["date_to"]) for item in tasks],
+            [("1949", "1949"), ("1978", "1978"), ("1979", "1979"), ("1980", "1980")],
+        )
+
+    def test_build_yearly_export_tasks_uses_single_year_windows_when_date_from_present(self) -> None:
+        """同时传入起始年与截至年时，也应按单年窗口构造任务。"""
+        tasks = self.interactor._build_yearly_export_tasks(
+            query="新青年",
+            available_years=["1980", "1979", "1978", "1949"],
+            date_from="1978",
+            date_to="1980",
+        )
+
+        self.assertEqual(
+            [(item["date_from"], item["date_to"]) for item in tasks],
+            [("1978", "1978"), ("1979", "1979"), ("1980", "1980")],
+        )
+
+    def test_build_yearly_export_tasks_clamps_start_year_to_1949(self) -> None:
+        """起始年早于 1949 时应钳制到 1949。"""
+        tasks = self.interactor._build_yearly_export_tasks(
+            query="新青年",
+            available_years=["1980", "1979", "1978", "1949", "1915"],
+            date_from="1915",
+            date_to="1980",
+        )
+
+        self.assertEqual(tasks[0]["date_from"], "1949")
+        self.assertEqual(tasks[0]["date_to"], "1949")
+        self.assertEqual(tasks[-1]["date_from"], "1980")
+        self.assertEqual(tasks[-1]["date_to"], "1980")
+
+    def test_run_yearly_advanced_export_skips_empty_year_and_continues(self) -> None:
+        """某年无结果时应写留痕并继续后续年份。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            success_file = output_dir / "1978-merged.xlsx"
+            success_file.write_text("ok", encoding="utf-8")
+
+            self.interactor.config.ensure_output_dir = lambda data=None: output_dir
+            self.interactor.export_processor = SimpleNamespace(
+                merge_batch_excels=lambda excel_paths, final_file: str(final_file),
+            )
+
+            with (
+                patch.object(self.interactor, "_prepare_yearly_progress_store", return_value=(SimpleNamespace(file_path=output_dir / "outer.json"), None)),
+                patch.object(self.interactor, "_collect_available_end_years", return_value=["1949", "1978"]),
+                patch.object(self.interactor, "_ensure_yearly_search_page_ready"),
+                patch.object(self.interactor, "_run_single_yearly_export", side_effect=[
+                    {"status": "no_results", "year": "1949"},
+                    {
+                        "status": "success",
+                        "year": "1978",
+                        "exported": 12,
+                        "selected": 12,
+                        "planned_download": 12,
+                        "batch_count": 1,
+                        "exported_batches": 1,
+                        "final_file_path": str(success_file),
+                        "report_file": str(output_dir / "1978-report.txt"),
+                        "progress_file": str(output_dir / "1978-progress.json"),
+                    },
+                ]) as run_single,
+                patch.object(self.interactor, "_save_yearly_progress_snapshot"),
+            ):
+                result = self.interactor._run_yearly_advanced_export(
+                    cli_params={
+                        "query": "新青年",
+                        "date_from": None,
+                        "date_to": "1978",
+                        "max_download": None,
+                    },
+                    progress_file=None,
+                )
+
+        self.assertEqual(run_single.call_count, 2)
+        self.assertTrue(result["yearly_mode"])
+        self.assertEqual(result["executed_years"], ["1949", "1978"])
+        self.assertEqual(result["empty_years"], ["1949"])
+        self.assertEqual(result["exported"], 12)
+
+    def test_run_yearly_advanced_export_resumes_from_next_unfinished_year(self) -> None:
+        """外层逐年进度恢复时应从下一个未完成年份继续。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            success_file = output_dir / "1979-merged.xlsx"
+            success_file.write_text("ok", encoding="utf-8")
+            resume_data = {
+                "status": "running",
+                "search_params": {
+                    "query": "新青年",
+                    "date_from": None,
+                    "date_to": "1979",
+                },
+                "runtime": {
+                    "available_years": ["1949", "1978", "1979"],
+                    "next_year_index": 2,
+                    "executed_years": ["1949", "1978"],
+                    "empty_years": ["1949"],
+                    "yearly_result_files": [],
+                    "exported_total": 8,
+                    "planned_download": 8,
+                    "batch_count": 1,
+                    "exported_batches": 1,
+                    "current_year_progress_file": "",
+                },
+            }
+
+            self.interactor.config.ensure_output_dir = lambda data=None: output_dir
+            self.interactor.export_processor = SimpleNamespace(
+                merge_batch_excels=lambda excel_paths, final_file: str(final_file),
+            )
+
+            with (
+                patch.object(self.interactor, "_prepare_yearly_progress_store", return_value=(SimpleNamespace(file_path=output_dir / "outer.json"), resume_data)),
+                patch.object(self.interactor, "_collect_available_end_years") as collect_years,
+                patch.object(self.interactor, "_ensure_yearly_search_page_ready"),
+                patch.object(self.interactor, "_run_single_yearly_export", return_value={
+                    "status": "success",
+                    "year": "1979",
+                    "exported": 5,
+                    "selected": 5,
+                    "planned_download": 5,
+                    "batch_count": 1,
+                    "exported_batches": 1,
+                    "final_file_path": str(success_file),
+                    "report_file": str(output_dir / "1979-report.txt"),
+                    "progress_file": str(output_dir / "1979-progress.json"),
+                }) as run_single,
+                patch.object(self.interactor, "_save_yearly_progress_snapshot"),
+            ):
+                result = self.interactor._run_yearly_advanced_export(
+                    cli_params={
+                        "query": "新青年",
+                        "date_from": None,
+                        "date_to": "1979",
+                        "max_download": None,
+                    },
+                    progress_file=None,
+                )
+
+        collect_years.assert_not_called()
+        run_single.assert_called_once()
+        self.assertEqual(result["executed_years"], ["1949", "1978", "1979"])
+        self.assertEqual(result["empty_years"], ["1949"])
+
+    def test_run_single_yearly_export_reopens_advanced_search_page(self) -> None:
+        """年度子任务开始前应重新打开首页并进入高级检索页。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            task = {
+                "query": "新青年",
+                "year": "1978",
+                "date_from": "1978",
+                "date_to": "1978",
+                "max_download": None,
+            }
+
+            with (
+                patch.object(self.interactor, "_open_advanced_search_page") as open_page,
+                patch.object(self.interactor, "_wait_for_any_selector"),
+                patch.object(self.interactor, "_ensure_captcha_cleared"),
+                patch.object(
+                    self.interactor,
+                    "run_advanced_export",
+                    return_value={"status": "success"},
+                ) as run_export,
+            ):
+                self.interactor._run_single_yearly_export(
+                    task=task,
+                    output_dir=output_dir,
+                    progress_file=output_dir / "progress.json",
+                )
+
+        open_page.assert_called_once()
+        run_export.assert_called_once_with(
+            cli_params=task,
+            progress_file=output_dir / "progress.json",
+            reuse_current_search_page=True,
+        )
+
+    def test_save_yearly_progress_snapshot_persists_current_year_context(self) -> None:
+        """外层逐年进度应显式记录当前处理年份与区间。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            progress_path = Path(temp_dir) / "yearly-progress.json"
+
+            class FakeStore:
+                def __init__(self, file_path: Path) -> None:
+                    self.file_path = file_path
+
+                def save(self, state: dict) -> str:
+                    self.file_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+                    return str(self.file_path)
+
+            store = FakeStore(progress_path)
+            self.interactor._save_yearly_progress_snapshot(
+                progress_store=store,
+                status="failed",
+                search_params={
+                    "query": "新青年",
+                    "date_from": "1978",
+                    "date_to": "1980",
+                },
+                output_dir=Path(temp_dir),
+                available_years=["1978", "1979", "1980"],
+                next_year_index=1,
+                executed_years=["1978"],
+                empty_years=[],
+                yearly_result_files=[],
+                batch_report_files=[],
+                yearly_report_files=[],
+                empty_result_files=[],
+                current_year="1979",
+                current_year_date_from="1978",
+                current_year_date_to="1979",
+                current_year_progress_file=str(Path(temp_dir) / "year-1979" / "progress.json"),
+                total=100,
+                planned_download=100,
+                exported_total=50,
+                batch_count=2,
+                exported_batches=1,
+                final_file_path="",
+                error=RuntimeError("翻页失败"),
+            )
+            data = json.loads(progress_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(data["runtime"]["current_year"], "1979")
+        self.assertEqual(data["runtime"]["current_year_date_from"], "1978")
+        self.assertEqual(data["runtime"]["current_year_date_to"], "1979")
+        self.assertTrue(data["runtime"]["current_year_progress_file"].endswith("progress.json"))
 
 
 class WanfangCliOutputTestCase(unittest.TestCase):

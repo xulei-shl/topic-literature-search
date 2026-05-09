@@ -6,9 +6,7 @@ from typing import Any, Dict, Optional
 
 from playwright.sync_api import Locator, Page
 
-from src.utils.playwright_page import first_visible_locator
-
-from exceptions import ValidationError
+from exceptions import NavigationStateError, ValidationError
 
 logger = logging.getLogger("wanfang_search.interactor")
 
@@ -17,6 +15,8 @@ class WanfangFormMixin:
     """万方高级检索表单操作。"""
 
     ADVANCED_QUERY_INPUT_SELECTOR = "input.ivu-input.ivu-input-default"
+    START_YEAR_DEFAULT_OPTION = "不限"
+    END_YEAR_DEFAULT_OPTION = "至今"
 
     def _open_advanced_search_page(self) -> None:
         """打开万方高级检索页。"""
@@ -26,7 +26,7 @@ class WanfangFormMixin:
         self.page.wait_for_load_state("domcontentloaded")
 
         if not self._is_advanced_search_page(self.page):
-            raise ValidationError("打开万方高级检索页面失败")
+            raise NavigationStateError("打开万方高级检索页面失败")
 
         self.browser_manager._page = self.page
         self.parser = self._make_parser(self.page)
@@ -76,10 +76,8 @@ class WanfangFormMixin:
         self._set_advanced_condition(1, "关键词", query, logic="或", set_field=False)
         self._disable_chinese_english_expansion()
 
-        if date_from:
-            self._select_date_year("start", date_from)
-        if date_to:
-            self._select_date_year("end", date_to)
+        self._set_date_year("start", date_from)
+        self._set_date_year("end", date_to)
 
     def _submit_advanced_search(self) -> None:
         """点击检索按钮。"""
@@ -246,35 +244,65 @@ class WanfangFormMixin:
 
         logger.debug("ivu-select操作完成: 行=%s, 标签=%s, 操作后值=%s", row_index, label, new_value)
 
-    def _select_date_year(self, boundary: str, year: str) -> None:
-        """通过 ivu-select 下拉选择年份。
+    def _set_date_year(self, boundary: str, year: Optional[str]) -> None:
+        """设置年份边界，空值时恢复默认选项。"""
+        option_text = self._resolve_date_option_text(boundary, year)
+        trigger = self._get_date_select_trigger(boundary)
+        if trigger.count() == 0:
+            logger.warning("未找到%s年份选择器", "起始" if boundary == "start" else "结束")
+            return
 
-        Args:
-            boundary: "start" 或 "end"
-            year: 年份字符串，如 "2020"
-        """
+        self._select_ivu_option(
+            trigger=trigger,
+            option_text=option_text,
+            label="起始年份" if boundary == "start" else "结束年份",
+            strict=True,
+        )
+
+    def _resolve_date_option_text(self, boundary: str, year: Optional[str]) -> str:
+        """根据边界和值生成目标年份文案。"""
+        if year:
+            return f"{year}年"
+        if boundary == "start":
+            return self.START_YEAR_DEFAULT_OPTION
+        return self.END_YEAR_DEFAULT_OPTION
+
+    def _get_date_select_trigger(self, boundary: str) -> Locator:
+        """返回日期范围对应边界的下拉触发器。"""
         date_container = self.page.locator("span.hrafwidth, div.hrafwidth")
         if date_container.count() == 0:
-            logger.warning("未找到时间范围选择器")
-            return
+            return self.page.locator("__missing_date_select__")
 
         selects = date_container.first.locator("div.ivu-select")
         if boundary == "start":
             target_select = selects.first
         else:
             target_select = selects.nth(1) if selects.count() > 1 else selects.first
+        return target_select.locator("div.ivu-select-selection")
 
-        if target_select.count() == 0:
-            logger.warning("未找到%s年份选择器", "起始" if boundary == "start" else "结束")
-            return
-
-        option_text = f"{year}年"
-        self._select_ivu_option(
-            trigger=target_select.locator("div.ivu-select-selection"),
-            option_text=option_text,
-            label="起始年份" if boundary == "start" else "结束年份",
-            strict=True,
-        )
+    def _collect_date_select_option_texts(self, trigger: Locator) -> list[str]:
+        """读取当前展开年份下拉中的所有可见选项文案。"""
+        texts: list[str] = []
+        try:
+            trigger.click(timeout=self._action_timeout_ms(), no_wait_after=True)
+            time.sleep(0.2)
+        except Exception as exc:
+            logger.debug("展开年份下拉失败: %s", exc)
+        dropdowns = self.page.locator("div.ivu-select-dropdown")
+        for index in range(dropdowns.count()):
+            dropdown = dropdowns.nth(index)
+            try:
+                style = (dropdown.get_attribute("style") or "").replace(" ", "").lower()
+            except Exception:
+                style = ""
+            if "display:none" in style:
+                continue
+            options = dropdown.locator("li.ivu-select-item")
+            for option_index in range(options.count()):
+                text = self._safe_text(options.nth(option_index))
+                if text:
+                    texts.append(text)
+        return texts
 
     def _disable_chinese_english_expansion(self) -> None:
         """关闭"中英文扩展"。"""

@@ -28,6 +28,16 @@ logger = logging.getLogger("cnki_search.interactor")
 class CnkiExportMixin:
     """CNKI ?????"""
 
+    EXPORT_PAGE_READY_SELECTORS = (
+        ".export-sidebar-a",
+        ".export-sidebar-a .formatlist",
+        "li.current a[displaymode='selfDefine']",
+        "a[displaymode='selfDefine']",
+        "#litoexcel",
+        "#litotxt",
+        ".check-labels",
+    )
+
     def _export_selected_results(self, query: str, batch_index: int, output_dir: Path) -> Dict[str, str]:
         self._open_export_menu()
         export_page = self._open_custom_export_page()
@@ -40,8 +50,7 @@ class CnkiExportMixin:
             raise ValidationError("未能打开自定义导出页面")
 
         try:
-            export_page.wait_for_load_state("domcontentloaded", timeout=20000)
-            export_page.wait_for_selector(".check-labels", timeout=20000)
+            export_page = self._wait_for_export_page_ready(export_page)
 
             self._click_link_by_text("全选", page=export_page)
             excel_path = self._download_from_export_page(
@@ -85,7 +94,7 @@ class CnkiExportMixin:
         kind: str,
         default_name: str,
     ) -> str:
-        with export_page.expect_download(timeout=45000) as download_info:
+        with export_page.expect_download(timeout=self._download_timeout_ms()) as download_info:
             if not self._click_first_available(selectors, page=export_page):
                 raise ValidationError(f"未找到导出按钮: {kind}")
 
@@ -131,12 +140,34 @@ class CnkiExportMixin:
         self._click_link_by_text("导出与分析")
         self._click_link_by_text("导出文献")
 
-    def _open_custom_export_page(self, timeout: int = 15) -> Optional[Page]:
+    def _wait_for_export_page_ready(self, export_page: Page) -> Page:
+        """等待导出页面关键元素出现。"""
+        try:
+            export_page.wait_for_load_state("domcontentloaded", timeout=self._action_timeout_ms())
+        except Exception as exc:
+            logger.debug("等待导出页基础 DOM 时忽略瞬时异常: %s", exc)
+
+        wait_for_any_selector(
+            page=export_page,
+            selectors=list(self.EXPORT_PAGE_READY_SELECTORS),
+            timeout_seconds=self._page_change_timeout_seconds(),
+            poll_interval_seconds=0.2,
+            wait_timeout_ms=300,
+            error_cls=TimeoutError,
+            error_message=f"等待导出页关键元素超时: {self.EXPORT_PAGE_READY_SELECTORS[0]}",
+        )
+        return export_page
+
+    def _download_timeout_ms(self) -> int:
+        """返回文件下载超时（毫秒），至少 30 秒。"""
+        return max(int(self._page_change_timeout_seconds() * 1000), 30000)
+
+    def _open_custom_export_page(self, timeout: Optional[int] = None) -> Optional[Page]:
         existing_pages = list(self.page.context.pages)
         if not self._click_first_available(["a[exporttype='selfDefine']"]):
             raise ValidationError("未找到“自定义”导出入口")
 
-        deadline = time.time() + timeout
+        deadline = time.time() + (timeout or self._page_change_timeout_seconds())
         while time.time() < deadline:
             if self._is_personal_login_visible():
                 return None
@@ -219,15 +250,22 @@ class CnkiExportMixin:
 
     def _click_link_by_text(self, text: str, page: Optional[Page] = None) -> None:
         target_page = page or self.page
-        links = target_page.locator("a").filter(has_text=text)
-        if links.count() == 0:
-            raise ValidationError(f"未找到链接: {text}")
-        for index in range(links.count()):
-            link = links.nth(index)
-            try:
-                link.wait_for(state="visible", timeout=800)
-                link.click()
-                return
-            except Exception:
+        deadline = time.time() + self._page_change_timeout_seconds()
+
+        while time.time() < deadline:
+            links = target_page.locator("a").filter(has_text=text)
+            if links.count() == 0:
+                time.sleep(0.2)
                 continue
-        raise ValidationError(f"未找到可见链接: {text}")
+
+            for index in range(links.count()):
+                link = links.nth(index)
+                try:
+                    link.wait_for(state="visible", timeout=800)
+                    link.click()
+                    return
+                except Exception as exc:
+                    logger.debug("点击链接失败，继续等待: text=%s, error=%s", text, exc)
+            time.sleep(0.2)
+
+        raise TimeoutError(f"等待链接超时: {text}")

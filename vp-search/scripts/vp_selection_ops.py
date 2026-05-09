@@ -53,6 +53,7 @@ class VpSelectionMixin:
         current_row_count = 0
         start_page = 0
         end_page = 0
+        reached_end = False
 
         while remaining > 0 if strict_target else covered_count < export_limit:
             page_prepare_started_at = time.perf_counter()
@@ -114,6 +115,7 @@ class VpSelectionMixin:
                 )
                 page_turn_started_at = time.perf_counter()
                 if not self._goto_next_results_page():
+                    reached_end = True
                     logger.debug("翻页失败或不存在下一页，结束本轮勾选")
                     break
                 logger.debug(
@@ -173,6 +175,7 @@ class VpSelectionMixin:
                 continue
             page_turn_started_at = time.perf_counter()
             if not self._goto_next_results_page():
+                reached_end = True
                 logger.debug("当前页已勾满但翻页失败或不存在下一页，结束本轮勾选")
                 break
             logger.debug(
@@ -182,6 +185,16 @@ class VpSelectionMixin:
             current_row_offset = 0
 
         if selected_count <= 0:
+            if reached_end:
+                return {
+                    "selected_count": 0,
+                    "next_row_offset": current_row_offset,
+                    "page_row_count": current_row_count,
+                    "already_at_target": False,
+                    "start_page": start_page,
+                    "end_page": end_page,
+                    "reached_end": True,
+                }
             raise ValidationError("结果页未选中任何文献，无法导出")
 
         already_at_target = export_limit - selected_count <= 0
@@ -193,6 +206,7 @@ class VpSelectionMixin:
             "already_at_target": already_at_target,
             "start_page": start_page,
             "end_page": end_page,
+            "reached_end": reached_end,
         }
 
     def _coerce_current_results_page(self, summary: Dict[str, Any]) -> int:

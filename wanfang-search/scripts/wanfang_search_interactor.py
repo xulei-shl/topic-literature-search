@@ -19,9 +19,11 @@ from wanfang_page_ops import WanfangPageMixin
 from wanfang_progress_ops import WanfangProgressMixin
 from wanfang_public_ops import WanfangPublicMixin
 from wanfang_selection_ops import WanfangSelectionMixin
+from wanfang_yearly_export_ops import WanfangYearlyExportMixin
 
 
 class WanfangSearchInteractor(
+    WanfangYearlyExportMixin,
     WanfangPublicMixin,
     WanfangFormMixin,
     WanfangSelectionMixin,
@@ -69,13 +71,16 @@ class WanfangSearchInteractor(
         progress_file: Optional[Path] = None,
     ) -> Dict[str, Any]:
         """执行高级检索并分批导出完整元数据。"""
+        cli_params = {
+            "query": query.strip() if query else None,
+            "date_from": date_from,
+            "date_to": date_to,
+            "max_download": max_download,
+        }
+        if self._should_use_yearly_full_export(date_to=date_to, max_download=max_download):
+            return self._run_yearly_advanced_export(cli_params=cli_params, progress_file=progress_file)
         return self.run_advanced_export(
-            cli_params={
-                "query": query.strip() if query else None,
-                "date_from": date_from,
-                "date_to": date_to,
-                "max_download": max_download,
-            },
+            cli_params=cli_params,
             progress_file=progress_file,
         )
 

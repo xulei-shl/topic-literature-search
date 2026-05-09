@@ -48,6 +48,38 @@ class BaseSearchProgressStore:
         """
         return self.file_path.exists()
 
+    @classmethod
+    def prepare_store(
+        cls,
+        progress_file: Optional[Path],
+        output_dir: Optional[Path] = None,
+        **search_params: Any,
+    ) -> tuple["BaseSearchProgressStore", Optional[dict[str, Any]]]:
+        """根据显式或默认路径初始化进度文件存储。
+
+        Args:
+            progress_file: 显式传入的进度文件路径。
+            output_dir: 默认进度文件所在目录。
+            **search_params: 用于构造默认进度文件名的检索参数。
+
+        Returns:
+            tuple[BaseSearchProgressStore, Optional[dict[str, Any]]]:
+                进度文件存储对象与已加载的历史进度。
+
+        Raises:
+            Exception: 无法确定进度文件路径时抛出配置的校验异常。
+        """
+        if progress_file is not None:
+            store = cls(progress_file)
+        else:
+            if output_dir is None:
+                raise cls._validation_error("高级检索至少需要提供 --query 或 --progress-file")
+            default_path = cls.build_default_path(output_dir=output_dir, **search_params)
+            store = cls(default_path)
+
+        resume_data = store.load() if store.exists() else None
+        return store, resume_data
+
     def load(self) -> dict[str, Any]:
         """读取进度文件。
 

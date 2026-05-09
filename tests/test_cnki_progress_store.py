@@ -15,9 +15,15 @@ from tests.script_loader import load_script_module
 SCRIPT_DIR = ROOT_DIR / "cnki-search" / "scripts"
 _exceptions_module = load_script_module(SCRIPT_DIR, "exceptions", "cnki_progress_exceptions_module")
 _progress_store_module = load_script_module(SCRIPT_DIR, "progress_store", "cnki_progress_store_module")
+_yearly_progress_store_module = load_script_module(
+    SCRIPT_DIR,
+    "cnki_yearly_progress_store",
+    "cnki_yearly_progress_store_module",
+)
 
 ValidationError = _exceptions_module.ValidationError
 SearchProgressStore = _progress_store_module.SearchProgressStore
+YearlySearchProgressStore = _yearly_progress_store_module.YearlySearchProgressStore
 
 
 class SearchProgressStoreTestCase(unittest.TestCase):
@@ -131,6 +137,114 @@ class SearchProgressStoreTestCase(unittest.TestCase):
         self.assertEqual(path.parent, output_dir)
         self.assertEqual(path.suffix, ".json")
         self.assertIn("新青年", path.name)
+
+    def test_prepare_store_auto_loads_existing_default_progress_file(self) -> None:
+        """未显式传入进度文件时，应自动加载默认进度文件。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            state = {
+                "version": 1,
+                "status": "failed",
+                "search_params": {"query": "新青年", "date_to": "2025"},
+                "runtime": {"exported_batches": 2},
+            }
+            progress_path = SearchProgressStore.build_default_path(
+                output_dir=output_dir,
+                query="新青年",
+                date_from=None,
+                date_to="2025",
+                core_only=False,
+                include_no_fulltext=True,
+                max_download=None,
+            )
+            progress_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+
+            store, resume_data = SearchProgressStore.prepare_store(
+                progress_file=None,
+                output_dir=output_dir,
+                query="新青年",
+                date_from=None,
+                date_to="2025",
+                core_only=False,
+                include_no_fulltext=True,
+                max_download=None,
+            )
+
+        self.assertEqual(store.file_path, progress_path.resolve())
+        self.assertEqual(resume_data, state)
+
+
+class YearlySearchProgressStoreTestCase(unittest.TestCase):
+    """验证逐年导出外层进度文件逻辑。"""
+
+    def test_build_default_path_uses_yearly_prefix(self) -> None:
+        """逐年导出进度文件应与普通批量导出隔离命名。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            path = YearlySearchProgressStore.build_default_path(
+                output_dir=output_dir,
+                query="新青年",
+                date_from="1949",
+                date_to="1980",
+                core_only=False,
+                include_no_fulltext=False,
+            )
+
+        self.assertEqual(path.parent, output_dir)
+        self.assertEqual(path.suffix, ".json")
+        self.assertIn("progress-", path.name)
+        self.assertIn("新青年", path.name)
+
+    def test_resolve_search_params_prefers_progress_file_when_cli_empty(self) -> None:
+        """逐年模式恢复执行时应复用进度文件中的检索参数。"""
+        progress_data = {
+            "search_params": {
+                "query": "新青年",
+                "date_from": "1949",
+                "date_to": "1980",
+                "core_only": False,
+                "include_no_fulltext": False,
+            }
+        }
+
+        resolved = YearlySearchProgressStore.resolve_search_params(
+            cli_params={
+                "query": None,
+                "date_from": None,
+                "date_to": None,
+                "core_only": False,
+                "include_no_fulltext": False,
+            },
+            progress_data=progress_data,
+        )
+
+        self.assertEqual(resolved["query"], "新青年")
+        self.assertEqual(resolved["date_from"], "1949")
+        self.assertEqual(resolved["date_to"], "1980")
+
+    def test_resolve_search_params_rejects_conflicting_cli_args(self) -> None:
+        """逐年模式的 CLI 参数与进度文件冲突时应直接报错。"""
+        progress_data = {
+            "search_params": {
+                "query": "新青年",
+                "date_from": "1949",
+                "date_to": "1980",
+                "core_only": False,
+                "include_no_fulltext": False,
+            }
+        }
+
+        with self.assertRaises(ValidationError):
+            YearlySearchProgressStore.resolve_search_params(
+                cli_params={
+                    "query": "鲁迅",
+                    "date_from": "1949",
+                    "date_to": "1980",
+                    "core_only": False,
+                    "include_no_fulltext": False,
+                },
+                progress_data=progress_data,
+            )
 
 
 if __name__ == "__main__":

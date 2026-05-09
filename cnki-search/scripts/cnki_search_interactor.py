@@ -20,8 +20,10 @@ from cnki_page_ops import CnkiPageMixin
 from cnki_progress_ops import CnkiProgressMixin
 from cnki_public_ops import CnkiPublicMixin
 from cnki_selection_ops import CnkiSelectionMixin
+from cnki_yearly_export_ops import CnkiYearlyExportMixin
 
 class CnkiSearchInteractor(
+    CnkiYearlyExportMixin,
     CnkiPublicMixin,
     CnkiFormMixin,
     CnkiSelectionMixin,
@@ -78,15 +80,18 @@ class CnkiSearchInteractor(
         progress_file: Optional[Path] = None,
     ) -> Dict[str, Any]:
         """执行高级检索并分批导出完整元数据。"""
-        return self.run_advanced_export(
-            cli_params={
+        cli_params = {
             "query": query.strip() if query else None,
             "date_from": date_from,
             "date_to": date_to,
             "core_only": core_only,
             "include_no_fulltext": include_no_fulltext,
             "max_download": max_download,
-            },
+        }
+        if self._should_use_yearly_full_export(date_to=date_to, max_download=max_download):
+            return self._run_yearly_advanced_export(cli_params=cli_params, progress_file=progress_file)
+        return self.run_advanced_export(
+            cli_params=cli_params,
             progress_file=progress_file,
         )
 

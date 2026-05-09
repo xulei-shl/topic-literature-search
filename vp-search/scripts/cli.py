@@ -8,6 +8,7 @@ from pathlib import Path
 from browser import BrowserManager
 from config import VpSearchConfig
 from exceptions import ValidationError, VpSearchError
+from src.utils.advanced_search_retry import run_with_auto_resume
 from src.utils.cli_dates import normalize_date_range, parse_cli_date
 from vp_search_interactor import VpSearchInteractor
 from utils import print_human_readable, print_json, save_results, setup_logging
@@ -68,8 +69,8 @@ def build_config(args: argparse.Namespace) -> VpSearchConfig:
     )
 
 
-def run_command(args: argparse.Namespace, config: VpSearchConfig) -> dict:
-    """执行命令。"""
+def _run_command_once(args: argparse.Namespace, config: VpSearchConfig) -> dict:
+    """执行单次命令。"""
     browser_manager = BrowserManager(config)
     try:
         page = browser_manager.start()
@@ -92,6 +93,16 @@ def run_command(args: argparse.Namespace, config: VpSearchConfig) -> dict:
         raise ValidationError(f"不支持的命令: {args.command}")
     finally:
         browser_manager.close()
+
+
+def run_command(args: argparse.Namespace, config: VpSearchConfig) -> dict:
+    """执行命令，并在高级检索失败时自动续跑。"""
+    return run_with_auto_resume(
+        args=args,
+        run_once=lambda: _run_command_once(args, config),
+        non_retryable_error_types=(ValueError, ValidationError),
+        logger=logger,
+    )
 
 
 def main() -> int:

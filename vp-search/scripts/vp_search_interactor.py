@@ -21,6 +21,7 @@ from vp_page_ops import VpPageMixin
 from vp_page_size_ops import VpPageSizeMixin
 from vp_progress_ops import VpProgressMixin
 from vp_selection_ops import VpSelectionMixin
+from vp_yearly_export_ops import VpYearlyExportMixin
 
 class VpSearchInteractor(
     VpFormMixin,
@@ -31,6 +32,7 @@ class VpSearchInteractor(
     VpPageMixin,
     VpExportMixin,
     VpProgressMixin,
+    VpYearlyExportMixin,
     BaseAdvancedExportFlow,
 ):
     """负责执行维普高级检索与批量导出。"""
@@ -139,16 +141,16 @@ class VpSearchInteractor(
         progress_file: Optional[Path] = None,
     ) -> Dict[str, Any]:
         """执行高级检索并分批导出完整元数据。"""
-        return self.run_advanced_export(
-            cli_params={
+        cli_params = {
             "query": query.strip() if query else None,
             "date_from": date_from,
             "date_to": date_to,
             "core_only": core_only,
             "max_download": max_download,
-            },
-            progress_file=progress_file,
-        )
+        }
+        if self._should_use_yearly_full_export(date_to=date_to, max_download=max_download):
+            return self._run_yearly_advanced_export(cli_params=cli_params, progress_file=progress_file)
+        return self.run_advanced_export(cli_params=cli_params, progress_file=progress_file)
 
     def _fill_advanced_search_form_from_params(self, search_params: SearchParams) -> None:
         """按共享骨架要求填写高级检索表单。"""

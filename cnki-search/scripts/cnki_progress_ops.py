@@ -35,17 +35,10 @@ class CnkiProgressMixin:
         cli_params: Dict[str, Any],
     ) -> tuple[SearchProgressStore, Optional[Dict[str, Any]]]:
         """初始化进度文件存储并按需读取历史进度。"""
-        if progress_file is not None:
-            progress_store = SearchProgressStore(progress_file)
-            resume_data = progress_store.load() if progress_store.exists() else None
-            return progress_store, resume_data
-
         query = cli_params.get("query")
-        if not query:
-            raise ValidationError("高级检索至少需要提供 --query 或 --progress-file")
-
-        output_dir = self.config.ensure_output_dir(query)
-        default_path = SearchProgressStore.build_default_path(
+        output_dir = self.config.ensure_output_dir(query) if query else None
+        return SearchProgressStore.prepare_store(
+            progress_file=progress_file,
             output_dir=output_dir,
             query=query,
             date_from=cli_params.get("date_from"),
@@ -54,7 +47,6 @@ class CnkiProgressMixin:
             include_no_fulltext=bool(cli_params.get("include_no_fulltext")),
             max_download=cli_params.get("max_download"),
         )
-        return SearchProgressStore(default_path), None
 
     def _resolve_output_dir(self, query: str, resume_data: Optional[Dict[str, Any]]) -> Path:
         """返回当前任务应使用的输出目录。"""

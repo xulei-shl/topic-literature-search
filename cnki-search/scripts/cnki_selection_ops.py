@@ -51,6 +51,7 @@ class CnkiSelectionMixin:
         current_row_count = 0
         start_page = 0
         end_page = 0
+        reached_end = False
 
         while remaining > 0 if strict_target else covered_count < export_limit:
             self._wait_for_results_ready()
@@ -61,6 +62,7 @@ class CnkiSelectionMixin:
 
             if current_row_offset >= current_row_count:
                 if not self._goto_next_results_page():
+                    reached_end = True
                     break
                 current_row_offset = 0
                 continue
@@ -101,10 +103,20 @@ class CnkiSelectionMixin:
                 continue
 
             if not self._goto_next_results_page():
+                reached_end = True
                 break
             current_row_offset = 0
 
         if selected_count <= 0:
+            if reached_end:
+                return {
+                    "selected_count": 0,
+                    "next_row_offset": current_row_offset,
+                    "page_row_count": current_row_count,
+                    "start_page": start_page,
+                    "end_page": end_page,
+                    "reached_end": True,
+                }
             raise ValidationError("结果页未选中任何文献，无法导出")
         return {
             "selected_count": selected_count,
@@ -112,6 +124,7 @@ class CnkiSelectionMixin:
             "page_row_count": current_row_count,
             "start_page": start_page,
             "end_page": end_page,
+            "reached_end": reached_end,
         }
 
     def _select_rows_on_current_page(self, row_offset: int, page_target_count: int, row_count: int) -> int:

@@ -16,7 +16,7 @@ from src.utils.result_output import build_export_file_path
 
 from browser import BrowserManager
 from config import VpSearchConfig
-from exceptions import CaptchaError, TimeoutError, ValidationError
+from exceptions import CaptchaError, NavigationStateError, TimeoutError, ValidationError
 from export_processor import ExportResultProcessor
 from progress_store import SearchProgressStore
 from result_parser import ResultParser
@@ -36,10 +36,8 @@ class VpFormMixin:
     ) -> None:
         self._set_advanced_condition(0, "题名或关键词", query)
         self._set_advanced_condition(1, "摘要", query, logic="OR")
-        if date_from:
-            self._set_native_select_value("#basic_beginYear", date_from)
-        if date_to:
-            self._set_native_select_value("#basic_endYear", date_to)
+        self._set_year_select_value("#basic_beginYear", date_from)
+        self._set_year_select_value("#basic_endYear", date_to)
 
         if core_only:
             self._disable_checkbox("input[name='basic_journalRange'][title='全部期刊']")
@@ -116,7 +114,7 @@ class VpFormMixin:
         self.page.goto(self.config.advanced_search_url, timeout=self._navigation_timeout_ms())
         self.page.wait_for_load_state("domcontentloaded")
         if not self._is_advanced_search_page(self.page):
-            raise ValidationError("打开维普高级检索页面失败")
+            raise NavigationStateError("打开维普高级检索页面失败")
 
         self.browser_manager._page = self.page
         self.parser = ResultParser(self.page)
@@ -142,6 +140,28 @@ class VpFormMixin:
 
     def _set_native_select_value(self, selector: str, value: str) -> None:
         set_native_select_value(self.page, selector, value, ValidationError)
+
+    def _set_year_select_value(self, selector: str, value: Optional[str]) -> None:
+        """显式覆盖年份下拉，空值时恢复默认项。"""
+        if value:
+            self._set_native_select_value(selector, value)
+            return
+        locator = self.page.locator(selector).first
+        if locator.count() == 0:
+            raise ValidationError(f"未找到年份选择器: {selector}")
+        locator.evaluate(
+            """
+            (element) => {
+                if (element.options && element.options.length > 0) {
+                    element.selectedIndex = 0;
+                } else {
+                    element.value = "";
+                }
+                element.dispatchEvent(new Event('input', { bubbles: true }));
+                element.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            """
+        )
 
     def _disable_checkbox(self, selector: str) -> None:
         disable_checkbox(self.page, selector, logger=logger)

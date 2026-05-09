@@ -26,6 +26,7 @@ class BatchSelectionResult(TypedDict, total=False):
     restore_results_page: bool
     start_page: int
     end_page: int
+    reached_end: bool
 
 
 class ExportBatchFiles(TypedDict):
@@ -60,6 +61,9 @@ class AdvancedExportResult(TypedDict):
     report_file: str
     progress_file: str
     resumed_from_progress: bool
+    yearly_mode: bool
+    executed_years: list[str]
+    empty_years: list[str]
 
 
 SearchParams = dict[str, Any]

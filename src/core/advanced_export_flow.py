@@ -37,12 +37,14 @@ class BaseAdvancedExportFlow(ABC):
         self,
         cli_params: SearchParams,
         progress_file: Optional[Path] = None,
+        reuse_current_search_page: bool = False,
     ) -> AdvancedExportResult:
         """执行高级检索批量导出主流程。
 
         Args:
             cli_params: 命令行输入参数。
             progress_file: 可选进度文件路径。
+            reuse_current_search_page: 是否直接复用当前高级检索页。
 
         Returns:
             AdvancedExportResult: 导出结果。
@@ -57,7 +59,8 @@ class BaseAdvancedExportFlow(ABC):
         )
         query = str(resolved_params["query"]).strip()
 
-        self._open_advanced_search_page()
+        if not reuse_current_search_page:
+            self._open_advanced_search_page()
         if self.ADVANCED_FORM_READY_SELECTORS:
             self._wait_for_any_selector(list(self.ADVANCED_FORM_READY_SELECTORS))
         self._ensure_captcha_cleared()
@@ -163,6 +166,16 @@ class BaseAdvancedExportFlow(ABC):
                     current_row_offset,
                     strict_target=strict_batch_target,
                 )
+                if int(batch_selection.get("selected_count") or 0) <= 0:
+                    if bool(batch_selection.get("reached_end")):
+                        logger.info(
+                            "结果页已到末尾，提前结束后续批次导出: batch=%s, exported_total=%s, planned_download=%s",
+                            batch_index,
+                            exported_total,
+                            planned_download,
+                        )
+                        break
+                    raise RuntimeError("批次勾选结果为空，且未标记为正常结束")
                 batch_selection["restore_results_page"] = exported_total + batch_target < planned_download
                 batch_download_started_at = time.perf_counter()
                 batch_files = self._export_selected_results_for_batch(
