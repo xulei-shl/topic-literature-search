@@ -1,0 +1,219 @@
+- generic [active] [ref=e1]:
+  - iframe
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic:
+        - link "维普期刊服务平台" [ref=e5] [cursor=pointer]:
+          - /url: /index.html?from=Qikan_Search_Advance
+          - img "维普期刊服务平台" [ref=e6]
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "期刊导航" [ref=e9] [cursor=pointer]:
+              - /url: /Qikan/Journal/JournalGuid?from=Qikan_Search_Advance
+          - listitem [ref=e10]:
+            - link "作者导航" [ref=e11] [cursor=pointer]:
+              - /url: /Qikan/Object/ObjectGuid?objectType=3&from=Qikan_Search_Advance
+          - listitem [ref=e12]:
+            - link "机构导航" [ref=e13] [cursor=pointer]:
+              - /url: /Qikan/Object/ObjectGuid?objectType=6&from=Qikan_Search_Advance
+          - listitem [ref=e14]:
+            - link " 期刊评价报告 2025版" [ref=e15] [cursor=pointer]:
+              - /url: /Qikan/Evaluation/Index?from=index
+              - generic [ref=e16]: 
+              - text: 期刊评价报告
+              - superscript [ref=e17]: 2025版
+          - listitem [ref=e18]:
+            - link "期刊开放获取" [ref=e19] [cursor=pointer]:
+              - /url: /Qikan/Journal/OaIndex?from=Qikan_Search_Advance
+          - listitem [ref=e20]:
+            - link "下载APP" [ref=e21] [cursor=pointer]:
+              - /url: /Qikan/WebControl/AppIntroduce?from=Qikan_Search_Advance
+        - list [ref=e22]:
+          - listitem [ref=e23]:
+            - text: 欢迎
+            - link "上海图书馆（上海科学技术情报研究所） " [ref=e24] [cursor=pointer]:
+              - /url: javascript:void(0)
+              - text: 上海图书馆（上海科学技术情报研究所）
+              - generic [ref=e25]: 
+          - listitem [ref=e26]:
+            - link " 登录" [ref=e27] [cursor=pointer]:
+              - /url: javascript:void(0)
+              - generic [ref=e28]: 
+              - text: 登录
+    - generic [ref=e30]:
+      - generic [ref=e32]:
+        - list [ref=e33]:
+          - listitem [ref=e34] [cursor=pointer]: 高级检索
+          - listitem [ref=e35] [cursor=pointer]: 检索式检索
+        - link " 查看更多规则" [ref=e37] [cursor=pointer]:
+          - /url: /Qikan/Search/SearchHelp?from=Qikan_Search_Advance
+          - generic [ref=e38]: 
+          - text: 查看更多规则
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - generic [ref=e42]:
+                - textbox "请选择" [ref=e46] [cursor=pointer]: 题名或关键词
+                - generic [ref=e48]:
+                  - textbox "请输入检索词" [ref=e49]
+                  - text: 
+                  - button "同义词扩展 " [ref=e50] [cursor=pointer]:
+                    - text: 同义词扩展
+                    - generic [ref=e51]: 
+                - textbox "请选择" [ref=e55] [cursor=pointer]: 模糊
+              - generic [ref=e57]:
+                - textbox "请选择" [ref=e61] [cursor=pointer]: 与
+                - textbox "请选择" [ref=e66] [cursor=pointer]: 摘要
+                - generic [ref=e68]:
+                  - textbox "请输入检索词" [ref=e69]
+                  - text: 
+                  - button "同义词扩展 " [ref=e70] [cursor=pointer]:
+                    - text: 同义词扩展
+                    - generic [ref=e71]: 
+                - textbox "请选择" [ref=e75] [cursor=pointer]: 模糊
+              - generic [ref=e77]:
+                - textbox "请选择" [ref=e81] [cursor=pointer]: 与
+                - textbox "请选择" [ref=e86] [cursor=pointer]: 作者
+                - generic [ref=e88]:
+                  - textbox "请输入检索词" [ref=e89]
+                  - text:  
+                - textbox "请选择" [ref=e93] [cursor=pointer]: 模糊
+                - generic [ref=e96]:
+                  - button "" [ref=e97] [cursor=pointer]:
+                    - generic [ref=e98]: 
+                  - button "" [ref=e99] [cursor=pointer]:
+                    - generic [ref=e100]: 
+            - text:      
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - generic [ref=e103] [cursor=pointer]:
+                  - heading "时间限定" [level=2] [ref=e104]
+                  - generic [ref=e105]: 
+                - generic [ref=e107]:
+                  - generic [ref=e108]:
+                    - generic [ref=e109]:
+                      - generic [ref=e110] [cursor=pointer]:
+                        - generic [ref=e111]: 
+                        - generic [ref=e112]: 年份
+                      - text: ":"
+                    - textbox "请选择" [ref=e116] [cursor=pointer]: 收录起始年
+                    - generic [ref=e118]: "-"
+                    - textbox "请选择" [ref=e122] [cursor=pointer]: "2026"
+                  - generic [ref=e124]:
+                    - generic [ref=e125]:
+                      - generic [ref=e126] [cursor=pointer]:
+                        - generic [ref=e127]: 
+                        - generic [ref=e128]: 更新时间
+                      - text: ":"
+                    - textbox "请选择" [ref=e132] [cursor=pointer]: 一个月内
+              - generic [ref=e134]:
+                - generic [ref=e135] [cursor=pointer]:
+                  - heading "期刊范围" [level=2] [ref=e136]
+                  - generic [ref=e137]: 
+                - list [ref=e139]:
+                  - listitem [ref=e140]:
+                    - generic [ref=e141] [cursor=pointer]:
+                      - generic [ref=e142]: 全部期刊
+                      - generic [ref=e143]: 
+                  - listitem [ref=e144]:
+                    - generic [ref=e145] [cursor=pointer]:
+                      - generic [ref=e146]: 北大核心期刊
+                      - generic [ref=e147]: 
+                  - listitem [ref=e148]:
+                    - generic [ref=e149] [cursor=pointer]:
+                      - generic [ref=e150]: EI来源期刊
+                      - generic [ref=e151]: 
+                  - listitem [ref=e152]:
+                    - generic [ref=e153] [cursor=pointer]:
+                      - generic [ref=e154]: SCIE期刊
+                      - generic [ref=e155]: 
+                  - listitem [ref=e156]:
+                    - generic [ref=e157] [cursor=pointer]:
+                      - generic [ref=e158]: CAS来源期刊
+                      - generic [ref=e159]: 
+                  - listitem [ref=e160]:
+                    - generic [ref=e161] [cursor=pointer]:
+                      - generic [ref=e162]: CSCD期刊
+                      - generic [ref=e163]: 
+                  - listitem [ref=e164]:
+                    - generic [ref=e165] [cursor=pointer]:
+                      - generic [ref=e166]: CSSCI期刊
+                      - generic [ref=e167]: 
+              - generic [ref=e168]:
+                - generic [ref=e169] [cursor=pointer]:
+                  - heading "学科限定" [level=2] [ref=e170]
+                  - generic [ref=e171]: 
+                - generic [ref=e173] [cursor=pointer]:
+                  - generic [ref=e174]: 全选
+                  - generic [ref=e175]: 
+                - text:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+            - generic [ref=e176]:
+              - button " 检索" [ref=e177] [cursor=pointer]:
+                - generic [ref=e178]: 
+                - text: 检索
+              - button "清空" [ref=e179] [cursor=pointer]
+              - link "检索历史" [ref=e181] [cursor=pointer]:
+                - /url: javascript:void(0)
+          - text: ": : : : :                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        "
+      - generic [ref=e182]:
+        - list
+    - text:                                            
+    - generic [ref=e184]:
+      - list [ref=e186]:
+        - listitem [ref=e187]:
+          - link "公司首页" [ref=e188] [cursor=pointer]:
+            - /url: http://www.vipinfo.com.cn/?from=Qikan_Search_Advance
+          - text: "|"
+        - listitem [ref=e189]:
+          - link "关于我们" [ref=e190] [cursor=pointer]:
+            - /url: /qikan/webcontrol/about?from=Qikan_Search_Advance
+          - text: "|"
+        - listitem [ref=e191]:
+          - link "联系我们" [ref=e192] [cursor=pointer]:
+            - /url: http://www.vipinfo.com.cn/helpcontactus.html?from=Qikan_Search_Advance
+          - text: "|"
+        - listitem [ref=e193]:
+          - link "服务协议" [ref=e194] [cursor=pointer]:
+            - /url: /Qikan/WebControl/ServiceAgreement?from=Qikan_Search_Advance
+          - text: "|"
+        - listitem [ref=e195]:
+          - link "移动版" [ref=e196] [cursor=pointer]:
+            - /url: https://mqikan.cqvip.com?from=Qikan_Search_Advance
+      - generic [ref=e197]:
+        - paragraph [ref=e198]:
+          - generic [ref=e199]:
+            - text: V8.0 版权所有© 2001-2026
+            - link "渝B2-20050021-1" [ref=e200] [cursor=pointer]:
+              - /url: https://beian.miit.gov.cn/#/Integrated/recordQuery
+          - link "渝公网安备 50019002500403号" [ref=e202] [cursor=pointer]:
+            - /url: http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=50019002500403&from=Qikan_Search_Advance
+            - img [ref=e203]
+            - text: 渝公网安备 50019002500403号
+          - link "违法和不良信息举报中心" [ref=e205] [cursor=pointer]:
+            - /url: https://www.12377.cn/?from=Qikan_Search_Advance
+          - text: 举报邮箱：jubao@cqvip.com
+        - paragraph [ref=e206]: 互联网出版许可证 新出网证(渝)字10号机构客服热线 023-67882612
+  - text:          ဆ
+  - generic [ref=e207]:
+    - link "在线咨询" [ref=e208]:
+      - /url: "#"
+      - generic [ref=e209]: 在线咨询
+      - iframe [ref=e211]:
+        - img [ref=f8e3] [cursor=pointer]
+    - link " 使用帮助" [ref=e212] [cursor=pointer]:
+      - /url: /Qikan/WebControl/UseHelp?from=Qikan_Search_Advance
+      - generic [ref=e213]:
+        - generic [ref=e214]: 
+        - text: 使用帮助
+    - link " 返回顶部" [ref=e215] [cursor=pointer]:
+      - /url: "#top"
+      - generic [ref=e216]:
+        - generic [ref=e217]: 
+        - text: 返回顶部
+    - link " 意见反馈" [ref=e218] [cursor=pointer]:
+      - /url: javascript:void(0)
+      - generic [ref=e219]:
+        - generic [ref=e220]: 
+        - text: 意见反馈
+  - text: ": : : :"
+  - iframe

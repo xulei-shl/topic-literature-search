@@ -1,0 +1,2531 @@
+- generic [ref=e1]:
+  - iframe
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic:
+        - link "维普期刊服务平台" [ref=e5] [cursor=pointer]:
+          - /url: /index.html?from=Qikan_Search_Advance
+          - img "维普期刊服务平台" [ref=e6]
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "期刊导航" [ref=e9] [cursor=pointer]:
+              - /url: /Qikan/Journal/JournalGuid?from=Qikan_Search_Advance
+          - listitem [ref=e10]:
+            - link "作者导航" [ref=e11] [cursor=pointer]:
+              - /url: /Qikan/Object/ObjectGuid?objectType=3&from=Qikan_Search_Advance
+          - listitem [ref=e12]:
+            - link "机构导航" [ref=e13] [cursor=pointer]:
+              - /url: /Qikan/Object/ObjectGuid?objectType=6&from=Qikan_Search_Advance
+          - listitem [ref=e14]:
+            - link " 期刊评价报告 2025版" [ref=e15] [cursor=pointer]:
+              - /url: /Qikan/Evaluation/Index?from=index
+              - generic [ref=e16]: 
+              - text: 期刊评价报告
+              - superscript [ref=e17]: 2025版
+          - listitem [ref=e18]:
+            - link "期刊开放获取" [ref=e19] [cursor=pointer]:
+              - /url: /Qikan/Journal/OaIndex?from=Qikan_Search_Advance
+          - listitem [ref=e20]:
+            - link "下载APP" [ref=e21] [cursor=pointer]:
+              - /url: /Qikan/WebControl/AppIntroduce?from=Qikan_Search_Advance
+        - list [ref=e22]:
+          - listitem [ref=e23]:
+            - text: 欢迎
+            - link "上海图书馆（上海科学技术情报研究所） " [ref=e24] [cursor=pointer]:
+              - /url: javascript:void(0)
+              - text: 上海图书馆（上海科学技术情报研究所）
+              - generic [ref=e25]: 
+          - listitem [ref=e26]:
+            - link " 登录" [ref=e27] [cursor=pointer]:
+              - /url: javascript:void(0)
+              - generic [ref=e28]: 
+              - text: 登录
+    - generic [ref=e30]:
+      - generic [ref=e32]:
+        - list [ref=e33]:
+          - listitem [ref=e34] [cursor=pointer]: 高级检索
+          - listitem [ref=e35] [cursor=pointer]: 检索式检索
+        - link " 查看更多规则" [ref=e37] [cursor=pointer]:
+          - /url: /Qikan/Search/SearchHelp?from=Qikan_Search_Advance
+          - generic [ref=e38]: 
+          - text: 查看更多规则
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - generic [ref=e42]:
+                - textbox "请选择" [ref=e223] [cursor=pointer]: 题名或关键词
+                - generic [ref=e48]:
+                  - textbox "请输入检索词" [ref=e49]: 新青年
+                  - text: 
+                  - button "同义词扩展 " [ref=e50] [cursor=pointer]:
+                    - text: 同义词扩展
+                    - generic [ref=e51]: 
+                - textbox "请选择" [ref=e227] [cursor=pointer]: 模糊
+              - generic [ref=e57]:
+                - textbox "请选择" [ref=e231] [cursor=pointer]: 与
+                - textbox "请选择" [ref=e235] [cursor=pointer]: 摘要
+                - generic [ref=e68]:
+                  - textbox "请输入检索词" [ref=e69]
+                  - text: 
+                  - button "同义词扩展 " [ref=e70] [cursor=pointer]:
+                    - text: 同义词扩展
+                    - generic [ref=e71]: 
+                - textbox "请选择" [ref=e239] [cursor=pointer]: 模糊
+              - generic [ref=e77]:
+                - textbox "请选择" [ref=e243] [cursor=pointer]: 与
+                - textbox "请选择" [ref=e247] [cursor=pointer]: 作者
+                - generic [ref=e88]:
+                  - textbox "请输入检索词" [ref=e89]
+                  - text:  
+                - textbox "请选择" [ref=e251] [cursor=pointer]: 模糊
+                - generic [ref=e96]:
+                  - button "" [ref=e97] [cursor=pointer]:
+                    - generic [ref=e98]: 
+                  - button "" [ref=e99] [cursor=pointer]:
+                    - generic [ref=e100]: 
+            - text:      
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - generic [ref=e103] [cursor=pointer]:
+                  - heading "时间限定" [level=2] [ref=e104]
+                  - generic [ref=e253]: 
+                - generic [ref=e107]:
+                  - generic [ref=e108]:
+                    - generic [ref=e109]:
+                      - generic [ref=e254] [cursor=pointer]:
+                        - generic [ref=e255]: 
+                        - generic [ref=e256]: 年份
+                      - text: ":"
+                    - textbox "请选择" [ref=e259] [cursor=pointer]: 收录起始年
+                    - generic [ref=e118]: "-"
+                    - textbox "请选择" [ref=e263] [cursor=pointer]: "2026"
+                  - generic [ref=e124]:
+                    - generic [ref=e125]:
+                      - generic [ref=e265] [cursor=pointer]:
+                        - generic [ref=e266]: 
+                        - generic [ref=e267]: 更新时间
+                      - text: ":"
+                    - textbox "请选择" [ref=e270] [cursor=pointer]: 一个月内
+              - generic [ref=e134]:
+                - generic [ref=e135] [cursor=pointer]:
+                  - heading "期刊范围" [level=2] [ref=e136]
+                  - generic [ref=e272]: 
+                - list [ref=e139]:
+                  - listitem [ref=e140]:
+                    - generic [ref=e273] [cursor=pointer]:
+                      - generic [ref=e274]: 全部期刊
+                      - generic [ref=e275]: 
+                  - listitem [ref=e144]:
+                    - generic [ref=e276] [cursor=pointer]:
+                      - generic [ref=e277]: 北大核心期刊
+                      - generic [ref=e278]: 
+                  - listitem [ref=e148]:
+                    - generic [ref=e279] [cursor=pointer]:
+                      - generic [ref=e280]: EI来源期刊
+                      - generic [ref=e281]: 
+                  - listitem [ref=e152]:
+                    - generic [ref=e282] [cursor=pointer]:
+                      - generic [ref=e283]: SCIE期刊
+                      - generic [ref=e284]: 
+                  - listitem [ref=e156]:
+                    - generic [ref=e285] [cursor=pointer]:
+                      - generic [ref=e286]: CAS来源期刊
+                      - generic [ref=e287]: 
+                  - listitem [ref=e160]:
+                    - generic [ref=e288] [cursor=pointer]:
+                      - generic [ref=e289]: CSCD期刊
+                      - generic [ref=e290]: 
+                  - listitem [ref=e164]:
+                    - generic [ref=e291] [cursor=pointer]:
+                      - generic [ref=e292]: CSSCI期刊
+                      - generic [ref=e293]: 
+              - generic [ref=e168]:
+                - generic [ref=e169] [cursor=pointer]:
+                  - heading "学科限定" [level=2] [ref=e170]
+                  - generic [ref=e294]: 
+                - generic [ref=e295] [cursor=pointer]:
+                  - generic [ref=e296]: 全选
+                  - generic [ref=e297]: 
+                - text:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+            - generic [ref=e176]:
+              - button " 检索" [active] [ref=e177] [cursor=pointer]:
+                - generic [ref=e178]: 
+                - text: 检索
+              - button "清空" [ref=e179] [cursor=pointer]
+              - link "检索历史" [ref=e181] [cursor=pointer]:
+                - /url: javascript:void(0)
+          - text: ": : : : :                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        "
+      - list [ref=e298]:
+        - listitem [ref=e299]:
+          - link "" [ref=e300] [cursor=pointer]:
+            - /url: javascript:void(0)
+            - generic [ref=e301]: 
+          - link "题名或关键词=新青年" [ref=e302] [cursor=pointer]:
+            - /url: javascript:void(0)
+      - generic [ref=e304]:
+        - generic [ref=e308]:
+          - generic [ref=e309]:
+            - heading "二次检索" [level=2] [ref=e310] [cursor=pointer]
+            - generic [ref=e311]:
+              - generic [ref=e312]:
+                - textbox "请选择" [ref=e316] [cursor=pointer]: 题名
+                - textbox "请输入检索词" [ref=e319]
+              - generic [ref=e320]:
+                - button "在结果中检索" [ref=e321] [cursor=pointer]
+                - button "在结果中去除" [ref=e322] [cursor=pointer]
+          - generic [ref=e323]:
+            - heading "年份 " [level=2] [ref=e324] [cursor=pointer]:
+              - text: 年份
+              - generic [ref=e325]: 
+            - list [ref=e327]:
+              - listitem [ref=e328]:
+                - link "2026 145" [ref=e329] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2026"
+                  - generic [ref=e330]: "145"
+              - listitem [ref=e331]:
+                - link "2025 1,004" [ref=e332] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2025"
+                  - generic [ref=e333]: 1,004
+              - listitem [ref=e334]:
+                - link "2024 1,149" [ref=e335] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2024"
+                  - generic [ref=e336]: 1,149
+              - listitem [ref=e337]:
+                - link "2023 1,198" [ref=e338] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2023"
+                  - generic [ref=e339]: 1,198
+              - listitem [ref=e340]:
+                - link "2022 1,083" [ref=e341] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2022"
+                  - generic [ref=e342]: 1,083
+              - listitem [ref=e343]:
+                - link "2021 1,110" [ref=e344] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2021"
+                  - generic [ref=e345]: 1,110
+              - listitem [ref=e346]:
+                - link "2020 962" [ref=e347] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2020"
+                  - generic [ref=e348]: "962"
+              - listitem [ref=e349]:
+                - link "2019 1,225" [ref=e350] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2019"
+                  - generic [ref=e351]: 1,225
+              - listitem [ref=e352]:
+                - link "2018 856" [ref=e353] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2018"
+                  - generic [ref=e354]: "856"
+              - listitem [ref=e355]:
+                - link "2017 448" [ref=e356] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2017"
+                  - generic [ref=e357]: "448"
+              - listitem [ref=e358]:
+                - link "2016 414" [ref=e359] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2016"
+                  - generic [ref=e360]: "414"
+              - listitem [ref=e361]:
+                - link "2015 448" [ref=e362] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2015"
+                  - generic [ref=e363]: "448"
+              - listitem [ref=e364]:
+                - link "2014 343" [ref=e365] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2014"
+                  - generic [ref=e366]: "343"
+              - listitem [ref=e367]:
+                - link "2013 320" [ref=e368] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2013"
+                  - generic [ref=e369]: "320"
+              - listitem [ref=e370]:
+                - link "2012 245" [ref=e371] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2012"
+                  - generic [ref=e372]: "245"
+              - listitem [ref=e373]:
+                - link "2011 265" [ref=e374] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2011"
+                  - generic [ref=e375]: "265"
+              - listitem [ref=e376]:
+                - link "2010 284" [ref=e377] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2010"
+                  - generic [ref=e378]: "284"
+              - listitem [ref=e379]:
+                - link "2009 239" [ref=e380] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2009"
+                  - generic [ref=e381]: "239"
+              - listitem [ref=e382]:
+                - link "2008 164" [ref=e383] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2008"
+                  - generic [ref=e384]: "164"
+              - listitem [ref=e385]:
+                - link "2007 160" [ref=e386] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2007"
+                  - generic [ref=e387]: "160"
+              - listitem [ref=e388]:
+                - link "2006 190" [ref=e389] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2006"
+                  - generic [ref=e390]: "190"
+              - listitem [ref=e391]:
+                - link "2005 142" [ref=e392] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2005"
+                  - generic [ref=e393]: "142"
+              - listitem [ref=e394]:
+                - link "2004 131" [ref=e395] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2004"
+                  - generic [ref=e396]: "131"
+              - listitem [ref=e397]:
+                - link "2003 112" [ref=e398] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2003"
+                  - generic [ref=e399]: "112"
+              - listitem [ref=e400]:
+                - link "2002 115" [ref=e401] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2002"
+                  - generic [ref=e402]: "115"
+              - listitem [ref=e403]:
+                - link "2001 115" [ref=e404] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2001"
+                  - generic [ref=e405]: "115"
+              - listitem [ref=e406]:
+                - link "2000 105" [ref=e407] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "2000"
+                  - generic [ref=e408]: "105"
+              - listitem [ref=e409]:
+                - link "1999 228" [ref=e410] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1999"
+                  - generic [ref=e411]: "228"
+              - listitem [ref=e412]:
+                - link "1998 120" [ref=e413] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1998"
+                  - generic [ref=e414]: "120"
+              - listitem [ref=e415]:
+                - link "1997 98" [ref=e416] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1997"
+                  - generic [ref=e417]: "98"
+              - listitem [ref=e418]:
+                - link "1996 121" [ref=e419] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1996"
+                  - generic [ref=e420]: "121"
+              - listitem [ref=e421]:
+                - link "1995 121" [ref=e422] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1995"
+                  - generic [ref=e423]: "121"
+              - listitem [ref=e424]:
+                - link "1994 92" [ref=e425] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1994"
+                  - generic [ref=e426]: "92"
+              - listitem [ref=e427]:
+                - link "1993 60" [ref=e428] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1993"
+                  - generic [ref=e429]: "60"
+              - listitem [ref=e430]:
+                - link "1992 52" [ref=e431] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1992"
+                  - generic [ref=e432]: "52"
+              - listitem [ref=e433]:
+                - link "1991 32" [ref=e434] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1991"
+                  - generic [ref=e435]: "32"
+              - listitem [ref=e436]:
+                - link "1990 27" [ref=e437] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1990"
+                  - generic [ref=e438]: "27"
+              - listitem [ref=e439]:
+                - link "1989 69" [ref=e440] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1989"
+                  - generic [ref=e441]: "69"
+              - listitem [ref=e442]:
+                - link "1988 28" [ref=e443] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1988"
+                  - generic [ref=e444]: "28"
+              - listitem [ref=e445]:
+                - link "1987 30" [ref=e446] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1987"
+                  - generic [ref=e447]: "30"
+              - listitem [ref=e448]:
+                - link "1986 50" [ref=e449] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1986"
+                  - generic [ref=e450]: "50"
+              - listitem [ref=e451]:
+                - link "1985 35" [ref=e452] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1985"
+                  - generic [ref=e453]: "35"
+              - listitem [ref=e454]:
+                - link "1984 35" [ref=e455] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1984"
+                  - generic [ref=e456]: "35"
+              - listitem [ref=e457]:
+                - link "1983 25" [ref=e458] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1983"
+                  - generic [ref=e459]: "25"
+              - listitem [ref=e460]:
+                - link "1982 32" [ref=e461] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1982"
+                  - generic [ref=e462]: "32"
+              - listitem [ref=e463]:
+                - link "1981 38" [ref=e464] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1981"
+                  - generic [ref=e465]: "38"
+              - listitem [ref=e466]:
+                - link "1980 23" [ref=e467] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1980"
+                  - generic [ref=e468]: "23"
+              - listitem [ref=e469]:
+                - link "1979 61" [ref=e470] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1979"
+                  - generic [ref=e471]: "61"
+              - listitem [ref=e472]:
+                - link "1978 9" [ref=e473] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1978"
+                  - generic [ref=e474]: "9"
+              - listitem [ref=e475]:
+                - link "1977 3" [ref=e476] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1977"
+                  - generic [ref=e477]: "3"
+              - listitem [ref=e478]:
+                - link "1976 3" [ref=e479] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1976"
+                  - generic [ref=e480]: "3"
+              - listitem [ref=e481]:
+                - link "1966 1" [ref=e482] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1966"
+                  - generic [ref=e483]: "1"
+              - listitem [ref=e484]:
+                - link "1964 4" [ref=e485] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1964"
+                  - generic [ref=e486]: "4"
+              - listitem [ref=e487]:
+                - link "1963 2" [ref=e488] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1963"
+                  - generic [ref=e489]: "2"
+              - listitem [ref=e490]:
+                - link "1962 1" [ref=e491] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1962"
+                  - generic [ref=e492]: "1"
+              - listitem [ref=e493]:
+                - link "1961 2" [ref=e494] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1961"
+                  - generic [ref=e495]: "2"
+              - listitem [ref=e496]:
+                - link "1960 2" [ref=e497] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1960"
+                  - generic [ref=e498]: "2"
+              - listitem [ref=e499]:
+                - link "1959 10" [ref=e500] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1959"
+                  - generic [ref=e501]: "10"
+              - listitem [ref=e502]:
+                - link "1957 5" [ref=e503] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1957"
+                  - generic [ref=e504]: "5"
+              - listitem [ref=e505]:
+                - link "1956 3" [ref=e506] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1956"
+                  - generic [ref=e507]: "3"
+              - listitem [ref=e508]:
+                - link "1955 1" [ref=e509] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1955"
+                  - generic [ref=e510]: "1"
+              - listitem [ref=e511]:
+                - link "1954 1" [ref=e512] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: "1954"
+                  - generic [ref=e513]: "1"
+          - generic [ref=e514]:
+            - heading "学科 " [level=2] [ref=e515] [cursor=pointer]:
+              - text: 学科
+              - generic [ref=e516]: 
+            - list [ref=e518]:
+              - listitem [ref=e519]:
+                - link " 政治法律 5,797" [ref=e520] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e521]: 
+                  - text: 政治法律
+                  - generic [ref=e522]: 5,797
+              - listitem [ref=e523]:
+                - link " 文化科学 4,611" [ref=e524] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e525]: 
+                  - text: 文化科学
+                  - generic [ref=e526]: 4,611
+              - listitem [ref=e527]:
+                - link " 经济管理 1,663" [ref=e528] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e529]: 
+                  - text: 经济管理
+                  - generic [ref=e530]: 1,663
+              - listitem [ref=e531]:
+                - link " 文学 1,287" [ref=e532] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e533]: 
+                  - text: 文学
+                  - generic [ref=e534]: 1,287
+              - listitem [ref=e535]:
+                - link " 历史地理 861" [ref=e536] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e537]: 
+                  - text: 历史地理
+                  - generic [ref=e538]: "861"
+              - listitem [ref=e539]:
+                - link " 艺术 691" [ref=e540] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e541]: 
+                  - text: 艺术
+                  - generic [ref=e542]: "691"
+              - listitem [ref=e543]:
+                - link " 社会学 465" [ref=e544] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e545]: 
+                  - text: 社会学
+                  - generic [ref=e546]: "465"
+              - listitem [ref=e547]:
+                - link " 哲学宗教 317" [ref=e548] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e549]: 
+                  - text: 哲学宗教
+                  - generic [ref=e550]: "317"
+              - listitem [ref=e551]:
+                - link " 医药卫生 221" [ref=e552] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e553]: 
+                  - text: 医药卫生
+                  - generic [ref=e554]: "221"
+              - listitem [ref=e555]:
+                - link " 语言文字 144" [ref=e556] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e557]: 
+                  - text: 语言文字
+                  - generic [ref=e558]: "144"
+              - listitem [ref=e559]:
+                - link " 军事 53" [ref=e560] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e561]: 
+                  - text: 军事
+                  - generic [ref=e562]: "53"
+              - listitem [ref=e563]:
+                - link " 建筑科学 49" [ref=e564] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e565]: 
+                  - text: 建筑科学
+                  - generic [ref=e566]: "49"
+              - listitem [ref=e567]:
+                - link " 自动化与计算机技术 24" [ref=e568] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e569]: 
+                  - text: 自动化与计算机技术
+                  - generic [ref=e570]: "24"
+              - listitem [ref=e571]:
+                - link " 轻工技术与工程 24" [ref=e572] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e573]: 
+                  - text: 轻工技术与工程
+                  - generic [ref=e574]: "24"
+              - listitem [ref=e575]:
+                - link " 环境科学与工程 24" [ref=e576] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e577]: 
+                  - text: 环境科学与工程
+                  - generic [ref=e578]: "24"
+              - listitem [ref=e579]:
+                - link " 机械工程 18" [ref=e580] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e581]: 
+                  - text: 机械工程
+                  - generic [ref=e582]: "18"
+              - listitem [ref=e583]:
+                - link " 交通运输工程 18" [ref=e584] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e585]: 
+                  - text: 交通运输工程
+                  - generic [ref=e586]: "18"
+              - listitem [ref=e587]:
+                - link " 天文地球 14" [ref=e588] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e589]: 
+                  - text: 天文地球
+                  - generic [ref=e590]: "14"
+              - listitem [ref=e591]:
+                - link " 理学 10" [ref=e592] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e593]: 
+                  - text: 理学
+                  - generic [ref=e594]: "10"
+              - listitem [ref=e595]:
+                - link " 农业科学 10" [ref=e596] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e597]: 
+                  - text: 农业科学
+                  - generic [ref=e598]: "10"
+              - listitem [ref=e599]:
+                - link " 一般工业技术 9" [ref=e600] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e601]: 
+                  - text: 一般工业技术
+                  - generic [ref=e602]: "9"
+              - listitem [ref=e603]:
+                - link " 化学工程 5" [ref=e604] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e605]: 
+                  - text: 化学工程
+                  - generic [ref=e606]: "5"
+              - listitem [ref=e607]:
+                - link " 金属学及工艺 5" [ref=e608] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e609]: 
+                  - text: 金属学及工艺
+                  - generic [ref=e610]: "5"
+              - listitem [ref=e611]:
+                - link " 电子电信 5" [ref=e612] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e613]: 
+                  - text: 电子电信
+                  - generic [ref=e614]: "5"
+              - listitem [ref=e615]:
+                - link " 水利工程 4" [ref=e616] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e617]: 
+                  - text: 水利工程
+                  - generic [ref=e618]: "4"
+              - listitem [ref=e619]:
+                - link " 生物学 4" [ref=e620] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e621]: 
+                  - text: 生物学
+                  - generic [ref=e622]: "4"
+              - listitem [ref=e623]:
+                - link " 航空宇航科学技术 3" [ref=e624] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e625]: 
+                  - text: 航空宇航科学技术
+                  - generic [ref=e626]: "3"
+              - listitem [ref=e627]:
+                - link " 矿业工程 2" [ref=e628] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e629]: 
+                  - text: 矿业工程
+                  - generic [ref=e630]: "2"
+              - listitem [ref=e631]:
+                - link " 电气工程 2" [ref=e632] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e633]: 
+                  - text: 电气工程
+                  - generic [ref=e634]: "2"
+              - listitem [ref=e635]:
+                - link " 兵器科学与技术 2" [ref=e636] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e637]: 
+                  - text: 兵器科学与技术
+                  - generic [ref=e638]: "2"
+              - listitem [ref=e639]:
+                - link " 核科学技术 2" [ref=e640] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e641]: 
+                  - text: 核科学技术
+                  - generic [ref=e642]: "2"
+              - listitem [ref=e643]:
+                - link " 动力工程及工程热物理 1" [ref=e644] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e645]: 
+                  - text: 动力工程及工程热物理
+                  - generic [ref=e646]: "1"
+          - generic [ref=e647]:
+            - heading "期刊收录 " [level=2] [ref=e648] [cursor=pointer]:
+              - text: 期刊收录
+              - generic [ref=e649]: 
+            - list [ref=e651]:
+              - listitem [ref=e652]:
+                - link "中国人文社科核心期刊 3,352" [ref=e653] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 中国人文社科核心期刊
+                  - generic [ref=e654]: 3,352
+              - listitem [ref=e655]:
+                - link " 北大核心期刊 2,508" [ref=e656] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e657]: 
+                  - text: 北大核心期刊
+                  - generic [ref=e658]: 2,508
+              - listitem [ref=e659]:
+                - link " CSSCI 2,035" [ref=e660] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e661]: 
+                  - text: CSSCI
+                  - generic [ref=e662]: 2,035
+              - listitem [ref=e663]:
+                - link "武大RCCSE核心期刊 1,074" [ref=e664] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 武大RCCSE核心期刊
+                  - generic [ref=e665]: 1,074
+              - listitem [ref=e666]:
+                - link "NSSD 1,001" [ref=e667] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: NSSD
+                  - generic [ref=e668]: 1,001
+              - listitem [ref=e669]:
+                - link "中国科技核心期刊 645" [ref=e670] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 中国科技核心期刊
+                  - generic [ref=e671]: "645"
+          - generic [ref=e672]:
+            - heading "主题 " [level=2] [ref=e673] [cursor=pointer]:
+              - text: 主题
+              - generic [ref=e674]: 
+            - list [ref=e676]:
+              - listitem [ref=e677]:
+                - link "新时代青年 2,153" [ref=e678] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 新时代青年
+                  - generic [ref=e679]: 2,153
+              - listitem [ref=e680]:
+                - link "青年教师 631" [ref=e681] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 青年教师
+                  - generic [ref=e682]: "631"
+              - listitem [ref=e683]:
+                - link "新媒体 526" [ref=e684] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 新媒体
+                  - generic [ref=e685]: "526"
+              - listitem [ref=e686]:
+                - link "新文化运动 483" [ref=e687] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 新文化运动
+                  - generic [ref=e688]: "483"
+              - listitem [ref=e689]:
+                - link "中国共产党 461" [ref=e690] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 中国共产党
+                  - generic [ref=e691]: "461"
+              - listitem [ref=e692]:
+                - link "五四运动 454" [ref=e693] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 五四运动
+                  - generic [ref=e694]: "454"
+              - listitem [ref=e695]:
+                - link "青年工作 423" [ref=e696] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 青年工作
+                  - generic [ref=e697]: "423"
+              - listitem [ref=e698]:
+                - link "高校青年 395" [ref=e699] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 高校青年
+                  - generic [ref=e700]: "395"
+              - listitem [ref=e701]:
+                - link "中国青年 361" [ref=e702] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 中国青年
+                  - generic [ref=e703]: "361"
+              - listitem [ref=e704]:
+                - link "共青团 356" [ref=e705] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 共青团
+                  - generic [ref=e706]: "356"
+              - listitem [ref=e707]:
+                - link "马克思主义 306" [ref=e708] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 马克思主义
+                  - generic [ref=e709]: "306"
+              - listitem [ref=e710]:
+                - link "思想政治教育 304" [ref=e711] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 思想政治教育
+                  - generic [ref=e712]: "304"
+              - listitem [ref=e713]:
+                - link "青年学生 300" [ref=e714] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 青年学生
+                  - generic [ref=e715]: "300"
+              - listitem [ref=e716]:
+                - link "思想政治工作 253" [ref=e717] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 思想政治工作
+                  - generic [ref=e718]: "253"
+              - listitem [ref=e719]:
+                - link "当代青年 253" [ref=e720] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 当代青年
+                  - generic [ref=e721]: "253"
+              - listitem [ref=e722]:
+                - link "五四时期 228" [ref=e723] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 五四时期
+                  - generic [ref=e724]: "228"
+              - listitem [ref=e725]:
+                - link "大学生 211" [ref=e726] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 大学生
+                  - generic [ref=e727]: "211"
+              - listitem [ref=e728]:
+                - link "青年干部 188" [ref=e729] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 青年干部
+                  - generic [ref=e730]: "188"
+          - generic [ref=e731]:
+            - heading "期刊 " [level=2] [ref=e732] [cursor=pointer]:
+              - text: 期刊
+              - generic [ref=e733]: 
+            - list [ref=e735]:
+              - listitem [ref=e736]:
+                - link "中国青年研究 177" [ref=e737] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 中国青年研究
+                  - generic [ref=e738]: "177"
+              - listitem [ref=e739]:
+                - link "中国青年 154" [ref=e740] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 中国青年
+                  - generic [ref=e741]: "154"
+              - listitem [ref=e742]:
+                - link "福建青年 148" [ref=e743] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 福建青年
+                  - generic [ref=e744]: "148"
+              - listitem [ref=e745]:
+                - link "中文科技期刊数据库（全文版）社会科学 132" [ref=e746] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 中文科技期刊数据库（全文版）社会科学
+                  - generic [ref=e747]: "132"
+              - listitem [ref=e748]:
+                - link "鲁迅研究月刊 107" [ref=e749] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 鲁迅研究月刊
+                  - generic [ref=e750]: "107"
+              - listitem [ref=e751]:
+                - link "人民论坛 102" [ref=e752] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 人民论坛
+                  - generic [ref=e753]: "102"
+              - listitem [ref=e754]:
+                - link "青年探索 98" [ref=e755] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 青年探索
+                  - generic [ref=e756]: "98"
+              - listitem [ref=e757]:
+                - link "青年与社会 97" [ref=e758] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 青年与社会
+                  - generic [ref=e759]: "97"
+              - listitem [ref=e760]:
+                - link "北京青年工作研究 94" [ref=e761] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 北京青年工作研究
+                  - generic [ref=e762]: "94"
+              - listitem [ref=e763]:
+                - link "学校党建与思想教育 85" [ref=e764] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 学校党建与思想教育
+                  - generic [ref=e765]: "85"
+              - listitem [ref=e766]:
+                - link "新丝路 84" [ref=e767] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 新丝路
+                  - generic [ref=e768]: "84"
+              - listitem [ref=e769]:
+                - link "当代青年研究 83" [ref=e770] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 当代青年研究
+                  - generic [ref=e771]: "83"
+              - listitem [ref=e772]:
+                - link "北京青年研究 83" [ref=e773] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 北京青年研究
+                  - generic [ref=e774]: "83"
+              - listitem [ref=e775]:
+                - link "中国现代文学研究丛刊 79" [ref=e776] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 中国现代文学研究丛刊
+                  - generic [ref=e777]: "79"
+              - listitem [ref=e778]:
+                - link "现代商贸工业 79" [ref=e779] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 现代商贸工业
+                  - generic [ref=e780]: "79"
+              - listitem [ref=e781]:
+                - link "时代人物 77" [ref=e782] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 时代人物
+                  - generic [ref=e783]: "77"
+              - listitem [ref=e784]:
+                - link "区域治理 73" [ref=e785] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 区域治理
+                  - generic [ref=e786]: "73"
+              - listitem [ref=e787]:
+                - link "文教资料 72" [ref=e788] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 文教资料
+                  - generic [ref=e789]: "72"
+              - listitem [ref=e790]:
+                - link "广西青年干部学院学报 69" [ref=e791] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 广西青年干部学院学报
+                  - generic [ref=e792]: "69"
+              - listitem [ref=e793]:
+                - link "中国青年社会科学 67" [ref=e794] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 中国青年社会科学
+                  - generic [ref=e795]: "67"
+          - generic [ref=e796]:
+            - heading "作者 " [level=2] [ref=e797] [cursor=pointer]:
+              - text: 作者
+              - generic [ref=e798]: 
+            - list [ref=e800]:
+              - listitem [ref=e801]:
+                - link "张宝明 20" [ref=e802] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 张宝明
+                  - generic [ref=e803]: "20"
+              - listitem [ref=e804]:
+                - link "谭建光 14" [ref=e805] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 谭建光
+                  - generic [ref=e806]: "14"
+              - listitem [ref=e807]:
+                - link "邓希泉 11" [ref=e808] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 邓希泉
+                  - generic [ref=e809]: "11"
+              - listitem [ref=e810]:
+                - link "王桂妹 10" [ref=e811] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 王桂妹
+                  - generic [ref=e812]: "10"
+              - listitem [ref=e813]:
+                - link "张良驯 9" [ref=e814] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 张良驯
+                  - generic [ref=e815]: "9"
+              - listitem [ref=e816]:
+                - link "张宝明 8" [ref=e817] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 张宝明
+                  - generic [ref=e818]: "8"
+              - listitem [ref=e819]:
+                - link "徐信华 7" [ref=e820] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 徐信华
+                  - generic [ref=e821]: "7"
+              - listitem [ref=e822]:
+                - link "曾一果 6" [ref=e823] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 曾一果
+                  - generic [ref=e824]: "6"
+              - listitem [ref=e825]:
+                - link "田子渝 6" [ref=e826] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 田子渝
+                  - generic [ref=e827]: "6"
+              - listitem [ref=e828]:
+                - link "张雪梅 6" [ref=e829] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 张雪梅
+                  - generic [ref=e830]: "6"
+              - listitem [ref=e831]:
+                - link "黄志坚 6" [ref=e832] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 黄志坚
+                  - generic [ref=e833]: "6"
+              - listitem [ref=e834]:
+                - link "张耀杰 6" [ref=e835] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 张耀杰
+                  - generic [ref=e836]: "6"
+              - listitem [ref=e837]:
+                - link "周培京 6" [ref=e838] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 周培京
+                  - generic [ref=e839]: "6"
+              - listitem [ref=e840]:
+                - link "蒋广学 6" [ref=e841] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 蒋广学
+                  - generic [ref=e842]: "6"
+              - listitem [ref=e843]:
+                - link "陆士桢 6" [ref=e844] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 陆士桢
+                  - generic [ref=e845]: "6"
+              - listitem [ref=e846]:
+                - link "陈旭光 5" [ref=e847] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 陈旭光
+                  - generic [ref=e848]: "5"
+              - listitem [ref=e849]:
+                - link "马中红 5" [ref=e850] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 马中红
+                  - generic [ref=e851]: "5"
+              - listitem [ref=e852]:
+                - link "廖小琴 5" [ref=e853] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 廖小琴
+                  - generic [ref=e854]: "5"
+              - listitem [ref=e855]:
+                - link "韩喜平 5" [ref=e856] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - text: 韩喜平
+                  - generic [ref=e857]: "5"
+          - generic [ref=e858]:
+            - heading "机构 " [level=2] [ref=e859] [cursor=pointer]:
+              - text: 机构
+              - generic [ref=e860]: 
+            - list [ref=e862]:
+              - listitem [ref=e863]:
+                - link " 北京大学 129" [ref=e864] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e865]: 
+                  - text: 北京大学
+                  - generic [ref=e866]: "129"
+              - listitem [ref=e867]:
+                - link " 中国青年政治学院 113" [ref=e868] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e869]: 
+                  - text: 中国青年政治学院
+                  - generic [ref=e870]: "113"
+              - listitem [ref=e871]:
+                - link " 北京师范大学 108" [ref=e872] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e873]: 
+                  - text: 北京师范大学
+                  - generic [ref=e874]: "108"
+              - listitem [ref=e875]:
+                - link " 复旦大学 106" [ref=e876] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e877]: 
+                  - text: 复旦大学
+                  - generic [ref=e878]: "106"
+              - listitem [ref=e879]:
+                - link " 中国人民大学 89" [ref=e880] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e881]: 
+                  - text: 中国人民大学
+                  - generic [ref=e882]: "89"
+              - listitem [ref=e883]:
+                - link " 武汉大学 83" [ref=e884] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e885]: 
+                  - text: 武汉大学
+                  - generic [ref=e886]: "83"
+              - listitem [ref=e887]:
+                - link " 西南大学 78" [ref=e888] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e889]: 
+                  - text: 西南大学
+                  - generic [ref=e890]: "78"
+              - listitem [ref=e891]:
+                - link " 南京大学 77" [ref=e892] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e893]: 
+                  - text: 南京大学
+                  - generic [ref=e894]: "77"
+              - listitem [ref=e895]:
+                - link " 河南大学 76" [ref=e896] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e897]: 
+                  - text: 河南大学
+                  - generic [ref=e898]: "76"
+              - listitem [ref=e899]:
+                - link " 福建师范大学 76" [ref=e900] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e901]: 
+                  - text: 福建师范大学
+                  - generic [ref=e902]: "76"
+              - listitem [ref=e903]:
+                - link " 华东师范大学 71" [ref=e904] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e905]: 
+                  - text: 华东师范大学
+                  - generic [ref=e906]: "71"
+              - listitem [ref=e907]:
+                - link " 中国青少年研究中心 70" [ref=e908] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e909]: 
+                  - text: 中国青少年研究中心
+                  - generic [ref=e910]: "70"
+              - listitem [ref=e911]:
+                - link " 中山大学 68" [ref=e912] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e913]: 
+                  - text: 中山大学
+                  - generic [ref=e914]: "68"
+              - listitem [ref=e915]:
+                - link " 南开大学 65" [ref=e916] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e917]: 
+                  - text: 南开大学
+                  - generic [ref=e918]: "65"
+              - listitem [ref=e919]:
+                - link " 华中师范大学 62" [ref=e920] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e921]: 
+                  - text: 华中师范大学
+                  - generic [ref=e922]: "62"
+              - listitem [ref=e923]:
+                - link " 南京师范大学 55" [ref=e924] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e925]: 
+                  - text: 南京师范大学
+                  - generic [ref=e926]: "55"
+              - listitem [ref=e927]:
+                - link " 吉林大学 52" [ref=e928] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e929]: 
+                  - text: 吉林大学
+                  - generic [ref=e930]: "52"
+              - listitem [ref=e931]:
+                - link " 浙江大学 52" [ref=e932] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e933]: 
+                  - text: 浙江大学
+                  - generic [ref=e934]: "52"
+              - listitem [ref=e935]:
+                - link " 山东大学 51" [ref=e936] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e937]: 
+                  - text: 山东大学
+                  - generic [ref=e938]: "51"
+              - listitem [ref=e939]:
+                - link " 清华大学 50" [ref=e940] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e941]: 
+                  - text: 清华大学
+                  - generic [ref=e942]: "50"
+        - generic [ref=e943]:
+          - generic [ref=e944]:
+            - generic [ref=e945]:
+              - text: 共找到
+              - generic [ref=e946]: 14,396
+              - text: 篇文章
+            - generic [ref=e947]:
+              - generic [ref=e949]:
+                - generic [ref=e950]: <
+                - generic [ref=e951]:
+                  - emphasis [ref=e952]
+                  - emphasis [ref=e953]: "1"
+                - link "2" [ref=e954] [cursor=pointer]:
+                  - /url: javascript:;
+                - generic [ref=e955]: …
+                - link "250" [ref=e956] [cursor=pointer]:
+                  - /url: javascript:;
+                - link ">" [ref=e957] [cursor=pointer]:
+                  - /url: javascript:;
+              - generic [ref=e958]:
+                - text: 每页显示
+                - link "20" [ref=e959] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                - link "50" [ref=e960] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                - link "100" [ref=e961] [cursor=pointer]:
+                  - /url: javascript:void(0)
+          - generic [ref=e962]:
+            - generic [ref=e963]:
+              - generic [ref=e964]:
+                - generic "全选" [ref=e965]:
+                  - generic [ref=e967] [cursor=pointer]: 
+                - generic [ref=e968]:
+                  - link "已选0条" [ref=e969] [cursor=pointer]:
+                    - /url: javascript:;
+                  - link "" [ref=e970] [cursor=pointer]:
+                    - /url: javascript:;
+                    - generic [ref=e971]: 
+              - generic [ref=e973]:
+                - generic [ref=e974] [cursor=pointer]:
+                  - text: 批量处理
+                  - generic [ref=e975]: 
+                - generic [ref=e976] [cursor=pointer]:
+                  - text: 引用分析
+                  - generic [ref=e977]: 
+                - generic [ref=e978] [cursor=pointer]:
+                  - text: 统计分析
+                  - generic [ref=e979]: 
+            - generic [ref=e980]:
+              - generic [ref=e981]:
+                - text: 显示方式：
+                - generic [ref=e982]:
+                  - link " 文摘" [ref=e983] [cursor=pointer]:
+                    - /url: javascript:void(0)
+                    - generic [ref=e984]: 
+                    - text: 文摘
+                  - link " 详细" [ref=e985] [cursor=pointer]:
+                    - /url: javascript:void(0)
+                    - generic [ref=e986]: 
+                    - text: 详细
+                  - link " 列表" [ref=e987] [cursor=pointer]:
+                    - /url: javascript:void(0)
+                    - generic [ref=e988]: 
+                    - text: 列表
+              - generic [ref=e990]:
+                - link " 相关度" [ref=e991] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e992]: 
+                  - text: 相关度
+                - link " 被引量" [ref=e993] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e994]: 
+                  - text: 被引量
+                - link " 时效性" [ref=e995] [cursor=pointer]:
+                  - /url: javascript:void(0)
+                  - generic [ref=e996]: 
+                  - text: 时效性
+          - generic [ref=e997]:
+            - generic [ref=e998]:
+              - generic [ref=e999]:
+                - term [ref=e1000]:
+                  - link "与“左行横迆”擦肩而过——《新青年》汉字横排失败原因考论" [ref=e1001] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7203284730
+                  - generic [ref=e1002]:
+                    - link " 认领" [ref=e1003] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1004]: 
+                      - text: 认领
+                    - link "引用" [ref=e1005] [cursor=pointer]:
+                      - /url: javascript:quote('7203284730');
+                      - img [ref=e1006]
+                      - text: 引用
+                - definition [ref=e1009]: "1"
+                - definition [ref=e1010]:
+                  - generic [ref=e1012] [cursor=pointer]: 
+                - definition [ref=e1013]:
+                  - generic [ref=e1014]:
+                    - generic [ref=e1015]: "作者 :"
+                    - link "陶君艳" [ref=e1017] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e9%99%b6%e5%90%9b%e8%89%b3
+                  - generic [ref=e1018]:
+                    - text: ·
+                    - link "《鲁迅研究月刊》" [ref=e1019] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=80743X
+                    - generic [ref=e1020]:
+                      - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1021]: CSSCI
+                      - generic "北大核心期刊（2023版）" [ref=e1022]: 北大核心
+                  - text: · 2026年第2期92-100,共9页
+                - definition [ref=e1023]:
+                  - generic [ref=e1024]:
+                    - text: 《新青年》汉字横排失败的原因历来为学界关注。尽管印刷技术落后,但同人的消极态度是造成《新青年》横排失败的根本原因。汉字横排属于文化革新,因而受到部分同人推崇,但普通大众偏好直行的读写习惯依然制约着中文书刊的排版方式,故推...
+                    - link "展开更多" [ref=e1025] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1026]:
+                  - generic [ref=e1027]:
+                    - generic [ref=e1028]: "关键词 :"
+                    - link "《新青年》" [ref=e1030] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "汉字横排" [ref=e1032] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%b1%89%e5%ad%97%e6%a8%aa%e6%8e%92
+                    - link "群益书社" [ref=e1034] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e7%be%a4%e7%9b%8a%e4%b9%a6%e7%a4%be
+                    - link "钱玄同" [ref=e1036] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%92%b1%e7%8e%84%e5%90%8c
+                    - link "胡适" [ref=e1038] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e8%83%a1%e9%80%82
+                - definition [ref=e1039]:
+                  - generic [ref=e1040]:
+                    - link " 在线阅读" [ref=e1041] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1042]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1043] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1044]: 
+                      - text: 下载PDF
+                    - text: 
+              - generic [ref=e1045]:
+                - term [ref=e1046]:
+                  - link "从文化革新到理论扎根:马克思主义中国化发展进程中《新青年》历史贡献发微" [ref=e1047] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7203144882
+                  - generic "免费获取" [ref=e1049]
+                  - generic [ref=e1050]:
+                    - link " 认领" [ref=e1051] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1052]: 
+                      - text: 认领
+                    - link "引用" [ref=e1053] [cursor=pointer]:
+                      - /url: javascript:quote('7203144882');
+                      - img [ref=e1054]
+                      - text: 引用
+                - definition [ref=e1057]: "2"
+                - definition [ref=e1058]:
+                  - generic [ref=e1060] [cursor=pointer]: 
+                - definition [ref=e1061]:
+                  - generic [ref=e1062]:
+                    - generic [ref=e1063]: "作者 :"
+                    - link "王小媛" [ref=e1065] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e7%8e%8b%e5%b0%8f%e5%aa%9b
+                  - generic [ref=e1066]:
+                    - text: ·
+                    - link "《传媒》" [ref=e1067] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=80714A
+                    - generic "中文社会科学引文索引-扩展（2025-2026）" [ref=e1069]: CSSCI
+                  - text: · 2026年第5期84-87,共4页
+                - definition [ref=e1070]:
+                  - generic [ref=e1071]:
+                    - text: 《新青年》杂志作为思想启蒙的旗帜与中国早期马克思主义传播的关键平台,既以白话文倡导民主与科学来瓦解封建桎梏,又以李大钊《我的马克思主义观》等中国先进知识分子的著述推动唯物史观的系统引介,成为理解马克思主义中国化时代化发...
+                    - link "展开更多" [ref=e1072] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1073]:
+                  - generic [ref=e1074]:
+                    - generic [ref=e1075]: "关键词 :"
+                    - link "《新青年》" [ref=e1077] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "马克思主义中国化" [ref=e1079] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%a9%ac%e5%85%8b%e6%80%9d%e4%b8%bb%e4%b9%89%e4%b8%ad%e5%9b%bd%e5%8c%96
+                    - link "中华优秀传统文化" [ref=e1081] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e4%b8%ad%e5%8d%8e%e4%bc%98%e7%a7%80%e4%bc%a0%e7%bb%9f%e6%96%87%e5%8c%96
+                    - link "“两个结合”" [ref=e1083] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e2%80%9c%e4%b8%a4%e4%b8%aa%e7%bb%93%e5%90%88%e2%80%9d
+                - definition [ref=e1084]:
+                  - generic [ref=e1085]:
+                    - link " 在线阅读" [ref=e1086] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1087]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1088] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1089]: 
+                      - text: 下载PDF
+                    - text: 
+              - generic [ref=e1090]:
+                - term [ref=e1091]:
+                  - link "应用标准,给“新青年”造一个智慧生活“家”——联发集团NewLife OS智慧社区建设实践" [ref=e1092] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7202888757
+                  - generic [ref=e1093]:
+                    - link " 认领" [ref=e1094] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1095]: 
+                      - text: 认领
+                    - link "引用" [ref=e1096] [cursor=pointer]:
+                      - /url: javascript:quote('7202888757');
+                      - img [ref=e1097]
+                      - text: 引用
+                - definition [ref=e1100]: "3"
+                - definition [ref=e1101]:
+                  - generic [ref=e1103] [cursor=pointer]: 
+                - definition [ref=e1104]:
+                  - generic [ref=e1105]:
+                    - generic [ref=e1106]: "作者 :"
+                    - link "董少华" [ref=e1108] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e8%91%a3%e5%b0%91%e5%8d%8e
+                  - generic [ref=e1109]:
+                    - text: ·
+                    - link "《中国建设信息化》" [ref=e1110] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=83587A
+                  - text: · 2026年第1期39-41,共3页
+                - definition [ref=e1111]:
+                  - generic [ref=e1112]:
+                    - text: 联发集团深度融合“安全、舒适、绿色、智慧”好房子建设内涵要求,以智慧社区相关国家标准为指引,在厦门“联发·嘉悦里”项目上线“NewLife OS”智慧社区系统,有效提升社区安全、促进共治、助力留才、降本增效,为新青年的“好房子...
+                    - link "展开更多" [ref=e1113] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1114]:
+                  - generic [ref=e1115]:
+                    - generic [ref=e1116]: "关键词 :"
+                    - link "“好房子”" [ref=e1118] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e2%80%9c%e5%a5%bd%e6%88%bf%e5%ad%90%e2%80%9d
+                    - link "国家标准" [ref=e1120] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%9b%bd%e5%ae%b6%e6%a0%87%e5%87%86
+                    - link "新青年社区" [ref=e1122] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e9%9d%92%e5%b9%b4%e7%a4%be%e5%8c%ba
+                    - link "智慧社区" [ref=e1124] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%99%ba%e6%85%a7%e7%a4%be%e5%8c%ba
+                - definition [ref=e1125]:
+                  - generic [ref=e1126]:
+                    - link " 在线阅读" [ref=e1127] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1128]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1129] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1130]: 
+                      - text: 下载PDF
+                    - text: 
+              - generic [ref=e1131]:
+                - term [ref=e1132]:
+                  - link "新青年的成长:“五四”与现代小说的诞生" [ref=e1133] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7200058516
+                  - generic "免费获取" [ref=e1135]
+                  - generic [ref=e1136]:
+                    - link " 认领" [ref=e1137] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1138]: 
+                      - text: 认领
+                    - link "引用" [ref=e1139] [cursor=pointer]:
+                      - /url: javascript:quote('7200058516');
+                      - img [ref=e1140]
+                      - text: 引用
+                  - generic [ref=e1143]:
+                    - text: 被引量：
+                    - link "1" [ref=e1144] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1145]: "4"
+                - definition [ref=e1146]:
+                  - generic [ref=e1148] [cursor=pointer]: 
+                - definition [ref=e1149]:
+                  - generic [ref=e1150]:
+                    - generic [ref=e1151]: "作者 :"
+                    - link "宋明炜" [ref=e1153] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e5%ae%8b%e6%98%8e%e7%82%9c
+                  - generic [ref=e1154]:
+                    - text: ·
+                    - link "《四川大学学报（哲学社会科学版）》" [ref=e1155] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=80165X
+                    - generic [ref=e1156]:
+                      - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1157]: CSSCI
+                      - generic "北大核心期刊（2023版）" [ref=e1158]: 北大核心
+                  - text: · 2025年第1期120-131,234,共12页
+                - definition [ref=e1159]:
+                  - generic [ref=e1160]:
+                    - text: 五四运动之后,反传统的文化立场明确进入了青春话语,而“新青年”的形象标志着中国青年运动的激进转折。以叶圣陶的《倪焕之》为中心,可以探讨新青年一代的成长经历如何构筑中国成长小说。通过对《新青年》杂志所建构的青春话语的历史研...
+                    - link "展开更多" [ref=e1161] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1162]:
+                  - generic [ref=e1163]:
+                    - generic [ref=e1164]: "关键词 :"
+                    - link "新青年" [ref=e1166] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e9%9d%92%e5%b9%b4
+                    - link "“五四”" [ref=e1168] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e2%80%9c%e4%ba%94%e5%9b%9b%e2%80%9d
+                    - link "《倪焕之》" [ref=e1170] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e5%80%aa%e7%84%95%e4%b9%8b%e3%80%8b
+                    - link "现代小说" [ref=e1172] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e7%8e%b0%e4%bb%a3%e5%b0%8f%e8%af%b4
+                - definition [ref=e1173]:
+                  - generic [ref=e1174]:
+                    - link " 在线阅读" [ref=e1175] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1176]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1177] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1178]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1179] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=SCDXXBZXSHKXB2025001014&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1180]: 
+                      - text: OA链接
+              - generic [ref=e1181]:
+                - term [ref=e1182]:
+                  - link "从询唤到“制造”:青年的身份书写与媒介动员——以《新青年》《中国青年》为中心的考察" [ref=e1183] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7200790538
+                  - generic [ref=e1184]:
+                    - link " 认领" [ref=e1185] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1186]: 
+                      - text: 认领
+                    - link "引用" [ref=e1187] [cursor=pointer]:
+                      - /url: javascript:quote('7200790538');
+                      - img [ref=e1188]
+                      - text: 引用
+                - definition [ref=e1191]: "5"
+                - definition [ref=e1192]:
+                  - generic [ref=e1194] [cursor=pointer]: 
+                - definition [ref=e1195]:
+                  - generic [ref=e1196]:
+                    - generic [ref=e1197]: "作者 :"
+                    - generic [ref=e1198]:
+                      - link "汪沛" [ref=e1199] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e6%b1%aa%e6%b2%9b
+                      - text: ","
+                    - generic [ref=e1200]:
+                      - link "马梅" [ref=e1201] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e9%a9%ac%e6%a2%85
+                      - text: ","
+                    - link "罗文慧" [ref=e1203] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e7%bd%97%e6%96%87%e6%85%a7
+                  - generic [ref=e1204]:
+                    - text: ·
+                    - link "《传媒观察》" [ref=e1205] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=82144A
+                    - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1207]: CSSCI
+                  - text: · 2025年第4期109-120,共12页
+                - definition [ref=e1208]:
+                  - generic [ref=e1209]:
+                    - text: 从《新青年》杂志到《中国青年》周刊的赓续传承,展现了中国报刊史的丰富侧面,亦折射了从“新青年”到“中国青年”的身份书写与媒介动员的历时性过程。“制造”青年的身份书写,在“期待”与“崇拜”的张力、“报人”与“群体”的互动...
+                    - link "展开更多" [ref=e1210] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1211]:
+                  - generic [ref=e1212]:
+                    - generic [ref=e1213]: "关键词 :"
+                    - link "《新青年》" [ref=e1215] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "《中国青年》" [ref=e1217] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e4%b8%ad%e5%9b%bd%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "青年" [ref=e1219] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%9d%92%e5%b9%b4
+                    - link "身份书写" [ref=e1221] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e8%ba%ab%e4%bb%bd%e4%b9%a6%e5%86%99
+                    - link "媒介动员" [ref=e1223] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%aa%92%e4%bb%8b%e5%8a%a8%e5%91%98
+                - definition [ref=e1224]:
+                  - link " 原文传递" [ref=e1226] [cursor=pointer]:
+                    - /url: javascript:void(0);
+                    - generic [ref=e1227]: 
+                    - text: 原文传递
+              - generic [ref=e1228]:
+                - term [ref=e1229]:
+                  - link "《新青年》中的新文学史料" [ref=e1230] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7202692666
+                  - generic [ref=e1231]:
+                    - link " 认领" [ref=e1232] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1233]: 
+                      - text: 认领
+                    - link "引用" [ref=e1234] [cursor=pointer]:
+                      - /url: javascript:quote('7202692666');
+                      - img [ref=e1235]
+                      - text: 引用
+                - definition [ref=e1238]: "6"
+                - definition [ref=e1239]:
+                  - generic [ref=e1241] [cursor=pointer]: 
+                - definition [ref=e1242]:
+                  - generic [ref=e1243]:
+                    - generic [ref=e1244]: "作者 :"
+                    - link "陈漱渝" [ref=e1246] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e9%99%88%e6%bc%b1%e6%b8%9d
+                  - generic [ref=e1247]:
+                    - text: ·
+                    - link "《鲁迅研究月刊》" [ref=e1248] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=80743X
+                    - generic [ref=e1249]:
+                      - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1250]: CSSCI
+                      - generic "北大核心期刊（2023版）" [ref=e1251]: 北大核心
+                  - text: · 2025年第11期33-44,共12页
+                - definition [ref=e1252]:
+                  - generic [ref=e1253]: 《新青年》今年创刊110周年,这是一份思想文化界的重要刊物,也是五四文学革命的滥觞地。本文从文学革命的理论建设、新诗革命、小说革命、戏剧改良、文学翻译等五个方面梳理了有关新文学史料,并进行了点评解析,兼具了理论性与史料性。
+                - definition [ref=e1254]:
+                  - generic [ref=e1255]:
+                    - generic [ref=e1256]: "关键词 :"
+                    - link "《新青年》" [ref=e1258] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "陈独秀" [ref=e1260] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%99%88%e7%8b%ac%e7%a7%80
+                    - link "胡适" [ref=e1262] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e8%83%a1%e9%80%82
+                    - link "鲁迅" [ref=e1264] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%b2%81%e8%bf%85
+                    - link "周作人" [ref=e1266] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%91%a8%e4%bd%9c%e4%ba%ba
+                    - link "钱玄同" [ref=e1268] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%92%b1%e7%8e%84%e5%90%8c
+                    - link "刘半农" [ref=e1270] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%88%98%e5%8d%8a%e5%86%9c
+                - definition [ref=e1271]:
+                  - generic [ref=e1272]:
+                    - link " 在线阅读" [ref=e1273] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1274]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1275] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1276]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1277] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=LXYJYK2025011005&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1278]: 
+                      - text: OA链接
+              - generic [ref=e1279]:
+                - term [ref=e1280]:
+                  - link "钱玄同与周氏兄弟关于《新青年》六卷二号往来通信考释" [ref=e1281] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7202692667
+                  - generic [ref=e1282]:
+                    - link " 认领" [ref=e1283] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1284]: 
+                      - text: 认领
+                    - link "引用" [ref=e1285] [cursor=pointer]:
+                      - /url: javascript:quote('7202692667');
+                      - img [ref=e1286]
+                      - text: 引用
+                - definition [ref=e1289]: "7"
+                - definition [ref=e1290]:
+                  - generic [ref=e1292] [cursor=pointer]: 
+                - definition [ref=e1293]:
+                  - generic [ref=e1294]:
+                    - generic [ref=e1295]: "作者 :"
+                    - link "秦素银" [ref=e1297] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e7%a7%a6%e7%b4%a0%e9%93%b6
+                  - generic [ref=e1298]:
+                    - text: ·
+                    - link "《鲁迅研究月刊》" [ref=e1299] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=80743X
+                    - generic [ref=e1300]:
+                      - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1301]: CSSCI
+                      - generic "北大核心期刊（2023版）" [ref=e1302]: 北大核心
+                  - text: · 2025年第11期45-63,共19页
+                - definition [ref=e1303]:
+                  - generic [ref=e1304]:
+                    - text: 2021年,北京鲁迅博物馆(北京新文化运动纪念馆)编辑出版《北京鲁迅博物馆藏中国近现代名人手札大系》第7册,首次整理出版了馆藏周作人致钱玄同书信,其中10通信件与《新青年》六卷二号稿件相关,加上已经发表过的鲁迅致钱玄同书信2通、钱...
+                    - link "展开更多" [ref=e1305] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1306]:
+                  - generic [ref=e1307]:
+                    - generic [ref=e1308]: "关键词 :"
+                    - link "《新青年》" [ref=e1310] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "钱玄同" [ref=e1312] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%92%b1%e7%8e%84%e5%90%8c
+                    - link "周作人" [ref=e1314] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%91%a8%e4%bd%9c%e4%ba%ba
+                    - link "鲁迅" [ref=e1316] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%b2%81%e8%bf%85
+                - definition [ref=e1317]:
+                  - generic [ref=e1318]:
+                    - link " 在线阅读" [ref=e1319] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1320]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1321] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1322]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1323] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=LXYJYK2025011006&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1324]: 
+                      - text: OA链接
+              - generic [ref=e1325]:
+                - term [ref=e1326]:
+                  - link "从《新青年》获取前进的智慧与勇气" [ref=e1327] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7202298152
+                  - generic [ref=e1328]:
+                    - link " 认领" [ref=e1329] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1330]: 
+                      - text: 认领
+                    - link "引用" [ref=e1331] [cursor=pointer]:
+                      - /url: javascript:quote('7202298152');
+                      - img [ref=e1332]
+                      - text: 引用
+                - definition [ref=e1335]: "8"
+                - definition [ref=e1336]:
+                  - generic [ref=e1338] [cursor=pointer]: 
+                - definition [ref=e1339]:
+                  - generic [ref=e1340]:
+                    - generic [ref=e1341]: "作者 :"
+                    - link "欧阳哲生" [ref=e1343] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e6%ac%a7%e9%98%b3%e5%93%b2%e7%94%9f
+                  - generic [ref=e1344]:
+                    - text: ·
+                    - link "《鲁迅研究月刊》" [ref=e1345] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=80743X
+                    - generic [ref=e1346]:
+                      - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1347]: CSSCI
+                      - generic "北大核心期刊（2023版）" [ref=e1348]: 北大核心
+                  - text: · 2025年第9期5-6,共2页
+                - definition [ref=e1349]:
+                  - generic [ref=e1350]:
+                    - text: 尊敬各位来宾、各位同仁!1919年5月4日爆发了五四爱国运动,这是中华民族觉醒的一个崭新的伟大起点,也是近代中国一个具有关键意义的历史转折点。每逢“五四”我们都会举行纪念活动,每逢周年都会举行纪念性的学术研讨会。然而,对新文化...
+                    - link "展开更多" [ref=e1351] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1352]:
+                  - generic [ref=e1353]:
+                    - generic [ref=e1354]: "关键词 :"
+                    - link "五四爱国运动" [ref=e1356] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e4%ba%94%e5%9b%9b%e7%88%b1%e5%9b%bd%e8%bf%90%e5%8a%a8
+                    - link "新文化运动" [ref=e1358] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e6%96%87%e5%8c%96%e8%bf%90%e5%8a%a8
+                    - link "新青年" [ref=e1360] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e9%9d%92%e5%b9%b4
+                - definition [ref=e1361]:
+                  - generic [ref=e1362]:
+                    - link " 在线阅读" [ref=e1363] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1364]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1365] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1366]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1367] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=LXYJYK2025009002&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1368]: 
+                      - text: OA链接
+              - generic [ref=e1369]:
+                - term [ref=e1370]:
+                  - link "论《新青年》办刊策略的三重考察与现实启示" [ref=e1371] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7201033894
+                  - generic "免费获取" [ref=e1373]
+                  - generic [ref=e1374]:
+                    - link " 认领" [ref=e1375] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1376]: 
+                      - text: 认领
+                    - link "引用" [ref=e1377] [cursor=pointer]:
+                      - /url: javascript:quote('7201033894');
+                      - img [ref=e1378]
+                      - text: 引用
+                - definition [ref=e1381]: "9"
+                - definition [ref=e1382]:
+                  - generic [ref=e1384] [cursor=pointer]: 
+                - definition [ref=e1385]:
+                  - generic [ref=e1386]:
+                    - generic [ref=e1387]: "作者 :"
+                    - link "张连奎" [ref=e1389] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e5%bc%a0%e8%bf%9e%e5%a5%8e
+                  - generic [ref=e1390]:
+                    - text: ·
+                    - link "《传媒》" [ref=e1391] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=80714A
+                    - generic "中文社会科学引文索引-扩展（2025-2026）" [ref=e1393]: CSSCI
+                  - text: · 2025年第10期84-86,共3页
+                - definition [ref=e1394]:
+                  - generic [ref=e1395]:
+                    - text: 新文化运动时期,《新青年》杂志对当时中国社会产生了巨大影响,在中国期刊史上具有划时代的意义。《新青年》杂志作为中国新文化运动标志性的刊物,不仅引领了当时思想解放的潮流,而且对于中国现当代期刊业的兴起与发展产生了举足轻重的...
+                    - link "展开更多" [ref=e1396] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1397]:
+                  - generic [ref=e1398]:
+                    - generic [ref=e1399]: "关键词 :"
+                    - link "《新青年》" [ref=e1401] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "办刊策略" [ref=e1403] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%8a%9e%e5%88%8a%e7%ad%96%e7%95%a5
+                    - link "新文化运动" [ref=e1405] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e6%96%87%e5%8c%96%e8%bf%90%e5%8a%a8
+                    - link "陈独秀" [ref=e1407] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%99%88%e7%8b%ac%e7%a7%80
+                - definition [ref=e1408]:
+                  - generic [ref=e1409]:
+                    - link " 在线阅读" [ref=e1410] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1411]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1412] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1413]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1414] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=CM2025010031&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1415]: 
+                      - text: OA链接
+              - generic [ref=e1416]:
+                - term [ref=e1417]:
+                  - link "建党前夕中国先进知识分子的劳工调查——以《新青年》为中心" [ref=e1418] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7201555291
+                  - generic [ref=e1419]:
+                    - link " 认领" [ref=e1420] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1421]: 
+                      - text: 认领
+                    - link "引用" [ref=e1422] [cursor=pointer]:
+                      - /url: javascript:quote('7201555291');
+                      - img [ref=e1423]
+                      - text: 引用
+                - definition [ref=e1426]: "10"
+                - definition [ref=e1427]:
+                  - generic [ref=e1429] [cursor=pointer]: 
+                - definition [ref=e1430]:
+                  - generic [ref=e1431]:
+                    - generic [ref=e1432]: "作者 :"
+                    - link "葛世林" [ref=e1434] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e8%91%9b%e4%b8%96%e6%9e%97
+                  - generic [ref=e1435]:
+                    - text: ·
+                    - link "《党史研究与教学》" [ref=e1436] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=82027X
+                    - generic [ref=e1437]:
+                      - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1438]: CSSCI
+                      - generic "北大核心期刊（2023版）" [ref=e1439]: 北大核心
+                  - text: · 2025年第2期37-49,共13页
+                - definition [ref=e1440]:
+                  - generic [ref=e1441]:
+                    - text: 劳工问题是建党前夕中国先进知识分子思考救国道路不可回避的重要话题。五四运动后,他们通过开展社会调查活动走进劳工群体,考察并了解社会劳工的真实状况。《新青年》等进步刊物登载的劳工调查报告提供了详实的数据和资料,揭示出这一...
+                    - link "展开更多" [ref=e1442] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1443]:
+                  - generic [ref=e1444]:
+                    - generic [ref=e1445]: "关键词 :"
+                    - link "中国共产党" [ref=e1447] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e4%b8%ad%e5%9b%bd%e5%85%b1%e4%ba%a7%e5%85%9a
+                    - link "知识分子" [ref=e1449] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e7%9f%a5%e8%af%86%e5%88%86%e5%ad%90
+                    - link "劳工调查" [ref=e1451] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%8a%b3%e5%b7%a5%e8%b0%83%e6%9f%a5
+                    - link "《新青年》" [ref=e1453] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                - definition [ref=e1454]:
+                  - link " 原文传递" [ref=e1456] [cursor=pointer]:
+                    - /url: javascript:void(0);
+                    - generic [ref=e1457]: 
+                    - text: 原文传递
+              - generic [ref=e1458]:
+                - term [ref=e1459]:
+                  - link "栏目设置、话语空间与经典化传播:近代马克思主义中国化的一个微观视角——基于《新青年》杂志栏目的分析" [ref=e1460] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7202298157
+                  - generic [ref=e1461]:
+                    - link " 认领" [ref=e1462] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1463]: 
+                      - text: 认领
+                    - link "引用" [ref=e1464] [cursor=pointer]:
+                      - /url: javascript:quote('7202298157');
+                      - img [ref=e1465]
+                      - text: 引用
+                - definition [ref=e1468]: "11"
+                - definition [ref=e1469]:
+                  - generic [ref=e1471] [cursor=pointer]: 
+                - definition [ref=e1472]:
+                  - generic [ref=e1473]:
+                    - generic [ref=e1474]: "作者 :"
+                    - link "韦东柳" [ref=e1476] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e9%9f%a6%e4%b8%9c%e6%9f%b3
+                  - generic [ref=e1477]:
+                    - text: ·
+                    - link "《鲁迅研究月刊》" [ref=e1478] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=80743X
+                    - generic [ref=e1479]:
+                      - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1480]: CSSCI
+                      - generic "北大核心期刊（2023版）" [ref=e1481]: 北大核心
+                  - text: · 2025年第9期27-37,共11页
+                - definition [ref=e1482]:
+                  - generic [ref=e1483]:
+                    - text: 杂志是马克思主义在中国传播过程中重要的载体,而杂志的栏目设置对于马克思主义的传播起到关键作用,既推动马克思主义理论进入大众视野,也建构起马克思主义传播的话语空间。在多重语境中考察《新青年》杂志中的栏目设置、编排和变迁,发...
+                    - link "展开更多" [ref=e1484] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1485]:
+                  - generic [ref=e1486]:
+                    - generic [ref=e1487]: "关键词 :"
+                    - link "《新青年》" [ref=e1489] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "杂志栏目" [ref=e1491] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%9d%82%e5%bf%97%e6%a0%8f%e7%9b%ae
+                    - link "马克思主义传播" [ref=e1493] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%a9%ac%e5%85%8b%e6%80%9d%e4%b8%bb%e4%b9%89%e4%bc%a0%e6%92%ad
+                - definition [ref=e1494]:
+                  - generic [ref=e1495]:
+                    - link " 在线阅读" [ref=e1496] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1497]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1498] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1499]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1500] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=LXYJYK2025009006&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1501]: 
+                      - text: OA链接
+              - generic [ref=e1502]:
+                - term [ref=e1503]:
+                  - link "从“女子问题”到“女界宣言”——《新青年》与中国女权思想的发生" [ref=e1504] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7201861428
+                  - generic [ref=e1505]:
+                    - link " 认领" [ref=e1506] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1507]: 
+                      - text: 认领
+                    - link "引用" [ref=e1508] [cursor=pointer]:
+                      - /url: javascript:quote('7201861428');
+                      - img [ref=e1509]
+                      - text: 引用
+                - definition [ref=e1512]: "12"
+                - definition [ref=e1513]:
+                  - generic [ref=e1515] [cursor=pointer]: 
+                - definition [ref=e1516]:
+                  - generic [ref=e1517]:
+                    - generic [ref=e1518]: "作者 :"
+                    - link "马春花" [ref=e1520] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e9%a9%ac%e6%98%a5%e8%8a%b1
+                  - generic [ref=e1521]:
+                    - text: ·
+                    - link "《东方论坛—青岛大学学报（社会科学版）》" [ref=e1522] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=83159X
+                  - text: · 2025年第5期108-122,共15页
+                - definition [ref=e1523]:
+                  - generic [ref=e1524]:
+                    - text: 作为引领新文化运动的重要刊物,《新青年》在创刊伊始就将女权话题纳入其中。女性作者署名的论说文在“女子问题”专栏中大量出现,彰显中国女权话语的两大脉络:主张家庭改良、“贤母良妻”的女性责任论和强调独立人格、女性职业的女性...
+                    - link "展开更多" [ref=e1525] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1526]:
+                  - generic [ref=e1527]:
+                    - generic [ref=e1528]: "关键词 :"
+                    - link "《新青年》" [ref=e1530] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "女子问题" [ref=e1532] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%a5%b3%e5%ad%90%e9%97%ae%e9%a2%98
+                    - link "女权" [ref=e1534] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%a5%b3%e6%9d%83
+                    - link "新文化运动" [ref=e1536] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e6%96%87%e5%8c%96%e8%bf%90%e5%8a%a8
+                - definition [ref=e1537]:
+                  - generic [ref=e1538]:
+                    - link " 在线阅读" [ref=e1539] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1540]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1541] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1542]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1543] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=DFLTQDDXXB2025005009&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1544]: 
+                      - text: OA链接
+              - generic [ref=e1545]:
+                - term [ref=e1546]:
+                  - link "民国时期的翻译批评空间建构——以《新青年》为例" [ref=e1547] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7202049639
+                  - generic "免费获取" [ref=e1549]
+                  - generic [ref=e1550]:
+                    - link " 认领" [ref=e1551] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1552]: 
+                      - text: 认领
+                    - link "引用" [ref=e1553] [cursor=pointer]:
+                      - /url: javascript:quote('7202049639');
+                      - img [ref=e1554]
+                      - text: 引用
+                - definition [ref=e1557]: "13"
+                - definition [ref=e1558]:
+                  - generic [ref=e1560] [cursor=pointer]: 
+                - definition [ref=e1561]:
+                  - generic [ref=e1562]:
+                    - generic [ref=e1563]: "作者 :"
+                    - generic [ref=e1564]:
+                      - link "李振国" [ref=e1565] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e6%9d%8e%e6%8c%af%e5%9b%bd
+                      - text: ","
+                    - link "何克勇" [ref=e1567] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e4%bd%95%e5%85%8b%e5%8b%87
+                  - generic [ref=e1568]:
+                    - text: ·
+                    - link "《译苑新谭》" [ref=e1569] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=71973X
+                  - text: · 2025年第2期83-90,共8页
+                - definition [ref=e1570]:
+                  - generic [ref=e1571]:
+                    - text: 民国时期的报刊业发展迅速,以《新青年》为代表的刊物,是近代中国公共领域的核心组成部分,是知识分子发声的主要场域,为文化传播、文学翻译与创作提供了理想的平台,构建了学者自由表达的空间。一大批思想家、政治家、学者、翻译家,以报...
+                    - link "展开更多" [ref=e1572] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1573]:
+                  - generic [ref=e1574]:
+                    - generic [ref=e1575]: "关键词 :"
+                    - link "民国时期" [ref=e1577] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%b0%91%e5%9b%bd%e6%97%b6%e6%9c%9f
+                    - link "《新青年》" [ref=e1579] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "翻译批评" [ref=e1581] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e7%bf%bb%e8%af%91%e6%89%b9%e8%af%84
+                - definition [ref=e1582]:
+                  - generic [ref=e1583]:
+                    - link " 在线阅读" [ref=e1584] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1585]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1586] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1587]: 
+                      - text: 下载PDF
+                    - text: 
+              - generic [ref=e1588]:
+                - term [ref=e1589]:
+                  - link "从我到我们:中华民族共同体视域下清末民初新青年的形象书写" [ref=e1590] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7201149109
+                  - generic "免费获取" [ref=e1592]
+                  - generic [ref=e1593]:
+                    - link " 认领" [ref=e1594] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1595]: 
+                      - text: 认领
+                    - link "引用" [ref=e1596] [cursor=pointer]:
+                      - /url: javascript:quote('7201149109');
+                      - img [ref=e1597]
+                      - text: 引用
+                  - generic [ref=e1600]:
+                    - text: 被引量：
+                    - link "1" [ref=e1601] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1602]: "14"
+                - definition [ref=e1603]:
+                  - generic [ref=e1605] [cursor=pointer]: 
+                - definition [ref=e1606]:
+                  - generic [ref=e1607]:
+                    - generic [ref=e1608]: "作者 :"
+                    - generic [ref=e1609]:
+                      - link "周典典" [ref=e1610] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e5%91%a8%e5%85%b8%e5%85%b8
+                      - text: ","
+                    - link "双传学" [ref=e1612] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e5%8f%8c%e4%bc%a0%e5%ad%a6
+                  - generic [ref=e1613]:
+                    - text: ·
+                    - link "《学术探索》" [ref=e1614] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=81813X
+                    - generic "中文社会科学引文索引-扩展（2025-2026）" [ref=e1616]: CSSCI
+                  - text: · 2025年第5期92-100,共9页
+                - definition [ref=e1617]:
+                  - generic [ref=e1618]:
+                    - text: 清末民初的青年群体是中国历史与社会进步的重要推动力量。这一时期,青年人经历了从个体情绪化表达到集体情感共鸣的转变,爱国主义情感在他们之间得以共享,并由此确立了爱国青年的身份认同。这种强烈的爱国情怀为中华民族注入了强大的...
+                    - link "展开更多" [ref=e1619] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1620]:
+                  - generic [ref=e1621]:
+                    - generic [ref=e1622]: "关键词 :"
+                    - link "中华民族共同体" [ref=e1624] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e4%b8%ad%e5%8d%8e%e6%b0%91%e6%97%8f%e5%85%b1%e5%90%8c%e4%bd%93
+                    - link "清末民初" [ref=e1626] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%b8%85%e6%9c%ab%e6%b0%91%e5%88%9d
+                    - link "中华民族" [ref=e1628] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e4%b8%ad%e5%8d%8e%e6%b0%91%e6%97%8f
+                    - link "新青年" [ref=e1630] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e9%9d%92%e5%b9%b4
+                - definition [ref=e1631]:
+                  - generic [ref=e1632]:
+                    - link " 在线阅读" [ref=e1633] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1634]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1635] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1636]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1637] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=XSTS2025005011&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1638]: 
+                      - text: OA链接
+              - generic [ref=e1639]:
+                - term [ref=e1640]:
+                  - link "青年身份书写的历史回望与新时代镜鉴——基于《新青年》文本的内容分析" [ref=e1641] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7200655256
+                  - generic [ref=e1642]:
+                    - link " 认领" [ref=e1643] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1644]: 
+                      - text: 认领
+                    - link "引用" [ref=e1645] [cursor=pointer]:
+                      - /url: javascript:quote('7200655256');
+                      - img [ref=e1646]
+                      - text: 引用
+                - definition [ref=e1649]: "15"
+                - definition [ref=e1650]:
+                  - generic [ref=e1652] [cursor=pointer]: 
+                - definition [ref=e1653]:
+                  - generic [ref=e1654]:
+                    - generic [ref=e1655]: "作者 :"
+                    - generic [ref=e1656]:
+                      - link "秦飞" [ref=e1657] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e7%a7%a6%e9%a3%9e
+                      - text: ","
+                    - link "邓纯余" [ref=e1659] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e9%82%93%e7%ba%af%e4%bd%99
+                  - generic [ref=e1660]:
+                    - text: ·
+                    - link "《山东社会科学》" [ref=e1661] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=82097X
+                    - generic [ref=e1662]:
+                      - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1663]: CSSCI
+                      - generic "北大核心期刊（2023版）" [ref=e1664]: 北大核心
+                  - text: · 2025年第2期167-175,共9页
+                - definition [ref=e1665]:
+                  - generic [ref=e1666]:
+                    - text: 《新青年》杂志在建设新文化、传播新思潮、改造国民性、探索办报建党等方面取得成功的过程中,刻画青年群像作为媒介主题发挥了极其重要的作用。新时代,塑造青年形象,培养担当民族复兴大任的时代新人,要善于回望历史,掌握和运用《新青...
+                    - link "展开更多" [ref=e1667] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1668]:
+                  - generic [ref=e1669]:
+                    - generic [ref=e1670]: "关键词 :"
+                    - link "《新青年》" [ref=e1672] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "新时代" [ref=e1674] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e6%97%b6%e4%bb%a3
+                    - link "身份书写" [ref=e1676] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e8%ba%ab%e4%bb%bd%e4%b9%a6%e5%86%99
+                    - link "历史镜鉴" [ref=e1678] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%8e%86%e5%8f%b2%e9%95%9c%e9%89%b4
+                - definition [ref=e1679]:
+                  - generic [ref=e1680]:
+                    - link " 原文传递" [ref=e1681] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1682]: 
+                      - text: 原文传递
+                    - link " OA链接" [ref=e1683] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=SDSHKX2025002018&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1684]: 
+                      - text: OA链接
+              - generic [ref=e1685]:
+                - term [ref=e1686]:
+                  - link "文化记忆视域下“新青年”的影视形象构建研究——从电视剧《觉醒年代》谈开去" [ref=e1687] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7200881175
+                  - generic "免费获取" [ref=e1689]
+                  - generic [ref=e1690]:
+                    - link " 认领" [ref=e1691] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1692]: 
+                      - text: 认领
+                    - link "引用" [ref=e1693] [cursor=pointer]:
+                      - /url: javascript:quote('7200881175');
+                      - img [ref=e1694]
+                      - text: 引用
+                  - generic [ref=e1697]:
+                    - text: 被引量：
+                    - link "2" [ref=e1698] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1699]: "16"
+                - definition [ref=e1700]:
+                  - generic [ref=e1702] [cursor=pointer]: 
+                - definition [ref=e1703]:
+                  - generic [ref=e1704]:
+                    - generic [ref=e1705]: "作者 :"
+                    - generic [ref=e1706]:
+                      - link "毛宇轩" [ref=e1707] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e6%af%9b%e5%ae%87%e8%bd%a9
+                      - text: ","
+                    - generic [ref=e1708]:
+                      - link "张泽博" [ref=e1709] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e5%bc%a0%e6%b3%bd%e5%8d%9a
+                      - text: ","
+                    - link "肖立尧" [ref=e1711] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e8%82%96%e7%ab%8b%e5%b0%a7
+                  - generic [ref=e1712]:
+                    - text: ·
+                    - link "《传媒》" [ref=e1713] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=80714A
+                    - generic "中文社会科学引文索引-扩展（2025-2026）" [ref=e1715]: CSSCI
+                  - text: · 2025年第9期94-96,共3页
+                - definition [ref=e1716]:
+                  - generic [ref=e1717]:
+                    - text: “新青年”是中国新文化运动历史时期的重要文化主体。本文以电视剧《觉醒年代》为例,通过分析新文化运动时期的“新青年”形象在影视作品中的构建与传播,揭示影视艺术对公众文化记忆与价值观念的影响与塑造功能。本文以文化记忆为理论...
+                    - link "展开更多" [ref=e1718] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1719]:
+                  - generic [ref=e1720]:
+                    - generic [ref=e1721]: "关键词 :"
+                    - link "文化记忆" [ref=e1723] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%87%e5%8c%96%e8%ae%b0%e5%bf%86
+                    - link "新青年" [ref=e1725] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e9%9d%92%e5%b9%b4
+                    - link "影视传播" [ref=e1727] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e5%bd%b1%e8%a7%86%e4%bc%a0%e6%92%ad
+                    - link "《觉醒年代》" [ref=e1729] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e8%a7%89%e9%86%92%e5%b9%b4%e4%bb%a3%e3%80%8b
+                - definition [ref=e1730]:
+                  - generic [ref=e1731]:
+                    - link " 在线阅读" [ref=e1732] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1733]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1734] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1735]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1736] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=CM2025009031&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1737]: 
+                      - text: OA链接
+              - generic [ref=e1738]:
+                - term [ref=e1739]:
+                  - link "《新青年》的衍变与思想建党理论强党之始" [ref=e1740] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7201505728
+                  - generic [ref=e1741]:
+                    - link " 认领" [ref=e1742] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1743]: 
+                      - text: 认领
+                    - link "引用" [ref=e1744] [cursor=pointer]:
+                      - /url: javascript:quote('7201505728');
+                      - img [ref=e1745]
+                      - text: 引用
+                  - generic [ref=e1748]:
+                    - text: 被引量：
+                    - link "1" [ref=e1749] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1750]: "17"
+                - definition [ref=e1751]:
+                  - generic [ref=e1753] [cursor=pointer]: 
+                - definition [ref=e1754]:
+                  - generic [ref=e1755]:
+                    - generic [ref=e1756]: "作者 :"
+                    - generic [ref=e1757]:
+                      - link "周晔" [ref=e1758] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e5%91%a8%e6%99%94
+                      - text: ","
+                    - link "潘震林" [ref=e1760] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e6%bd%98%e9%9c%87%e6%9e%97
+                  - generic [ref=e1761]:
+                    - text: ·
+                    - link "《复旦学报（社会科学版）》" [ref=e1762] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=81270X
+                    - generic [ref=e1763]:
+                      - generic "中文社会科学引文索引-来源（2025-2026）" [ref=e1764]: CSSCI
+                      - generic "北大核心期刊（2023版）" [ref=e1765]: 北大核心
+                  - text: · 2025年第4期1-10,共10页
+                - definition [ref=e1766]:
+                  - generic [ref=e1767]:
+                    - text: “觉醒年代”不仅有建党伟业这样“开天辟地的大事变”,更有鲜明的思想底色。中国共产党自成立之日起就高举马克思主义的思想旗帜,在长期发展中形成了思想建党、理论强党的鲜明特色和光荣传统,因此,考察思想建党、理论强党之始,即中国...
+                    - link "展开更多" [ref=e1768] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1769]:
+                  - generic [ref=e1770]:
+                    - generic [ref=e1771]: "关键词 :"
+                    - link "《新青年》" [ref=e1773] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                    - link "衍变" [ref=e1775] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e8%a1%8d%e5%8f%98
+                    - link "思想建党" [ref=e1777] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%80%9d%e6%83%b3%e5%bb%ba%e5%85%9a
+                    - link "理论强党" [ref=e1779] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e7%90%86%e8%ae%ba%e5%bc%ba%e5%85%9a
+                - definition [ref=e1780]:
+                  - generic [ref=e1781]:
+                    - link " 原文传递" [ref=e1782] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1783]: 
+                      - text: 原文传递
+                    - link " OA链接" [ref=e1784] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=FDXBSHKXB2025004001&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1785]: 
+                      - text: OA链接
+              - generic [ref=e1786]:
+                - term [ref=e1787]:
+                  - link "算法推荐视域下数字新青年核心价值观培育:时代风险与应然转向" [ref=e1788] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7200983309
+                  - generic "免费获取" [ref=e1790]
+                  - generic [ref=e1791]:
+                    - link " 认领" [ref=e1792] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1793]: 
+                      - text: 认领
+                    - link "引用" [ref=e1794] [cursor=pointer]:
+                      - /url: javascript:quote('7200983309');
+                      - img [ref=e1795]
+                      - text: 引用
+                - definition [ref=e1798]: "18"
+                - definition [ref=e1799]:
+                  - generic [ref=e1801] [cursor=pointer]: 
+                - definition [ref=e1802]:
+                  - generic [ref=e1803]:
+                    - generic [ref=e1804]: "作者 :"
+                    - link "温稀丹" [ref=e1806] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e6%b8%a9%e7%a8%80%e4%b8%b9
+                  - generic [ref=e1807]:
+                    - text: ·
+                    - link "《福建医科大学学报（社会科学版）》" [ref=e1808] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=86868X
+                  - text: · 2025年第2期66-71,共6页
+                - definition [ref=e1809]:
+                  - generic [ref=e1810]:
+                    - text: 数媒化、智能化推动了网络文化景观的勃兴,算法推荐技术的更迭为型构价值光谱、建构价值格局带来了全新场景,数字新青年核心价值观的“云”生成在智能媒体的冲击下正面临一系列挑战:流量牵引下技术与资本多维交互的技术反驯、算法运行...
+                    - link "展开更多" [ref=e1811] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1812]:
+                  - generic [ref=e1813]:
+                    - generic [ref=e1814]: "关键词 :"
+                    - link "算法技术" [ref=e1816] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e7%ae%97%e6%b3%95%e6%8a%80%e6%9c%af
+                    - link "数字新青年" [ref=e1818] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%95%b0%e5%ad%97%e6%96%b0%e9%9d%92%e5%b9%b4
+                    - link "核心价值观" [ref=e1820] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%a0%b8%e5%bf%83%e4%bb%b7%e5%80%bc%e8%a7%82
+                - definition [ref=e1821]:
+                  - generic [ref=e1822]:
+                    - link " 在线阅读" [ref=e1823] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1824]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1825] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1826]: 
+                      - text: 下载PDF
+                    - text: 
+                    - link " OA链接" [ref=e1827] [cursor=pointer]:
+                      - /url: https://www.ncpssd.cn/Literature/articleinfo?id=FJYKDXXBSHKXB2025002011&synUpdateType=&type=journalArticle&typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&nav=1&langType=1
+                      - generic [ref=e1828]: 
+                      - text: OA链接
+              - generic [ref=e1829]:
+                - term [ref=e1830]:
+                  - link "Z时代的新青年文化" [ref=e1831] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7200404997
+                  - generic "免费获取" [ref=e1833]
+                  - generic [ref=e1834]:
+                    - link " 认领" [ref=e1835] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1836]: 
+                      - text: 认领
+                    - link "引用" [ref=e1837] [cursor=pointer]:
+                      - /url: javascript:quote('7200404997');
+                      - img [ref=e1838]
+                      - text: 引用
+                  - generic [ref=e1841]:
+                    - text: 被引量：
+                    - link "3" [ref=e1842] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1843]: "19"
+                - definition [ref=e1844]:
+                  - generic [ref=e1846] [cursor=pointer]: 
+                - definition [ref=e1847]:
+                  - generic [ref=e1848]:
+                    - generic [ref=e1849]: "作者 :"
+                    - link "徐悦媛" [ref=e1851] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e5%be%90%e6%82%a6%e5%aa%9b
+                  - generic [ref=e1852]:
+                    - text: ·
+                    - link "《文化产业》" [ref=e1853] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=89382X
+                  - text: · 2025年第8期31-33,共3页
+                - definition [ref=e1854]:
+                  - generic [ref=e1855]:
+                    - text: 出生于1995年至2009年之间,即Z时代的年轻人,作为互联网原住民,他们是成长于数字化时代的新青年,拥有独特的文化特征、价值观念和行为模式。现旨在探讨Z时代新青年的文化趋势,分析其在个性化体验、社交媒体影响、消费习惯、社会责任感...
+                    - link "展开更多" [ref=e1856] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1857]:
+                  - generic [ref=e1858]:
+                    - generic [ref=e1859]: "关键词 :"
+                    - link "社交媒体" [ref=e1861] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e7%a4%be%e4%ba%a4%e5%aa%92%e4%bd%93
+                    - link "个性化体验" [ref=e1863] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e4%b8%aa%e6%80%a7%e5%8c%96%e4%bd%93%e9%aa%8c
+                    - link "消费习惯" [ref=e1865] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%b6%88%e8%b4%b9%e4%b9%a0%e6%83%af
+                    - link "数字化时代" [ref=e1867] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%95%b0%e5%ad%97%e5%8c%96%e6%97%b6%e4%bb%a3
+                    - link "互联网" [ref=e1869] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e4%ba%92%e8%81%94%e7%bd%91
+                    - link "社会责任感" [ref=e1871] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e7%a4%be%e4%bc%9a%e8%b4%a3%e4%bb%bb%e6%84%9f
+                    - link "观念和行为" [ref=e1873] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e8%a7%82%e5%bf%b5%e5%92%8c%e8%a1%8c%e4%b8%ba
+                    - link "新青年文化" [ref=e1875] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%96%b0%e9%9d%92%e5%b9%b4%e6%96%87%e5%8c%96
+                - definition [ref=e1876]:
+                  - generic [ref=e1877]:
+                    - link " 在线阅读" [ref=e1878] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1879]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1880] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1881]: 
+                      - text: 下载PDF
+                    - text: 
+              - generic [ref=e1882]:
+                - term [ref=e1883]:
+                  - link "《新青年》鲁迅文章的主题风格及其思想变迁历程研究" [ref=e1884] [cursor=pointer]:
+                    - /url: /Qikan/Article/Detail?id=7200647400
+                  - generic [ref=e1885]:
+                    - link " 认领" [ref=e1886] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                      - generic [ref=e1887]: 
+                      - text: 认领
+                    - link "引用" [ref=e1888] [cursor=pointer]:
+                      - /url: javascript:quote('7200647400');
+                      - img [ref=e1889]
+                      - text: 引用
+                - definition [ref=e1892]: "20"
+                - definition [ref=e1893]:
+                  - generic [ref=e1895] [cursor=pointer]: 
+                - definition [ref=e1896]:
+                  - generic [ref=e1897]:
+                    - generic [ref=e1898]: "作者 :"
+                    - generic [ref=e1899]:
+                      - link "熊福瑶" [ref=e1900] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e7%86%8a%e7%a6%8f%e7%91%b6
+                      - text: ","
+                    - generic [ref=e1901]:
+                      - link "李琳" [ref=e1902] [cursor=pointer]:
+                        - /url: /Qikan/Search/Index?key=A%3d%e6%9d%8e%e7%90%b3
+                      - text: ","
+                    - link "+2 位作者" [ref=e1904] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                    - text: ", ,"
+                    - link "谢丽莎" [ref=e1906] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=A%3d%e8%b0%a2%e4%b8%bd%e8%8e%8e
+                  - generic [ref=e1907]:
+                    - text: ·
+                    - link "《椰城》" [ref=e1908] [cursor=pointer]:
+                      - /url: /Qikan/Journal/Summary?kind=1&gch=61535X
+                  - text: · 2025年第2期82-84,共3页
+                - definition [ref=e1909]:
+                  - generic [ref=e1910]:
+                    - text: 鲁迅的文章以其深刻的思想、犀利的笔触和独特的艺术风格,为现代文学的发展奠定了坚实的基础。这些文章对当时封建传统文化的批判与反思,以及对新思想的探索与传播,均具有重要的历史意义和文化价值。因此,文章分析了鲁迅的思想变迁历程...
+                    - link "展开更多" [ref=e1911] [cursor=pointer]:
+                      - /url: javascript:void(0)
+                - definition [ref=e1912]:
+                  - generic [ref=e1913]:
+                    - generic [ref=e1914]: "关键词 :"
+                    - link "鲁迅" [ref=e1916] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e9%b2%81%e8%bf%85
+                    - link "主题风格" [ref=e1918] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e4%b8%bb%e9%a2%98%e9%a3%8e%e6%a0%bc
+                    - link "思想变迁" [ref=e1920] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e6%80%9d%e6%83%b3%e5%8f%98%e8%bf%81
+                    - link "《新青年》" [ref=e1922] [cursor=pointer]:
+                      - /url: /Qikan/Search/Index?key=K%3d%e3%80%8a%e6%96%b0%e9%9d%92%e5%b9%b4%e3%80%8b
+                - definition [ref=e1923]:
+                  - generic [ref=e1924]:
+                    - link " 在线阅读" [ref=e1925] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1926]: 
+                      - text: 在线阅读
+                    - link " 下载PDF" [ref=e1927] [cursor=pointer]:
+                      - /url: javascript:void(0);
+                      - generic [ref=e1928]: 
+                      - text: 下载PDF
+                    - text: 
+            - text: ":   : : : · : : : ;    :   : : : · : : : ; ; ;    :   : : : · : : : ; ;    :   : : : · : : : : ;     :   : , , : , , , : · : : : : ;  :   : : , : · : : : ;     :   : : : · : : : ;     :   : : : · : : : ;     :   : : : · : , : : : ;     :   : : : · : : : : ;  :   : : , : · : : : ; ; ;     :   : : : · : : : : : ; ;     :   : , : , : · : : : : ;    :   : , : , : · : , , : : : : ; ;     :   : , : : · : : : : : ;   :   : , , : , : · : : : ;     :   : , : , : · : : : : : ; ;   :   : : : · : : : : ; ;     :   : : : · : : : ;    :   : , , , , : : · : : : : ;                                                                                       "
+          - generic [ref=e1929]:
+            - generic [ref=e1930]:
+              - generic [ref=e1931]:
+                - generic "全选" [ref=e1932]:
+                  - generic [ref=e1934] [cursor=pointer]: 
+                - generic [ref=e1935]:
+                  - link "已选0条" [ref=e1936] [cursor=pointer]:
+                    - /url: javascript:;
+                  - link "" [ref=e1937] [cursor=pointer]:
+                    - /url: javascript:;
+                    - generic [ref=e1938]: 
+              - generic [ref=e1940]:
+                - generic [ref=e1941] [cursor=pointer]:
+                  - text: 批量处理
+                  - generic [ref=e1942]: 
+                - generic [ref=e1943] [cursor=pointer]:
+                  - text: 引用分析
+                  - generic [ref=e1944]: 
+                - generic [ref=e1945] [cursor=pointer]:
+                  - text: 统计分析
+                  - generic [ref=e1946]: 
+            - generic [ref=e1949]:
+              - generic [ref=e1950]: 上一页
+              - generic [ref=e1951]:
+                - emphasis [ref=e1952]
+                - emphasis [ref=e1953]: "1"
+              - link "2" [ref=e1954] [cursor=pointer]:
+                - /url: javascript:;
+              - generic [ref=e1955]: …
+              - link "250" [ref=e1956] [cursor=pointer]:
+                - /url: javascript:;
+              - link "下一页" [ref=e1957] [cursor=pointer]:
+                - /url: javascript:;
+              - generic [ref=e1958]:
+                - text: 到第
+                - textbox [ref=e1959]
+                - text: 页
+                - button "确定" [ref=e1960] [cursor=pointer]
+      - text: "             : · · :      : · · :      : · · :      : · · :       : , , · · :    : · · :       : · · :       : · · :       : · · :       : · · :    : · · :       : · · :       : , · · :      : , · · :       : , · · :     : , , · · :       : , · · :     : · · :       : · · :      : , , , , · · :    :   : : : · : : : ;    :   : : : · : : : ; ; ;    :   : : : · : : : ; ;    :   : : : · : : : : ;     :   : , , : , , , : · : : : : ;  :   : : , : · : : : ;     :   : : : · : : : ;     :   : : : · : : : ;     :   : : : · : , : : : ;     :   : : : · : : : : ;  :   : : , : · : : : ; ; ;     :   : : : · : : : : : ; ;     :   : , : , : · : : : : ;    :   : , : , : · : , , : : : : ; ;     :   : , : : · : : : : : ;   :   : , , : , : · : : : ;     :   : , : , : · : : : : : ; ;   :   : : : · : : : : ; ;     :   : : : · : : : ;    :   : , , , , : : · : : : : ;                                                                                            "
+    - text:                                            
+    - generic [ref=e184]:
+      - list [ref=e186]:
+        - listitem [ref=e187]:
+          - link "公司首页" [ref=e188] [cursor=pointer]:
+            - /url: http://www.vipinfo.com.cn/?from=Qikan_Search_Advance
+          - text: "|"
+        - listitem [ref=e189]:
+          - link "关于我们" [ref=e190] [cursor=pointer]:
+            - /url: /qikan/webcontrol/about?from=Qikan_Search_Advance
+          - text: "|"
+        - listitem [ref=e191]:
+          - link "联系我们" [ref=e192] [cursor=pointer]:
+            - /url: http://www.vipinfo.com.cn/helpcontactus.html?from=Qikan_Search_Advance
+          - text: "|"
+        - listitem [ref=e193]:
+          - link "服务协议" [ref=e194] [cursor=pointer]:
+            - /url: /Qikan/WebControl/ServiceAgreement?from=Qikan_Search_Advance
+          - text: "|"
+        - listitem [ref=e195]:
+          - link "移动版" [ref=e196] [cursor=pointer]:
+            - /url: https://mqikan.cqvip.com?from=Qikan_Search_Advance
+      - generic [ref=e197]:
+        - paragraph [ref=e198]:
+          - generic [ref=e199]:
+            - text: V8.0 版权所有© 2001-2026
+            - link "渝B2-20050021-1" [ref=e200] [cursor=pointer]:
+              - /url: https://beian.miit.gov.cn/#/Integrated/recordQuery
+          - link "渝公网安备 50019002500403号" [ref=e202] [cursor=pointer]:
+            - /url: http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=50019002500403&from=Qikan_Search_Advance
+            - img [ref=e203]
+            - text: 渝公网安备 50019002500403号
+          - link "违法和不良信息举报中心" [ref=e205] [cursor=pointer]:
+            - /url: https://www.12377.cn/?from=Qikan_Search_Advance
+          - text: 举报邮箱：jubao@cqvip.com
+        - paragraph [ref=e206]: 互联网出版许可证 新出网证(渝)字10号机构客服热线 023-67882612
+  - text:          ဆ
+  - generic [ref=e1961]:
+    - subscript [ref=e1962]: "0"
+    - link "批量处理" [ref=e1963] [cursor=pointer]:
+      - /url: javascript:batch();
+      - generic [ref=e1964]:
+        - img [ref=e1965]
+        - text: 批量处理
+  - generic [ref=e207]:
+    - link "在线咨询" [ref=e208]:
+      - /url: "#"
+      - generic [ref=e209]: 在线咨询
+      - iframe [ref=e211]:
+        - img [ref=f8e3] [cursor=pointer]
+    - link " 使用帮助" [ref=e212] [cursor=pointer]:
+      - /url: /Qikan/WebControl/UseHelp?from=Qikan_Search_Advance
+      - generic [ref=e213]:
+        - generic [ref=e214]: 
+        - text: 使用帮助
+    - link " 返回顶部" [ref=e215] [cursor=pointer]:
+      - /url: "#top"
+      - generic [ref=e216]:
+        - generic [ref=e217]: 
+        - text: 返回顶部
+    - link " 意见反馈" [ref=e218] [cursor=pointer]:
+      - /url: javascript:void(0)
+      - generic [ref=e219]:
+        - generic [ref=e220]: 
+        - text: 意见反馈
+  - text: ": : : :"
+  - iframe

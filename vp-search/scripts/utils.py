@@ -48,8 +48,10 @@ def print_human_readable(data: Dict[str, Any]) -> None:
         if data.get("yearly_mode"):
             executed_years = data.get("executed_years") or []
             empty_years = data.get("empty_years") or []
+            skipped_years = data.get("skipped_years") or []
             print(f"执行年份: {', '.join(executed_years) if executed_years else '无'}")
             print(f"无结果年份: {', '.join(empty_years) if empty_years else '无'}")
+            print(f"跳过年份: {', '.join(skipped_years) if skipped_years else '无'}")
         if data.get("resumed_from_progress"):
             print("恢复模式: 是")
         return

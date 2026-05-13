@@ -22,6 +22,7 @@ from vp_page_size_ops import VpPageSizeMixin
 from vp_progress_ops import VpProgressMixin
 from vp_selection_ops import VpSelectionMixin
 from vp_yearly_export_ops import VpYearlyExportMixin
+from exceptions import ValidationError
 
 class VpSearchInteractor(
     VpFormMixin,
@@ -37,14 +38,15 @@ class VpSearchInteractor(
 ):
     """负责执行维普高级检索与批量导出。"""
 
-    EXPORT_BATCH_SIZE = 500
+    EXPORT_BATCH_SIZE = 100
     ADVANCED_FORM_READY_SELECTORS = (
         "input[name='advSearchKeywords']",
         "#basic_beginYear",
         "#basic_endYear",
     )
-    PREFERRED_RESULTS_PAGE_SIZE = 50
+    PREFERRED_RESULTS_PAGE_SIZE = 100
     NEXT_PAGE_MAX_RETRIES = 3
+    NEXT_PAGE_RETRY_DELAY = 1
     CORE_JOURNAL_TITLES = [
         "北大核心期刊",
         "EI来源期刊",
@@ -54,6 +56,7 @@ class VpSearchInteractor(
         "CSSCI期刊",
     ]
     RESULT_CHECKBOX_SELECTORS = [
+        "input[lay-filter='selectArticle']",
         "input[name='selectArticle']",
         "input[data-name='selectArticle']",
         ".search-list input[type='checkbox']",
@@ -166,6 +169,85 @@ class VpSearchInteractor(
         del planned_download, total
         self._prefer_results_page_size()
         self._wait_for_results_ready()
+
+    def _build_resume_runtime(
+        self,
+        resume_data: Optional[SearchParams],
+        output_dir: Path,
+        planned_download: int,
+        batch_count: int,
+        total: int,
+    ) -> Dict[str, Any]:
+        """维普单页导出模式下仅支持按整页续跑。"""
+        runtime = VpProgressMixin._build_resume_runtime(
+            self,
+            resume_data=resume_data,
+            output_dir=output_dir,
+            planned_download=planned_download,
+            batch_count=batch_count,
+            total=total,
+        )
+        current_row_offset = int(runtime.get("current_row_offset") or 0)
+        if current_row_offset > 0:
+            raise ValidationError("当前维普单页导出模式不支持从页内偏移续跑，请删除旧进度文件后重试")
+        runtime["current_row_offset"] = 0
+        return runtime
+
+    def _select_batch_for_export(
+        self,
+        search_params: SearchParams,
+        batch_index: int,
+        batch_target: int,
+        current_page: int,
+        current_row_offset: int,
+        strict_target: bool,
+    ) -> BatchSelectionResult:
+        """维普按单页导出，每批只处理当前结果页。"""
+        del search_params, batch_index, current_row_offset, strict_target
+
+        self._restore_results_position(current_page)
+        self._clear_selected_results()
+        self._wait_for_results_ready()
+
+        summary = self.parser.parse_results_summary()
+        resolved_current_page = int(summary.get("current_page") or current_page or 1)
+        checkbox_items = self._wait_for_current_page_checkbox_items()
+        page_row_count = len(checkbox_items)
+        if page_row_count <= 0:
+            return {
+                "selected_count": 0,
+                "next_row_offset": 0,
+                "page_row_count": 0,
+                "already_at_target": False,
+                "start_page": resolved_current_page,
+                "end_page": resolved_current_page,
+                "reached_end": not bool(summary.get("has_next_page")),
+            }
+
+        page_target_count = min(batch_target, page_row_count)
+        selected_count = self._select_rows_on_current_page(
+            row_offset=0,
+            page_target_count=page_target_count,
+            row_count=page_row_count,
+            selected_before_page=self._extract_selected_count(0),
+        )
+        return {
+            "selected_count": selected_count,
+            "next_row_offset": 0,
+            "page_row_count": page_row_count,
+            "already_at_target": selected_count >= page_target_count,
+            "start_page": resolved_current_page,
+            "end_page": resolved_current_page,
+            "reached_end": False,
+        }
+
+    def _prepare_next_batch_cursor(self, batch_selection: BatchSelectionResult) -> Dict[str, int]:
+        """单页导出完成后，下一批从下一页重新开始。"""
+        current_page = int(batch_selection.get("end_page") or 1)
+        return {
+            "current_page": current_page + 1,
+            "current_row_offset": 0,
+        }
 
     def _export_selected_results_for_batch(
         self,

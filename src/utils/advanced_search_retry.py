@@ -55,6 +55,12 @@ def run_with_auto_resume(
                     )
                 raise
 
+            exc_message = str(exc)
+            if "该进度文件已执行完成" in exc_message or "该进度文件对应的检索结果为空" in exc_message:
+                if logger is not None:
+                    logger.warning("进度文件已完成或无需继续，跳过自动续跑: error=%s", exc_message)
+                raise
+
             attempt += 1
             if logger is not None:
                 logger.warning(

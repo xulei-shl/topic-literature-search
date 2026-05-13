@@ -7,7 +7,7 @@ import unittest
 from tempfile import TemporaryDirectory
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
@@ -335,28 +335,16 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
 
     def test_select_rows_on_current_page_uses_precise_range_for_partial_page(self) -> None:
         row_checkboxes = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(10)]
-        select_all = FakeLocator(attributes={"name": "selectArticleAll"})
-        page_size_active = FakeLocator(attributes={"data-count": "10"})
-        page = FakePage(
-            {
-                "#selectPageSize a.active[data-count]": page_size_active,
-                ".search-list input[type='checkbox']": FakeLocatorGroup([select_all, *row_checkboxes]),
-                "input[name='selectArticleAll']": select_all,
-            }
-        )
-        self.interactor.page = page
-        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 1})
-        checkbox_items = self.interactor._current_page_checkbox_items()
 
         with (
+            patch.object(self.interactor, "_current_page_checkbox_items", return_value=row_checkboxes),
             patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
             patch.object(self.interactor, "_count_checked_rows", return_value=3),
         ):
             self.interactor._select_rows_on_current_page(
-                checkbox_items=checkbox_items,
                 row_offset=2,
                 page_target_count=3,
-                row_count=len(checkbox_items),
+                row_count=10,
                 selected_before_page=0,
             )
 
@@ -369,120 +357,121 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             ],
         )
 
-    def test_select_rows_on_current_page_partial_page_does_not_clear_current_page_selection(self) -> None:
+    def test_select_rows_on_current_page_partial_page_uses_incremental_selection(self) -> None:
         checkbox_group = FakeCheckboxGroup(10)
 
         with (
-            patch.object(self.interactor, "_clear_page_selection") as clear_page_selection,
-            patch.object(self.interactor, "_select_rows_incrementally") as select_rows_incrementally,
+            patch.object(self.interactor, "_current_page_checkbox_items", return_value=checkbox_group.items),
+            patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
             patch.object(self.interactor, "_count_checked_rows", return_value=3),
+            patch.object(self.interactor, "_try_select_all_on_current_page", return_value=False),
         ):
             self.interactor._select_rows_on_current_page(
-                checkbox_items=checkbox_group.items,
                 row_offset=0,
                 page_target_count=3,
                 row_count=10,
                 selected_before_page=100,
             )
 
-        clear_page_selection.assert_not_called()
-        select_rows_incrementally.assert_called_once_with(
-            checkbox_items=checkbox_group.items,
-            row_offset=0,
-            page_target_count=3,
-            selected_before_page=0,
-        )
+        self.assertEqual(ensure_checkbox_checked.call_count, 3)
+        ensure_checkbox_checked.assert_any_call(checkbox_group.items[0], selector="result_checkbox[0]")
+        ensure_checkbox_checked.assert_any_call(checkbox_group.items[1], selector="result_checkbox[1]")
+        ensure_checkbox_checked.assert_any_call(checkbox_group.items[2], selector="result_checkbox[2]")
 
     def test_select_rows_on_current_page_falls_back_when_select_all_count_is_abnormal(self) -> None:
         checkbox_group = FakeCheckboxGroup(50)
-        select_all = FakeLocator()
-        page = FakePage({"input[name='selectArticleAll']": select_all})
-        self.interactor.page = page
 
         with (
-            patch.object(self.interactor, "_extract_selected_count", side_effect=[120, 50]),
+            patch.object(self.interactor, "_current_page_checkbox_items", return_value=checkbox_group.items),
+            patch.object(self.interactor, "_try_select_all_on_current_page", return_value=False),
             patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
-            patch.object(self.interactor, "_disable_checkbox") as disable_checkbox,
-            patch.object(self.interactor, "_select_rows_incrementally") as select_rows_incrementally,
             patch.object(self.interactor, "_count_checked_rows", return_value=50),
         ):
             self.interactor._select_rows_on_current_page(
-                checkbox_items=checkbox_group.items,
                 row_offset=0,
                 page_target_count=50,
                 row_count=50,
                 selected_before_page=50,
             )
 
-        ensure_checkbox_checked.assert_called_once_with(
-            select_all,
-            selector="input[name='selectArticleAll']",
-        )
-        disable_checkbox.assert_called_once_with("input[name='selectArticleAll']")
-        select_rows_incrementally.assert_called_once_with(
-            checkbox_items=checkbox_group.items,
-            row_offset=0,
-            page_target_count=50,
-            selected_before_page=0,
-        )
+        self.assertEqual(ensure_checkbox_checked.call_count, 50)
+        ensure_checkbox_checked.assert_any_call(checkbox_group.items[0], selector="result_checkbox[0]")
+        ensure_checkbox_checked.assert_any_call(checkbox_group.items[49], selector="result_checkbox[49]")
 
     def test_select_rows_on_current_page_allows_select_all_after_previous_page_selected(self) -> None:
         checkbox_group = FakeCheckboxGroup(50)
-        select_all = FakeLocator()
-        page = FakePage({"input[name='selectArticleAll']": select_all})
-        self.interactor.page = page
 
         with (
-            patch.object(self.interactor, "_extract_selected_count", return_value=100),
+            patch.object(self.interactor, "_try_select_all_on_current_page", return_value=True) as try_select_all,
             patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
         ):
             self.interactor._select_rows_on_current_page(
-                checkbox_items=checkbox_group.items,
                 row_offset=0,
                 page_target_count=50,
                 row_count=50,
                 selected_before_page=50,
             )
 
-        ensure_checkbox_checked.assert_called_once_with(
-            select_all,
-            selector="input[name='selectArticleAll']",
+        try_select_all.assert_called_once_with(
+            expected_increase=50,
+            selected_before_page=50,
         )
+        ensure_checkbox_checked.assert_not_called()
 
-    def test_select_rows_on_current_page_skips_select_all_for_incomplete_page_sample(self) -> None:
-        checkbox_group = FakeCheckboxGroup(3)
-        page_size_active = FakeLocator(attributes={"data-count": "50"})
-        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
+    def test_try_select_all_on_current_page_does_not_clear_page_when_shortfall(self) -> None:
+        checkbox_group = FakeCheckboxGroup(50)
+        select_all = FakeLocator()
+        self.interactor.page = FakePage({"input[name='selectArticleAll']": select_all})
 
         with (
-            patch.object(self.interactor, "_try_select_all_on_current_page") as try_select_all_on_current_page,
-            patch.object(self.interactor, "_select_rows_incrementally") as select_rows_incrementally,
+            patch.object(self.interactor, "_current_page_checkbox_items", return_value=checkbox_group.items),
+            patch.object(self.interactor, "_ensure_checkbox_checked"),
+            patch.object(self.interactor, "_wait_for_select_all_settled", return_value=32),
+            patch.object(self.interactor, "_clear_page_selection") as clear_page_selection,
+        ):
+            result = self.interactor._try_select_all_on_current_page(
+                expected_increase=50,
+                selected_before_page=0,
+            )
+
+        self.assertFalse(result)
+        clear_page_selection.assert_not_called()
+
+    def test_select_rows_on_current_page_tries_select_all_for_incomplete_page_sample(self) -> None:
+        checkbox_group = FakeCheckboxGroup(3)
+
+        with (
+            patch.object(self.interactor, "_current_page_checkbox_items", return_value=checkbox_group.items),
+            patch.object(self.interactor, "_try_select_all_on_current_page", return_value=False) as try_select_all,
+            patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
             patch.object(self.interactor, "_count_checked_rows", return_value=3),
         ):
             self.interactor._select_rows_on_current_page(
-                checkbox_items=checkbox_group.items,
                 row_offset=0,
                 page_target_count=3,
                 row_count=3,
                 selected_before_page=300,
             )
 
-        try_select_all_on_current_page.assert_not_called()
-        select_rows_incrementally.assert_called_once_with(
-            checkbox_items=checkbox_group.items,
-            row_offset=0,
-            page_target_count=3,
-            selected_before_page=0,
+        try_select_all.assert_called_once_with(
+            expected_increase=3,
+            selected_before_page=300,
         )
+        self.assertEqual(ensure_checkbox_checked.call_count, 3)
 
-    def test_select_rows_incrementally_checks_exact_target_range(self) -> None:
+    def test_select_rows_on_current_page_checks_exact_target_range(self) -> None:
+        """逐条勾选应精确覆盖目标区间 [row_offset, row_offset + page_target_count)。"""
         checkbox_group = FakeCheckboxGroup(5)
 
-        with patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked:
-            self.interactor._select_rows_incrementally(
-                checkbox_items=checkbox_group.items,
+        with (
+            patch.object(self.interactor, "_current_page_checkbox_items", return_value=checkbox_group.items),
+            patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
+            patch.object(self.interactor, "_count_checked_rows", return_value=3),
+        ):
+            self.interactor._select_rows_on_current_page(
                 row_offset=0,
                 page_target_count=3,
+                row_count=5,
                 selected_before_page=50,
             )
 
@@ -497,21 +486,11 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
 
     def test_select_batch_results_uses_visible_checkbox_count_for_pagination(self) -> None:
         all_checkbox_group = FakeCheckboxGroup(304)
-        page_size_active = FakeLocator(attributes={"data-count": "50"})
-        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
         self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 1})
-        for index, checkbox in enumerate(all_checkbox_group.items):
-            checkbox.visible = False
-            checkbox.child_locators = {
-                "xpath=following-sibling::div[contains(@class,'layui-form-checkbox')][1]": FakeLocator(
-                    count_value=1,
-                    visible=index < 50,
-                )
-            }
 
         with (
             patch.object(self.interactor, "_wait_for_results_ready"),
-            patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
+            patch.object(self.interactor, "_current_page_checkbox_items", return_value=all_checkbox_group.items[:50]),
             patch.object(self.interactor, "_select_rows_on_current_page", side_effect=[50, 50]) as select_rows_on_current_page,
             patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
         ):
@@ -520,12 +499,10 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.assertEqual(select_rows_on_current_page.call_count, 2)
         first_call = select_rows_on_current_page.call_args_list[0].kwargs
         second_call = select_rows_on_current_page.call_args_list[1].kwargs
-        self.assertEqual(len(first_call["checkbox_items"]), 50)
         self.assertEqual(first_call["row_offset"], 0)
         self.assertEqual(first_call["page_target_count"], 50)
         self.assertEqual(first_call["row_count"], 50)
         self.assertEqual(first_call["selected_before_page"], 0)
-        self.assertEqual(len(second_call["checkbox_items"]), 50)
         self.assertEqual(second_call["row_offset"], 0)
         self.assertEqual(second_call["page_target_count"], 50)
         self.assertEqual(second_call["row_count"], 50)
@@ -554,6 +531,12 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             selection = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=False)
 
         self.assertEqual(select_rows_on_current_page.call_count, 2)
+        first_call = select_rows_on_current_page.call_args_list[0].kwargs
+        self.assertNotIn("checkbox_items", first_call)
+        self.assertEqual(first_call["row_offset"], 0)
+        self.assertEqual(first_call["page_target_count"], 50)
+        self.assertEqual(first_call["row_count"], 50)
+        self.assertEqual(first_call["selected_before_page"], 0)
         self.assertEqual(selection["selected_count"], 97)
         self.assertEqual(selection["next_row_offset"], 50)
         self.assertEqual(selection["page_row_count"], 50)
@@ -586,6 +569,8 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             selection = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=True)
 
         self.assertEqual(select_rows_on_current_page.call_count, 3)
+        for call_args in select_rows_on_current_page.call_args_list:
+            self.assertNotIn("checkbox_items", call_args.kwargs)
         self.assertEqual(selection["selected_count"], 100)
         self.assertEqual(selection["next_row_offset"], 3)
         self.assertEqual(selection["page_row_count"], 50)
@@ -594,8 +579,8 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         self.assertEqual(selection["end_page"], 3)
         self.assertEqual(goto_next_results_page.call_count, 2)
 
-    def test_select_batch_results_returns_reached_end_when_last_page_exhausted(self) -> None:
-        """续跑游标已在末页末尾时应按正常结束返回。"""
+    def test_select_batch_results_raises_validation_error_when_last_page_exhausted(self) -> None:
+        """续跑游标已在末页末尾时抛出 ValidationError。"""
         checkbox_items = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(50)]
 
         with (
@@ -606,121 +591,75 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
                 "parser",
                 SimpleNamespace(parse_results_summary=lambda: {"current_page": 120}),
             ),
-            patch.object(self.interactor, "_goto_next_results_page", return_value=False) as goto_next_results_page,
+            patch.object(self.interactor, "_goto_next_results_page", return_value=False),
             patch.object(INTERACTOR_TIME, "sleep", return_value=None),
         ):
-            selection = self.interactor._select_batch_results(export_limit=100, row_offset=50, strict_target=True)
+            with self.assertRaises(ValidationError):
+                self.interactor._select_batch_results(export_limit=100, row_offset=50, strict_target=True)
 
-        self.assertEqual(selection["selected_count"], 0)
-        self.assertEqual(selection["next_row_offset"], 50)
-        self.assertEqual(selection["page_row_count"], 50)
-        self.assertFalse(selection["already_at_target"])
-        self.assertTrue(selection["reached_end"])
-        goto_next_results_page.assert_called_once()
-
-    def test_current_page_checkbox_items_prefers_page_slice(self) -> None:
-        all_checkbox_group = FakeCheckboxGroup(304)
-        page_size_active = FakeLocator(attributes={"data-count": "50"})
-        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
-        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 2})
-
-        with patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group):
-            checkbox_items = self.interactor._current_page_checkbox_items()
-
-        self.assertEqual(len(checkbox_items), 50)
-        self.assertIs(checkbox_items[0], all_checkbox_group.items[50])
-        self.assertIs(checkbox_items[-1], all_checkbox_group.items[99])
-
-    def test_current_page_checkbox_items_skips_visible_scan_for_later_page_slice(self) -> None:
-        all_checkbox_group = FakeCheckboxGroup(304)
-        page_size_active = FakeLocator(attributes={"data-count": "50"})
-        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
-        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 3})
-
-        with (
-            patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
-            patch.object(
-                self.interactor,
-                "_collect_visible_result_row_checkboxes",
-                side_effect=AssertionError("后续页整页切片不应回退到可见性扫描"),
-            ),
-        ):
-            checkbox_items = self.interactor._current_page_checkbox_items()
-
-        self.assertEqual(len(checkbox_items), 50)
-        self.assertIs(checkbox_items[0], all_checkbox_group.items[100])
-        self.assertIs(checkbox_items[-1], all_checkbox_group.items[149])
-
-    def test_current_page_checkbox_items_filters_select_all_from_later_page_slice(self) -> None:
-        all_checkbox_group = FakeCheckboxGroup(304)
-        page_size_active = FakeLocator(attributes={"data-count": "50"})
-        page_three_start = 100
-        select_all = all_checkbox_group.items[page_three_start]
-        select_all.attributes = {"name": "selectArticleAll"}
-        replacement_row = FakeLocator(attributes={"name": "selectArticle"})
-        all_checkbox_group.items[page_three_start + 49] = replacement_row
-        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
-        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 3, "total_pages": 100})
-
-        with (
-            patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
-            patch.object(
-                self.interactor,
-                "_collect_visible_result_row_checkboxes",
-                side_effect=AssertionError("后续页单个全选框混入时不应回退到可见性扫描"),
-            ),
-        ):
-            checkbox_items = self.interactor._current_page_checkbox_items()
-
-        self.assertEqual(len(checkbox_items), 50)
-        self.assertNotIn(select_all, checkbox_items)
-        self.assertIs(checkbox_items[0], all_checkbox_group.items[101])
-        self.assertIn(replacement_row, checkbox_items)
-        self.assertIs(checkbox_items[-1], all_checkbox_group.items[150])
-
-    def test_current_page_checkbox_items_falls_back_when_middle_page_slice_is_incomplete(self) -> None:
-        all_checkbox_group = FakeCheckboxGroup(304)
-        all_checkbox_group.items[303].attributes = {"name": "selectArticleAll"}
-        visible_items = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(50)]
-        page_size_active = FakeLocator(attributes={"data-count": "50"})
-        self.interactor.page = FakePage({"#selectPageSize a.active[data-count]": page_size_active})
-        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 7, "total_pages": 100})
-
-        with (
-            patch.object(self.interactor, "_result_checkbox_locator", return_value=all_checkbox_group),
-            patch.object(
-                self.interactor,
-                "_collect_visible_result_row_checkboxes",
-                return_value=visible_items,
-            ) as collect_visible_result_row_checkboxes,
-        ):
-            checkbox_items = self.interactor._current_page_checkbox_items()
-
-        self.assertIs(checkbox_items, visible_items)
-        collect_visible_result_row_checkboxes.assert_called_once_with(
-            checkbox_locator=all_checkbox_group,
-            total_count=304,
-            page_size=50,
-        )
-
-    def test_current_page_checkbox_items_filters_select_all_from_broad_selector(self) -> None:
-        select_all = FakeLocator(attributes={"name": "selectArticleAll"})
+    def test_current_page_checkbox_items_returns_all_filtered_items(self) -> None:
+        """新实现直接返回所有过滤后的复选框，不再按页切片。"""
         row_checkboxes = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(50)]
-        page_size_active = FakeLocator(attributes={"data-count": "50"})
+        self.interactor.page = FakePage({})
+
+        with patch.object(self.interactor, "_result_checkbox_locator", return_value=FakeLocatorGroup(row_checkboxes)):
+            checkbox_items = self.interactor._current_page_checkbox_items()
+
+        self.assertEqual(len(checkbox_items), 50)
+
+    def test_current_page_checkbox_items_uses_selectArticle_selector(self) -> None:
+        """主选择器 input[name='selectArticle'] 自动排除全选框 selectArticleAll。"""
+        row_checkboxes = [FakeLocator(attributes={"name": "selectArticle"}) for _ in range(50)]
         self.interactor.page = FakePage(
-            {
-                "#selectPageSize a.active[data-count]": page_size_active,
-                ".search-list input[type='checkbox']": FakeLocatorGroup([select_all, *row_checkboxes]),
-            }
+            {"input[name='selectArticle']": FakeLocatorGroup(row_checkboxes)}
         )
-        self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 1})
 
         checkbox_items = self.interactor._current_page_checkbox_items()
 
         self.assertEqual(len(checkbox_items), 50)
-        self.assertNotIn(select_all, checkbox_items)
         self.assertIs(checkbox_items[0], row_checkboxes[0])
         self.assertIs(checkbox_items[-1], row_checkboxes[-1])
+
+    def test_current_page_checkbox_items_returns_all_items_without_visible_filter(self) -> None:
+        """当前页复选框不再按可见性过滤，全部返回供 force 操作。"""
+        hidden_only = FakeLocator(visible=False)
+        hidden_only.child_locators = {
+            "xpath=following-sibling::div[contains(@class,'layui-form-checkbox')][1]": FakeLocator(visible=False),
+        }
+        visible_via_wrapper_1 = FakeLocator(visible=False)
+        visible_via_wrapper_1.child_locators = {
+            "xpath=following-sibling::div[contains(@class,'layui-form-checkbox')][1]": FakeLocator(visible=True),
+        }
+        visible_via_wrapper_2 = FakeLocator(visible=False)
+        visible_via_wrapper_2.child_locators = {
+            "xpath=following-sibling::div[contains(@class,'layui-form-checkbox')][1]": FakeLocator(visible=True),
+        }
+        self.interactor.page = FakePage(
+            {
+                ".search-list tbody input[lay-filter='selectArticle']": FakeLocatorGroup(
+                    [hidden_only, visible_via_wrapper_1, visible_via_wrapper_2]
+                )
+            }
+        )
+
+        checkbox_items = self.interactor._current_page_checkbox_items()
+
+        self.assertEqual(checkbox_items, [hidden_only, visible_via_wrapper_1, visible_via_wrapper_2])
+
+    def test_resolve_checkbox_click_target_prefers_visible_following_sibling(self) -> None:
+        visible_target = FakeLocator(visible=True)
+        parent_target = FakeLocator(visible=False)
+        checkbox = FakeLocator(
+            visible=False,
+            child_locators={
+                "xpath=following-sibling::div[contains(@class,'layui-form-checkbox')][1]": visible_target,
+                "xpath=../div[contains(@class,'layui-form-checkbox')][1]": parent_target,
+            },
+        )
+
+        target = self.interactor._resolve_checkbox_click_target(checkbox)
+
+        self.assertIs(target, visible_target)
 
     def test_open_export_page_retries_after_expanding_batch_menu(self) -> None:
         current_page = FakePage({})
@@ -914,6 +853,49 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
             restore_results_page=False,
         )
 
+    def test_select_batch_for_export_only_processes_current_page(self) -> None:
+        checkbox_group = FakeCheckboxGroup(100)
+        self.interactor.parser = SimpleNamespace(
+            parse_results_summary=lambda: {"current_page": 3, "has_next_page": True}
+        )
+
+        with (
+            patch.object(self.interactor, "_restore_results_position") as restore_results_position,
+            patch.object(self.interactor, "_clear_selected_results") as clear_selected_results,
+            patch.object(self.interactor, "_wait_for_results_ready") as wait_for_results_ready,
+            patch.object(self.interactor, "_wait_for_current_page_checkbox_items", return_value=checkbox_group.items),
+            patch.object(self.interactor, "_extract_selected_count", return_value=12),
+            patch.object(self.interactor, "_select_rows_on_current_page", return_value=88) as select_rows_on_current_page,
+        ):
+            selection = self.interactor._select_batch_for_export(
+                search_params={"query": "新青年"},
+                batch_index=2,
+                batch_target=88,
+                current_page=3,
+                current_row_offset=0,
+                strict_target=False,
+            )
+
+        restore_results_position.assert_called_once_with(3)
+        clear_selected_results.assert_called_once()
+        wait_for_results_ready.assert_called_once()
+        select_rows_on_current_page.assert_called_once_with(
+            row_offset=0,
+            page_target_count=88,
+            row_count=100,
+            selected_before_page=12,
+        )
+        self.assertEqual(selection["selected_count"], 88)
+        self.assertEqual(selection["page_row_count"], 100)
+        self.assertEqual(selection["start_page"], 3)
+        self.assertEqual(selection["end_page"], 3)
+        self.assertEqual(selection["next_row_offset"], 0)
+
+    def test_prepare_next_batch_cursor_advances_to_next_page(self) -> None:
+        next_cursor = self.interactor._prepare_next_batch_cursor({"end_page": 4})
+
+        self.assertEqual(next_cursor, {"current_page": 5, "current_row_offset": 0})
+
     def test_download_from_export_page_uses_confirm_button_when_option_has_no_auto_download(self) -> None:
         export_page = FakePage({})
         with TemporaryDirectory() as temp_dir:
@@ -1062,25 +1044,30 @@ class VpInteractorSelectionTestCase(unittest.TestCase):
         wait_for_export_type_selected.assert_called_once_with(export_page=export_page, export_type="excel")
         capture_by_confirm.assert_called_once_with(export_page=export_page, kind="metadata")
 
-    def test_ensure_checkbox_checked_prefers_layui_wrapper(self) -> None:
+    def test_ensure_checkbox_checked_uses_native_check(self) -> None:
+        """逐条勾选优先使用原生 check(force=True)，失败后 JS 兜底。"""
         checkbox = FakeLocator(checked=False)
 
-        def mark_checked(_locator: FakeLocator) -> None:
-            checkbox.checked = True
+        self.interactor._ensure_checkbox_checked(checkbox, selector="input[name='selectArticle']")
 
-        visual_checkbox = FakeLocator(
-            class_name="layui-unselect layui-form-checkbox",
-            on_click=mark_checked,
-        )
-        checkbox.child_locators = {
-            "xpath=following-sibling::div[contains(@class,'layui-form-checkbox')][1]": visual_checkbox
-        }
-
-        self.interactor._ensure_checkbox_checked(checkbox, selector="input[name='selectArticleAll']")
-
-        self.assertEqual(visual_checkbox.click_calls, [True])
-        self.assertEqual(checkbox.check_calls, 0)
+        self.assertEqual(checkbox.check_calls, 1)
         self.assertTrue(checkbox.checked)
+
+    def test_ensure_checkbox_unchecked_prefers_click_target(self) -> None:
+        """取消勾选优先点击可见 Layui 包装层，避免对隐藏 input 直接 uncheck。"""
+        checkbox = FakeLocator(checked=True)
+
+        def clear_checkbox(_locator):
+            checkbox.checked = False
+
+        click_target = FakeLocator(on_click=clear_checkbox)
+
+        with patch.object(self.interactor, "_resolve_checkbox_click_target", return_value=click_target):
+            self.interactor._ensure_checkbox_unchecked(checkbox, selector="input[name='selectArticle']")
+
+        self.assertEqual(click_target.click_calls, [True])
+        self.assertEqual(checkbox.check_calls, 0)
+        self.assertFalse(checkbox.checked)
 
 
 class VpInteractorResultsPageTestCase(unittest.TestCase):
@@ -1097,9 +1084,9 @@ class VpInteractorResultsPageTestCase(unittest.TestCase):
         with patch.object(INTERACTOR_TIME, "sleep", return_value=None):
             self.interactor._wait_for_results_ready()
 
-    def test_prefer_results_page_size_clicks_50_option(self) -> None:
+    def test_prefer_results_page_size_clicks_100_option(self) -> None:
         page_size_link = FakeLocator(class_name="")
-        self.interactor.page = FakePage({"#selectPageSize a[data-count='50']": page_size_link})
+        self.interactor.page = FakePage({"#selectPageSize a[data-count='100']": page_size_link})
 
         with patch.object(self.interactor, "_wait_for_results_page_size_applied") as wait_for_page_size:
             self.interactor._prefer_results_page_size()
@@ -1109,7 +1096,7 @@ class VpInteractorResultsPageTestCase(unittest.TestCase):
 
     def test_prefer_results_page_size_supports_generic_data_count_selector(self) -> None:
         page_size_link = FakeLocator(class_name="")
-        self.interactor.page = FakePage({"[data-count='50']": FakeLocatorGroup([page_size_link])})
+        self.interactor.page = FakePage({"[data-count='100']": FakeLocatorGroup([page_size_link])})
 
         with patch.object(self.interactor, "_wait_for_results_page_size_applied") as wait_for_page_size:
             self.interactor._prefer_results_page_size()
@@ -1203,49 +1190,49 @@ class VpInteractorYearlyExportTestCase(unittest.TestCase):
         legacy.assert_called_once()
 
     def test_build_yearly_export_tasks_uses_real_available_years(self) -> None:
-        """仅应基于页面真实可选年份构造任务。"""
+        """仅应基于页面真实可选年份构造任务，VP 最小年份为 1989。"""
         tasks = self.interactor._build_yearly_export_tasks(
             query="新青年",
-            available_years=["2026", "1980", "1979", "1978", "1949", "1915"],
+            available_years=["2020", "1991", "1990", "1989", "1988"],
             date_from=None,
-            date_to="1980",
+            date_to="1991",
             core_only=False,
         )
 
         self.assertEqual(
             [(item["date_from"], item["date_to"]) for item in tasks],
-            [("1949", "1949"), ("1978", "1978"), ("1979", "1979"), ("1980", "1980")],
+            [("", "1989"), ("1990", "1990"), ("1991", "1991")],
         )
 
     def test_build_yearly_export_tasks_uses_single_year_windows_when_date_from_present(self) -> None:
         """同时传入起始年与截至年时，也应按单年窗口构造任务。"""
         tasks = self.interactor._build_yearly_export_tasks(
             query="新青年",
-            available_years=["1980", "1979", "1978", "1949"],
-            date_from="1978",
-            date_to="1980",
+            available_years=["1989", "1990", "1991", "1992"],
+            date_from="1990",
+            date_to="1992",
             core_only=True,
         )
 
         self.assertEqual(
             [(item["date_from"], item["date_to"], item["core_only"]) for item in tasks],
-            [("1978", "1978", True), ("1979", "1979", True), ("1980", "1980", True)],
+            [("1990", "1990", True), ("1991", "1991", True), ("1992", "1992", True)],
         )
 
-    def test_build_yearly_export_tasks_clamps_start_year_to_1949(self) -> None:
-        """起始年早于 1949 时应钳制到 1949。"""
+    def test_build_yearly_export_tasks_clamps_start_year_to_vp_minimum(self) -> None:
+        """起始年早于 VP 最小年份 1989 时应钳制到 1989。"""
         tasks = self.interactor._build_yearly_export_tasks(
             query="新青年",
-            available_years=["1980", "1979", "1978", "1949", "1915"],
-            date_from="1915",
-            date_to="1980",
+            available_years=["1991", "1990", "1989", "1988"],
+            date_from="1985",
+            date_to="1991",
             core_only=False,
         )
 
-        self.assertEqual(tasks[0]["date_from"], "1949")
-        self.assertEqual(tasks[0]["date_to"], "1949")
-        self.assertEqual(tasks[-1]["date_from"], "1980")
-        self.assertEqual(tasks[-1]["date_to"], "1980")
+        self.assertEqual(tasks[0]["date_from"], "")
+        self.assertEqual(tasks[0]["date_to"], "1989")
+        self.assertEqual(tasks[-1]["date_from"], "1991")
+        self.assertEqual(tasks[-1]["date_to"], "1991")
 
     def test_collect_available_end_years_reads_select_options(self) -> None:
         """可选年份应直接从结束年下拉 DOM 提取。"""
@@ -1266,6 +1253,18 @@ class VpInteractorYearlyExportTestCase(unittest.TestCase):
 
         self.assertEqual(years, ["1978", "1979"])
 
+    def test_build_yearly_export_tasks_exits_when_date_to_before_vp_minimum(self) -> None:
+        """date_to 小于 1989 时应输出错误并退出。"""
+        with self.assertRaises(SystemExit) as cm:
+            self.interactor._build_yearly_export_tasks(
+                query="新青年",
+                available_years=["1980", "1978", "1949"],
+                date_from=None,
+                date_to="1980",
+                core_only=False,
+            )
+        self.assertEqual(cm.exception.code, 1)
+
     def test_run_yearly_advanced_export_skips_empty_year_and_continues(self) -> None:
         """某年无结果时应写留痕并继续后续年份。"""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1275,35 +1274,41 @@ class VpInteractorYearlyExportTestCase(unittest.TestCase):
 
             self.interactor.config.ensure_output_dir = lambda data=None: output_dir
             self.interactor.export_processor = SimpleNamespace(
-                merge_batch_excels=lambda excel_paths, final_file: str(final_file),
+                merge_batch_excels=lambda excel_paths, final_file, check_reference_column=False: str(final_file),
             )
 
             with (
                 patch.object(self.interactor, "_prepare_yearly_progress_store", return_value=(SimpleNamespace(file_path=output_dir / "outer.json"), None)),
-                patch.object(self.interactor, "_collect_available_end_years", return_value=["1949", "1978"]),
+                patch.object(self.interactor, "_collect_available_end_years", return_value=["1989", "1990", "1991"]),
                 patch.object(self.interactor, "_ensure_yearly_search_page_ready"),
                 patch.object(self.interactor, "_run_single_yearly_export", side_effect=[
-                    {"status": "no_results", "year": "1949"},
+                    {"status": "no_results", "year": "1989"},
                     {
                         "status": "success",
-                        "year": "1978",
+                        "year": "1990",
                         "exported": 12,
                         "selected": 12,
                         "planned_download": 12,
                         "batch_count": 1,
                         "exported_batches": 1,
                         "final_file_path": str(success_file),
-                        "report_file": str(output_dir / "1978-report.txt"),
-                        "progress_file": str(output_dir / "1978-progress.json"),
+                        "report_file": str(output_dir / "1990-report.txt"),
+                        "progress_file": str(output_dir / "1990-progress.json"),
                     },
                 ]) as run_single,
+                patch.object(self.interactor, "_collect_yearly_validation_outcomes", return_value=([], [])),
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(output_dir / "1990-report.txt")]),
+                ),
                 patch.object(self.interactor, "_save_yearly_progress_snapshot"),
             ):
                 result = self.interactor._run_yearly_advanced_export(
                     cli_params={
                         "query": "新青年",
                         "date_from": None,
-                        "date_to": "1978",
+                        "date_to": "1990",
                         "core_only": False,
                         "max_download": None,
                     },
@@ -1312,29 +1317,29 @@ class VpInteractorYearlyExportTestCase(unittest.TestCase):
 
         self.assertEqual(run_single.call_count, 2)
         self.assertTrue(result["yearly_mode"])
-        self.assertEqual(result["executed_years"], ["1949", "1978"])
-        self.assertEqual(result["empty_years"], ["1949"])
+        self.assertEqual(result["executed_years"], ["1989", "1990"])
+        self.assertEqual(result["empty_years"], ["1989"])
         self.assertEqual(result["exported"], 12)
 
     def test_run_yearly_advanced_export_resumes_from_next_unfinished_year(self) -> None:
         """外层逐年进度恢复时应从下一个未完成年份继续。"""
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)
-            success_file = output_dir / "1979-merged.xlsx"
+            success_file = output_dir / "1991-merged.xlsx"
             success_file.write_text("ok", encoding="utf-8")
             resume_data = {
                 "status": "running",
                 "search_params": {
                     "query": "新青年",
                     "date_from": None,
-                    "date_to": "1979",
+                    "date_to": "1991",
                     "core_only": True,
                 },
                 "runtime": {
-                    "available_years": ["1949", "1978", "1979"],
+                    "available_years": ["1989", "1990", "1991"],
                     "next_year_index": 2,
-                    "executed_years": ["1949", "1978"],
-                    "empty_years": ["1949"],
+                    "executed_years": ["1989", "1990"],
+                    "empty_years": ["1989"],
                     "yearly_result_files": [],
                     "exported_total": 8,
                     "planned_download": 8,
@@ -1346,7 +1351,7 @@ class VpInteractorYearlyExportTestCase(unittest.TestCase):
 
             self.interactor.config.ensure_output_dir = lambda data=None: output_dir
             self.interactor.export_processor = SimpleNamespace(
-                merge_batch_excels=lambda excel_paths, final_file: str(final_file),
+                merge_batch_excels=lambda excel_paths, final_file, check_reference_column=False: str(final_file),
             )
 
             with (
@@ -1355,23 +1360,29 @@ class VpInteractorYearlyExportTestCase(unittest.TestCase):
                 patch.object(self.interactor, "_ensure_yearly_search_page_ready"),
                 patch.object(self.interactor, "_run_single_yearly_export", return_value={
                     "status": "success",
-                    "year": "1979",
+                    "year": "1991",
                     "exported": 5,
                     "selected": 5,
                     "planned_download": 5,
                     "batch_count": 1,
                     "exported_batches": 1,
                     "final_file_path": str(success_file),
-                    "report_file": str(output_dir / "1979-report.txt"),
-                    "progress_file": str(output_dir / "1979-progress.json"),
+                    "report_file": str(output_dir / "1991-report.txt"),
+                    "progress_file": str(output_dir / "1991-progress.json"),
                 }) as run_single,
+                patch.object(self.interactor, "_collect_yearly_validation_outcomes", return_value=([], [])),
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(output_dir / "1991-report.txt")]),
+                ),
                 patch.object(self.interactor, "_save_yearly_progress_snapshot"),
             ):
                 result = self.interactor._run_yearly_advanced_export(
                     cli_params={
                         "query": "新青年",
                         "date_from": None,
-                        "date_to": "1979",
+                        "date_to": "1991",
                         "core_only": True,
                         "max_download": None,
                     },
@@ -1380,8 +1391,101 @@ class VpInteractorYearlyExportTestCase(unittest.TestCase):
 
         collect_years.assert_not_called()
         run_single.assert_called_once()
-        self.assertEqual(result["executed_years"], ["1949", "1978", "1979"])
-        self.assertEqual(result["empty_years"], ["1949"])
+        self.assertEqual(result["executed_years"], ["1989", "1990", "1991"])
+        self.assertEqual(result["empty_years"], ["1989"])
+
+    def test_run_yearly_advanced_export_reruns_mismatched_year_before_merge(self) -> None:
+        """年度汇总数量与合并表格行数不一致时应先重跑再总合并。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            success_file = output_dir / "1990-merged.xlsx"
+            report_file = output_dir / "1990-report.txt"
+            progress_file = output_dir / "1990-progress.json"
+            task = {
+                "query": "新青年",
+                "year": "1990",
+                "date_from": "1990",
+                "date_to": "1990",
+                "core_only": True,
+                "max_download": None,
+            }
+
+            merge_batch_excels = Mock(return_value=str(output_dir / "final.xlsx"))
+            self.interactor.config.ensure_output_dir = lambda data=None: output_dir
+            self.interactor.export_processor = SimpleNamespace(merge_batch_excels=merge_batch_excels)
+
+            with (
+                patch.object(self.interactor, "_prepare_yearly_progress_store", return_value=(SimpleNamespace(file_path=output_dir / "outer.json"), None)),
+                patch.object(self.interactor, "_collect_available_end_years", return_value=["1990"]),
+                patch.object(self.interactor, "_ensure_yearly_search_page_ready"),
+                patch.object(
+                    self.interactor,
+                    "_run_single_yearly_export",
+                    side_effect=[
+                        {
+                            "status": "success",
+                            "year": "1990",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(success_file),
+                            "report_file": str(report_file),
+                            "progress_file": str(progress_file),
+                            "batch_report_files": [],
+                        },
+                        {
+                            "status": "success",
+                            "year": "1990",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(success_file),
+                            "report_file": str(report_file),
+                            "progress_file": str(progress_file),
+                            "batch_report_files": [],
+                        },
+                    ],
+                ) as run_single,
+                patch.object(
+                    self.interactor,
+                    "_collect_yearly_validation_outcomes",
+                    side_effect=[
+                        ([{"task": task, "year": "1990", "reported_total": 319, "actual_rows": 100}], []),
+                        ([], []),
+                    ],
+                ) as collect_failures,
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(report_file)]),
+                ),
+                patch.object(self.interactor, "_build_yearly_sub_progress_file", return_value=progress_file),
+                patch.object(self.interactor, "_cleanup_year_output_dir") as cleanup_dir,
+                patch.object(self.interactor, "_save_yearly_progress_snapshot"),
+            ):
+                result = self.interactor._run_yearly_advanced_export(
+                    cli_params={
+                        "query": "新青年",
+                        "date_from": None,
+                        "date_to": "1990",
+                        "core_only": True,
+                        "max_download": None,
+                    },
+                    progress_file=None,
+                )
+
+        self.assertEqual(run_single.call_count, 2)
+        self.assertEqual(collect_failures.call_count, 2)
+        cleanup_dir.assert_called_once_with(output_dir, task)
+        merge_args = merge_batch_excels.call_args.args
+        self.assertEqual(merge_args[0], [Path(str(success_file))])
+        self.assertEqual(merge_args[1].parent, output_dir)
+        self.assertTrue(merge_args[1].name.endswith("-merged.xlsx"))
+        self.assertTrue(result["yearly_mode"])
 
     def test_run_single_yearly_export_reuses_current_search_page(self) -> None:
         """年度子任务应直接复用当前高级检索页，不再重新开页。"""
@@ -1503,6 +1607,7 @@ class VpInteractorPaginationTestCase(unittest.TestCase):
             patch.object(self.interactor, "_find_next_page_link", return_value=locator),
             patch.object(self.interactor, "_first_result_title", return_value="标题A"),
             patch.object(self.interactor, "_click_next_page_link") as click_next_page_link,
+            patch.object(self.interactor, "_wait_for_pagination_loading_dismissed"),
             patch.object(
                 self.interactor,
                 "_wait_for_results_page_advanced",
@@ -1536,6 +1641,7 @@ class VpInteractorPaginationTestCase(unittest.TestCase):
             patch.object(self.interactor, "_find_next_page_link", return_value=locator),
             patch.object(self.interactor, "_first_result_title", return_value="标题A"),
             patch.object(self.interactor, "_click_next_page_link"),
+            patch.object(self.interactor, "_wait_for_pagination_loading_dismissed"),
             patch.object(
                 self.interactor,
                 "_wait_for_results_page_advanced",
@@ -1642,6 +1748,7 @@ class VpInteractorPaginationTestCase(unittest.TestCase):
 
         with (
             patch.object(self.interactor, "_first_result_title", return_value="标题A"),
+            patch.object(self.interactor, "_wait_for_pagination_loading_dismissed"),
             patch.object(self.interactor, "_wait_for_results_changed", return_value=None),
         ):
             result = self.interactor._jump_to_results_page(target_page=18)
@@ -1649,6 +1756,36 @@ class VpInteractorPaginationTestCase(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(skip_input.text, "18")
         self.assertEqual(skip_button.click_calls, [False])
+
+    def test_wait_for_pagination_loading_dismissed_returns_when_not_visible(self) -> None:
+        """加载弹窗不可见时立即返回。"""
+        mock_page = Mock()
+        loading_locator = Mock()
+        loading_locator.count.return_value = 0
+        mock_page.locator.return_value.first = loading_locator
+        interactor = VpSearchInteractor(
+            page=mock_page,
+            config=SimpleNamespace(page_timeout=30, page_change_timeout=5),
+            browser_manager=SimpleNamespace(is_captcha_visible=lambda p: False),
+        )
+        interactor._wait_for_pagination_loading_dismissed(timeout=3)
+        mock_page.locator.assert_called_once_with(".layui-layer-msg:has-text('加载中')")
+
+    def test_wait_for_pagination_loading_dismissed_waits_until_hidden(self) -> None:
+        """加载弹窗可见时等待其消失后返回。"""
+        mock_page = Mock()
+        loading_locator = Mock()
+        loading_locator.count.return_value = 1
+        loading_locator.is_visible.side_effect = [True, True, False]
+        mock_page.locator.return_value.first = loading_locator
+        interactor = VpSearchInteractor(
+            page=mock_page,
+            config=SimpleNamespace(page_timeout=30, page_change_timeout=5),
+            browser_manager=SimpleNamespace(is_captcha_visible=lambda p: False),
+        )
+        with patch.object(INTERACTOR_TIME, "sleep", return_value=None):
+            interactor._wait_for_pagination_loading_dismissed(timeout=3)
+        self.assertEqual(loading_locator.is_visible.call_count, 3)
 
     def test_select_dropdown_option_raises_after_timeout(self) -> None:
         config = SimpleNamespace(page_timeout=0.01)
@@ -1783,7 +1920,8 @@ class VpInteractorProgressTestCase(unittest.TestCase):
         self.interactor = VpSearchInteractor(page=page, config=config, browser_manager=None)
         self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 2, "page": "2/10"})
 
-    def test_build_resume_runtime_rejects_missing_history_files(self) -> None:
+    def test_build_resume_runtime_resets_when_history_files_missing(self) -> None:
+        """历史批次文件缺失时应自动重置计数，从头开始。"""
         with TemporaryDirectory() as temp_dir:
             missing_file = Path(temp_dir) / "missing.xlsx"
             resume_data = {
@@ -1798,13 +1936,43 @@ class VpInteractorProgressTestCase(unittest.TestCase):
                 },
             }
 
-            with self.assertRaises(ValidationError):
+            runtime = self.interactor._build_resume_runtime(
+                resume_data=resume_data,
+                output_dir=Path(temp_dir),
+                planned_download=100,
+                batch_count=2,
+                total=200,
+            )
+            self.assertEqual(runtime["exported_batches"], 0)
+            self.assertEqual(runtime["exported_total"], 0)
+            self.assertEqual(runtime["next_batch_index"], 1)
+            self.assertEqual(runtime["current_page"], 1)
+            self.assertEqual(runtime["current_row_offset"], 0)
+            self.assertEqual(runtime["enriched_batch_files"], [])
+
+    def test_build_resume_runtime_rejects_legacy_row_offset_progress(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            existing_file = Path(temp_dir) / "batch.xlsx"
+            existing_file.write_text("ok", encoding="utf-8")
+            resume_data = {
+                "status": "failed",
+                "runtime": {
+                    "exported_total": 100,
+                    "exported_batches": 1,
+                    "next_batch_index": 2,
+                    "current_page": 3,
+                    "current_row_offset": 20,
+                    "enriched_batch_files": [str(existing_file)],
+                },
+            }
+
+            with self.assertRaisesRegex(ValidationError, "单页导出模式不支持从页内偏移续跑"):
                 self.interactor._build_resume_runtime(
                     resume_data=resume_data,
                     output_dir=Path(temp_dir),
-                    planned_download=100,
+                    planned_download=200,
                     batch_count=2,
-                    total=200,
+                    total=300,
                 )
 
     def test_save_progress_snapshot_persists_runtime_context(self) -> None:

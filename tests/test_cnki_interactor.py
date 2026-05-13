@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 import json
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -877,6 +877,12 @@ class CnkiInteractorYearlyExportTestCase(unittest.TestCase):
                         "progress_file": str(output_dir / "1978-progress.json"),
                     },
                 ]) as run_single,
+                patch.object(self.interactor, "_collect_yearly_validation_outcomes", return_value=([], [])),
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(output_dir / "1978-report.txt")]),
+                ),
                 patch.object(self.interactor, "_save_yearly_progress_snapshot"),
             ):
                 result = self.interactor._run_yearly_advanced_export(
@@ -947,6 +953,12 @@ class CnkiInteractorYearlyExportTestCase(unittest.TestCase):
                     "report_file": str(output_dir / "1979-report.txt"),
                     "progress_file": str(output_dir / "1979-progress.json"),
                 }) as run_single,
+                patch.object(self.interactor, "_collect_yearly_validation_outcomes", return_value=([], [])),
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(output_dir / "1979-report.txt")]),
+                ),
                 patch.object(self.interactor, "_save_yearly_progress_snapshot"),
             ):
                 result = self.interactor._run_yearly_advanced_export(
@@ -965,6 +977,101 @@ class CnkiInteractorYearlyExportTestCase(unittest.TestCase):
         run_single.assert_called_once()
         self.assertEqual(result["executed_years"], ["1949", "1978", "1979"])
         self.assertEqual(result["empty_years"], ["1949"])
+
+    def test_run_yearly_advanced_export_reruns_mismatched_year_before_merge(self) -> None:
+        """年度汇总数量与合并表格行数不一致时应先重跑再总合并。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            success_file = output_dir / "1978-merged.xlsx"
+            report_file = output_dir / "1978-report.txt"
+            progress_file = output_dir / "1978-progress.json"
+            task = {
+                "query": "新青年",
+                "year": "1978",
+                "date_from": "1978",
+                "date_to": "1978",
+                "core_only": False,
+                "include_no_fulltext": False,
+                "max_download": None,
+            }
+
+            merge_batch_excels = Mock(return_value=str(output_dir / "final.xlsx"))
+            self.interactor.config.ensure_output_dir = lambda data=None: output_dir
+            self.interactor.export_processor = SimpleNamespace(merge_batch_excels=merge_batch_excels)
+
+            with (
+                patch.object(self.interactor, "_prepare_yearly_progress_store", return_value=(SimpleNamespace(file_path=output_dir / "outer.json"), None)),
+                patch.object(self.interactor, "_collect_available_end_years", return_value=["1978"]),
+                patch.object(self.interactor, "_ensure_yearly_search_page_ready"),
+                patch.object(
+                    self.interactor,
+                    "_run_single_yearly_export",
+                    side_effect=[
+                        {
+                            "status": "success",
+                            "year": "1978",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(success_file),
+                            "report_file": str(report_file),
+                            "progress_file": str(progress_file),
+                            "batch_report_files": [],
+                        },
+                        {
+                            "status": "success",
+                            "year": "1978",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(success_file),
+                            "report_file": str(report_file),
+                            "progress_file": str(progress_file),
+                            "batch_report_files": [],
+                        },
+                    ],
+                ) as run_single,
+                patch.object(
+                    self.interactor,
+                    "_collect_yearly_validation_outcomes",
+                    side_effect=[
+                        ([{"task": task, "year": "1978", "reported_total": 319, "actual_rows": 100}], []),
+                        ([], []),
+                    ],
+                ) as collect_failures,
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(report_file)]),
+                ),
+                patch.object(self.interactor, "_build_yearly_sub_progress_file", return_value=progress_file),
+                patch.object(self.interactor, "_cleanup_year_output_dir") as cleanup_dir,
+                patch.object(self.interactor, "_save_yearly_progress_snapshot"),
+            ):
+                result = self.interactor._run_yearly_advanced_export(
+                    cli_params={
+                        "query": "新青年",
+                        "date_from": None,
+                        "date_to": "1978",
+                        "core_only": False,
+                        "include_no_fulltext": False,
+                        "max_download": None,
+                    },
+                    progress_file=None,
+                )
+
+        self.assertEqual(run_single.call_count, 2)
+        self.assertEqual(collect_failures.call_count, 2)
+        cleanup_dir.assert_called_once_with(output_dir, task)
+        merge_args = merge_batch_excels.call_args.args
+        self.assertEqual(merge_args[0], [Path(str(success_file))])
+        self.assertEqual(merge_args[1].parent, output_dir)
+        self.assertTrue(merge_args[1].name.endswith("-merged.xlsx"))
+        self.assertTrue(result["yearly_mode"])
 
     def test_run_single_yearly_export_reuses_current_search_page(self) -> None:
         """年度子任务应直接复用当前高级检索页，不再重新开页。"""

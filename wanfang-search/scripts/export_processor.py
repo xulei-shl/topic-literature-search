@@ -83,10 +83,24 @@ class ExportResultProcessor:
         enriched.to_excel(output_path, index=False, engine="openpyxl")
         return str(output_path)
 
-    def merge_batch_excels(self, excel_paths: list[Path], output_path: Path) -> str:
-        """合并多个批次 Excel。"""
+    def merge_batch_excels(
+        self, excel_paths: list[Path], output_path: Path, check_reference_column: bool = False
+    ) -> str:
+        """合并多个批次 Excel。
+
+        Args:
+            excel_paths: 待合并的 Excel 文件路径列表。
+            output_path: 合并后输出路径。
+            check_reference_column: 是否检查每个文件是否包含参考格式列。
+        """
         if not excel_paths:
             raise ExportProcessingError("没有可合并的批次文件")
+
+        if check_reference_column:
+            for path in excel_paths:
+                df = pd.read_excel(path, engine="openpyxl")
+                if REFERENCE_COLUMN not in df.columns:
+                    raise ExportProcessingError(f"文件缺少参考格式列: {path.name}")
 
         frames = [pd.read_excel(path, engine="openpyxl") for path in excel_paths]
         merged = pd.concat(frames, ignore_index=True)

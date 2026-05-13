@@ -89,7 +89,17 @@ class CnkiProgressMixin:
         current_row_offset = int(runtime.get("current_row_offset") or 0)
         enriched_batch_files = [Path(file_path).resolve() for file_path in runtime.get("enriched_batch_files") or []]
 
-        self._validate_resume_batch_files(enriched_batch_files)
+        valid_batch_files = self._validate_resume_batch_files(enriched_batch_files)
+        if len(valid_batch_files) != len(enriched_batch_files):
+            logger.warning("部分已导出批次文件缺失，重置导出计数为 0，从头开始导出")
+            exported_total = 0
+            exported_batches = 0
+            next_batch_index = 1
+            current_page = 1
+            current_row_offset = 0
+            enriched_batch_files = []
+        else:
+            enriched_batch_files = valid_batch_files
 
         if exported_total > planned_download:
             raise ValidationError("进度文件中的已导出数量超过本次计划导出数量")
@@ -108,11 +118,15 @@ class CnkiProgressMixin:
             "output_dir": output_dir.resolve(),
         }
 
-    def _validate_resume_batch_files(self, enriched_batch_files: list[Path]) -> None:
-        """校验历史批次文件是否仍然存在。"""
+    def _validate_resume_batch_files(self, enriched_batch_files: list[Path]) -> list[Path]:
+        """校验历史批次文件是否仍然存在，返回有效文件列表。"""
+        valid_files: list[Path] = []
         for file_path in enriched_batch_files:
-            if not file_path.exists():
-                raise ValidationError(f"进度文件引用的批次文件不存在: {file_path}")
+            if file_path.exists():
+                valid_files.append(file_path)
+            else:
+                logger.warning("进度文件引用的批次文件不存在，已跳过: %s", file_path)
+        return valid_files
 
     def _save_progress_snapshot(
         self,

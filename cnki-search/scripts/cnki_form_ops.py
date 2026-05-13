@@ -2,6 +2,7 @@
 
 import logging
 import os
+import random
 import time
 from datetime import datetime
 from pathlib import Path
@@ -63,34 +64,21 @@ class CnkiFormMixin:
         self.browser_manager.restore_session(self.config.home_url)
         self._ensure_captcha_cleared()
 
-        current_page = self.page
-        existing_pages = list(current_page.context.pages)
         link = self.page.locator("#highSearch").first
         if link.count() == 0:
-            raise ValidationError("首页未找到“高级检索”入口")
+            raise ValidationError('首页未找到"高级检索"入口')
 
         link.click()
-        target_page = self._resolve_advanced_search_target_page(current_page, existing_pages)
-        if target_page is not current_page:
-            self._activate_advanced_search_page(target_page)
-            self._close_redundant_context_pages(target_page)
+        time.sleep(random.uniform(2, 3))
 
         try:
-            self.page.wait_for_load_state("domcontentloaded", timeout=self.config.navigation_timeout * 1000)
+            self.page.goto(
+                self.config.advanced_search_url,
+                timeout=self.config.navigation_timeout * 1000,
+                wait_until="domcontentloaded",
+            )
         except Exception as exc:
-            logger.debug("点击高级检索入口后等待页面稳定失败，准备直接校验页面状态: %s", exc)
-
-        if not self._is_advanced_search_page(self.page):
-            try:
-                self.page.goto(
-                    self.config.advanced_search_url,
-                    timeout=self.config.navigation_timeout * 1000,
-                    wait_until="domcontentloaded",
-                )
-            except Exception as exc:
-                logger.debug("直接打开高级检索页超时，准备校验当前页面是否已可操作: %s", exc)
-                if not self._is_advanced_search_page(self.page):
-                    raise
+            logger.debug("打开高级检索页超时，准备校验当前页面是否已可操作: %s", exc)
 
         if not self._is_advanced_search_page(self.page):
             raise NavigationStateError("打开统一高级检索页面失败")

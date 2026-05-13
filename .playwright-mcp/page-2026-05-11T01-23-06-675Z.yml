@@ -1,0 +1,238 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - list [ref=e5]:
+        - text: 
+        - listitem [ref=e6]:
+          - link " 期刊评价报告 2025版" [ref=e7] [cursor=pointer]:
+            - /url: /Qikan/Evaluation/Index
+            - generic [ref=e8]: 
+            - text: 期刊评价报告
+            - superscript [ref=e9]: 2025版
+        - listitem [ref=e10]:
+          - link " 期刊开放获取" [ref=e11] [cursor=pointer]:
+            - /url: /Qikan/Journal/OaIndex
+            - generic [ref=e12]: 
+            - text: 期刊开放获取
+        - listitem [ref=e13]:
+          - link "数据出版直通车" [ref=e14] [cursor=pointer]:
+            - /url: javascript:void(0);
+            - text: 数据出版直通车
+        - listitem [ref=e16]:
+          - link "融合出版服务 推荐" [ref=e17] [cursor=pointer]:
+            - /url: javascript:void(0);
+            - text: 融合出版服务
+            - superscript [ref=e19]: 推荐
+        - listitem [ref=e20]:
+          - link " 下载APP" [ref=e21] [cursor=pointer]:
+            - /url: /Qikan/WebControl/AppIntroduce
+            - generic [ref=e22]: 
+            - text: 下载APP
+        - listitem [ref=e23]:
+          - link "更多" [ref=e24] [cursor=pointer]:
+            - /url: javascript:void(0);
+      - list
+    - generic:
+      - generic: 
+    - img "维普期刊服务平台" [ref=e26]
+    - generic [ref=e27]:
+      - text: 已收录
+      - strong [ref=e28]: 83,872,405 +
+      - text: 条文献
+    - generic [ref=e30]:
+      - textbox "请选择" [ref=e34] [cursor=pointer]: 任意字段
+      - textbox "请输入检索词" [ref=e37]
+      - button " 检索" [ref=e39] [cursor=pointer]
+      - list [ref=e40]:
+        - listitem [ref=e41]:
+          - link "高级检索" [ref=e42] [cursor=pointer]:
+            - /url: /Qikan/Search/Advance
+        - listitem [ref=e43]:
+          - link "期刊导航" [ref=e44] [cursor=pointer]:
+            - /url: /Qikan/Journal/JournalGuid
+        - listitem [ref=e45]:
+          - link "检索历史" [ref=e46] [cursor=pointer]:
+            - /url: /Qikan/Article/History
+    - generic [ref=e47]:
+      - generic [ref=e48]: "学术资讯 :"
+      - list [ref=e49]:
+        - listitem [ref=e50]:
+          - link "《世界科技研究与发展》“算力网”专题征稿通知" [ref=e51] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1316
+        - listitem [ref=e52]:
+          - link "《世界科技研究与发展》 “战略科技‘四极’布局”专题征稿通知" [ref=e53] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1315
+        - listitem [ref=e54]:
+          - link "《世界科技研究与发展》“脑机接口”专题征稿通知" [ref=e55] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1314
+        - listitem [ref=e56]:
+          - link "《世界科技研究与发展》2026年选题指南" [ref=e57] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1312
+        - listitem [ref=e58]:
+          - link "砚承·科研辅导与咨询服务正式启航！" [ref=e59] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1310
+      - link "更多+" [ref=e61] [cursor=pointer]:
+        - /url: /Qikan/Academic/Index
+    - generic:
+      - list:     
+  - generic [ref=e71]:
+    - generic [ref=e72]:
+      - heading "丰富的检索应用" [level=2] [ref=e73]
+      - paragraph [ref=e74]: 满足用户查全、查准、查新等多场景检索应用
+    - generic [ref=e77]: 
+  - generic [ref=e91]:
+    - generic [ref=e92]:
+      - heading "热门文章" [level=2] [ref=e93]
+      - paragraph [ref=e94]: HOT ARTICLES
+    - generic [ref=e95]:
+      - generic [ref=e96]:
+        - term [ref=e97]:
+          - link "Meteorite impact craters as hotspots for mineral resources and energy fuels:A global review" [ref=e98] [cursor=pointer]:
+            - /url: /Qikan/Article/Detail?id=7110900750
+        - definition [ref=e99]:
+          - generic [ref=e100]:
+            - link "S.James" [ref=e101] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dS.James
+            - link "Saranya R.Chandran" [ref=e102] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dSaranya%2bR.Chandran
+            - link "M.Santosh" [ref=e103] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dM.Santosh
+            - link "A.P.Pradeepkumar" [ref=e104] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dA.P.Pradeepkumar
+            - link "M.N.Praveen" [ref=e105] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dM.N.Praveen
+            - link "K.S Sajinkumar" [ref=e106] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dK.S%2bSajinkumar
+          - link "《Energy Geoscience》" [ref=e108] [cursor=pointer]:
+            - /url: /Qikan/Journal/Summary?kind=1&gch=59371X
+          - generic [ref=e109]: 2022年第2期136-146,共11页
+        - definition [ref=e110]: The ever-increasing recovery rate of natural resources from terrestrial impact craters over the last fewdecades across the globe offers new avenues for further exploration of mineral and hydrocarbon resources in such settings.As of today,60 of the 208 terrestrial craters have been identified to host diverseresources such as hydrocarbons,metals and construction materials.The potential of craters as plausibleresource contributors to the energy sector is therefore,worthy of consideration,as 42(70%)of the 60craters host energy resources such as oil,gas,coal,uranium,mercury,critical and major minerals as wellas hydropower resources.Among others,19 craters are of well-developed hydrocarbon reserves.Mineraldeposits associated with craters are also classified similar to other mineral resources such as progenetic,syngenetic and epigenetic sources.Of these,the progenetic and syngenetic mineralization are confinedto the early and late excavation stage of impact crater evolution,respectively,whereas epigenetic deposits are formed during and after the modification stage of crater formation.Thus,progenetic andsyngenetic mineral deposits(like Fe,Ni,Pb,Zn and Cu)associated with craters are formed as a directresult of the impact event,whereas epigenetic deposits(e.g.hydrocarbon)are hosted by the impactstructure and result from post-impact processes.In the progenetic and syngenetic deposits,the shockwave induced fracturing and melting aid the formation of deposits,whereas in the epigenetic deposits,the highly fractured lithostratigraphic units of higher porosity and permeability,like the centralelevated area(CEA)or the rim,act as traps.In this review,we provide a holistic view of the mineral andenergy resources associated with impact craters,and use some of the remote sensing techniques toidentify the mineral deposits as supplemented by a schematic model of the types of deposits formedduring cratering process.
+      - generic [ref=e111]:
+        - term [ref=e112]:
+          - link "康普印刷科技 推动环保橡皮布国产化进程" [ref=e113] [cursor=pointer]:
+            - /url: /Qikan/Article/Detail?id=7108270712
+        - definition [ref=e114]:
+          - link "无" [ref=e116] [cursor=pointer]:
+            - /url: /Qikan/Search/Index?key=A%3d%e6%97%a0
+          - link "《印刷杂志》" [ref=e118] [cursor=pointer]:
+            - /url: /Qikan/Journal/Summary?kind=1&gch=91599X
+          - generic [ref=e119]: 2022年第S1期80-80,共1页
+        - definition [ref=e120]: 2022年1月,国家新闻出版署发布《印刷业“十四五”时期发展专项规划》。在“高端印刷装备器材”一节中明确提出“推动绿色油墨、环保橡皮布等印刷器材国产化进程”。在“分类布局建设装备器材创新高地”一节中明确提出“江苏(苏州、泰州)建设绿色原辅料材创新中心”。
+      - generic [ref=e121]:
+        - term [ref=e122]:
+          - link "严复思想学以致用" [ref=e123] [cursor=pointer]:
+            - /url: /Qikan/Article/Detail?id=7108698306
+        - definition [ref=e124]:
+          - generic [ref=e125]:
+            - link "江登峰" [ref=e126] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3d%e6%b1%9f%e7%99%bb%e5%b3%b0
+            - link "王宏" [ref=e127] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3d%e7%8e%8b%e5%ae%8f
+          - link "《海峡通讯》" [ref=e129] [cursor=pointer]:
+            - /url: /Qikan/Journal/Summary?kind=1&gch=71308X
+          - generic [ref=e130]: 2022年第11期80-81,共2页
+        - definition [ref=e131]: 大道至简,实干为要。习近平总书记在党的二十大报告中强调,牢记空谈误国、实干兴邦。“学以致用”是“实干”的基本要求,也是伟大的思想家严复留给人类的精神财富之一。学以致用,通俗理解就是为了实际应用而学习,并将学到的理论知识结合实际情况运用到生活或工作中,在实践过程中针对性地解决遇到的新问题,从而进一步完善理论。严复“代表了在中国共产党出世以前向西方寻找真理的一派人物”(摘自《毛泽东选集》合订本第1358页),是“中国近代思想文化史上里程碑式的巨人”(摘自1993年习近平同志为《严复国际学术研讨会论文集》所作的序言)。
+  - generic [ref=e133]:
+    - generic [ref=e134]:
+      - heading "合作期刊" [level=2] [ref=e135]
+      - paragraph [ref=e136]: Cooperative Periodicals
+    - generic [ref=e137]:
+      - link "《IT经理世界》 《IT经理世界》 1998年3月，《IT经理世界》诞生。从创刊之日起，她就立志成为中国最好的商业管理杂志。从信息扶推动企业管理进步这个角度切入，《IT经理世界》逐渐进入了各个行业战略管理和运营层面，开始探讨信息产业，制造业，流通业，金融业等各个行业的企业所括外资企业，本土国有企业，民营企业等各种不同类型企业的经营管理问题。《IT经理世界》秉承了“观点前卫，立意严肃，谨慎求证，忠实记不”的一贯风格，致力于对当前中国工商界问题的独立判断及深刻剖析，是一份真正能够在中国企业发展过程中起到舆论引导作用的权威媒体。" [ref=e138] [cursor=pointer]:
+        - /url: /Qikan/Journal/Summary?kind=1&gch=81168X
+        - img "《IT经理世界》" [ref=e140]
+        - generic [ref=e141]:
+          - generic [ref=e142]: 《IT经理世界》
+          - generic [ref=e143]: 1998年3月，《IT经理世界》诞生。从创刊之日起，她就立志成为中国最好的商业管理杂志。从信息扶推动企业管理进步这个角度切入，《IT经理世界》逐渐进入了各个行业战略管理和运营层面，开始探讨信息产业，制造业，流通业，金融业等各个行业的企业所括外资企业，本土国有企业，民营企业等各种不同类型企业的经营管理问题。《IT经理世界》秉承了“观点前卫，立意严肃，谨慎求证，忠实记不”的一贯风格，致力于对当前中国工商界问题的独立判断及深刻剖析，是一份真正能够在中国企业发展过程中起到舆论引导作用的权威媒体。
+      - link "《现代农业》 《现代农业》 《现代农业》创刊于1975年。现由内蒙古自治区农牧业科学院主管主办，《现代农业》编辑部出版双月刊，国内公开发行。多年来致力于传播农牧业科技创新成果，促进农牧业绿色、可持续发展。主要设置“乡村振兴”“农牧经济”“生态环保”等栏目，面向的读者和作者群体主要包括全国各省市自治区涉农涉牧高校教师、硕博士研究生、科研院所科技人员等，全年发文量180篇左右，基金论文占比58.33%，现已对标核心期刊，加大组稿约稿力度，进一步完善出版流程，严格审读和编校标准，实现题目、作者、摘要、关键词中英文双语出版。" [ref=e144] [cursor=pointer]:
+        - /url: /Qikan/Journal/Summary?kind=1&gch=96185X
+        - img "《现代农业》" [ref=e146]
+        - generic [ref=e147]:
+          - generic [ref=e148]: 《现代农业》
+          - generic [ref=e149]: 《现代农业》创刊于1975年。现由内蒙古自治区农牧业科学院主管主办，《现代农业》编辑部出版双月刊，国内公开发行。多年来致力于传播农牧业科技创新成果，促进农牧业绿色、可持续发展。主要设置“乡村振兴”“农牧经济”“生态环保”等栏目，面向的读者和作者群体主要包括全国各省市自治区涉农涉牧高校教师、硕博士研究生、科研院所科技人员等，全年发文量180篇左右，基金论文占比58.33%，现已对标核心期刊，加大组稿约稿力度，进一步完善出版流程，严格审读和编校标准，实现题目、作者、摘要、关键词中英文双语出版。
+      - link "《农技服务》 《农技服务》 《农技服务》杂志创刊于1984年，面向基层农技人员、管理人员与现代农业经营主体传播推广实用农业生产、乡村建设技术成果，产业经营管理经验与党和政府的涉农方针政策，主要刊载农林牧渔产业及农产品质量安全管理、农业资源利用、农业生态环境修复、农业工程机械设施维建、农业经营管理、美丽乡村建设管理等方面的试验研究、调查分析、技术总结等文稿，当好党和政府涉农政策宣传、农业科技工作者技术创新与管理决策工作者服务创新技术传播推广的\"二传手\"。" [ref=e150] [cursor=pointer]:
+        - /url: /Qikan/Journal/Summary?kind=1&gch=96211X
+        - img "《农技服务》" [ref=e152]
+        - generic [ref=e153]:
+          - generic [ref=e154]: 《农技服务》
+          - generic [ref=e155]: 《农技服务》杂志创刊于1984年，面向基层农技人员、管理人员与现代农业经营主体传播推广实用农业生产、乡村建设技术成果，产业经营管理经验与党和政府的涉农方针政策，主要刊载农林牧渔产业及农产品质量安全管理、农业资源利用、农业生态环境修复、农业工程机械设施维建、农业经营管理、美丽乡村建设管理等方面的试验研究、调查分析、技术总结等文稿，当好党和政府涉农政策宣传、农业科技工作者技术创新与管理决策工作者服务创新技术传播推广的"二传手"。
+      - generic [ref=e156]:
+        - link "" [ref=e157] [cursor=pointer]:
+          - /url: /Qikan/Search/Index?key=AM=OA&objectType=7
+        - generic [ref=e158]: OA期刊
+        - generic [ref=e159]:
+          - list:
+            - listitem [ref=e160]:
+              - link "《科技资讯》" [ref=e161] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=87241X
+            - listitem [ref=e162]:
+              - link "《中国实用医药》" [ref=e163] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=88643X
+            - listitem [ref=e164]:
+              - link "《安徽农业科学》" [ref=e165] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=90168X
+            - listitem [ref=e166]:
+              - link "《科学咨询》" [ref=e167] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=85412X
+            - listitem [ref=e168]:
+              - link "《科技创新与应用》" [ref=e169] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=96274A
+            - listitem [ref=e170]:
+              - link "《中国现代药物应用》" [ref=e171] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=88776X
+  - generic [ref=e173]:
+    - generic [ref=e174]:
+      - heading "合作单位" [level=2] [ref=e175]
+      - paragraph [ref=e176]: Cooperative unit
+    - list [ref=e178]:
+      - listitem [ref=e179]:
+        - generic [ref=e181]: 北京大学
+      - listitem [ref=e182]:
+        - generic [ref=e184]: 重庆大学
+      - listitem [ref=e185]:
+        - generic [ref=e187]: 中国国家图书馆
+      - listitem [ref=e188]:
+        - generic [ref=e190]: 上海图书馆
+      - listitem [ref=e191]:
+        - generic [ref=e193]: 黑龙江护理高等专科学校
+      - listitem [ref=e194]:
+        - generic [ref=e196]: 四川财经职业学院
+      - listitem [ref=e197]:
+        - generic [ref=e199]: 中国科学院文献情报中心
+      - listitem [ref=e200]:
+        - generic [ref=e202]: 中国中铁二局集团有限公司
+  - generic [ref=e204]:
+    - list [ref=e206]:
+      - listitem [ref=e207]:
+        - link "公司首页" [ref=e208] [cursor=pointer]:
+          - /url: http://www.vipinfo.com.cn/
+        - text: "|"
+      - listitem [ref=e209]:
+        - link "关于我们" [ref=e210] [cursor=pointer]:
+          - /url: /qikan/webcontrol/about
+        - text: "|"
+      - listitem [ref=e211]:
+        - link "联系我们" [ref=e212] [cursor=pointer]:
+          - /url: http://www.vipinfo.com.cn/helpcontactus.html
+        - text: "|"
+      - listitem [ref=e213]:
+        - link "服务协议" [ref=e214] [cursor=pointer]:
+          - /url: /Qikan/WebControl/ServiceAgreement
+        - text: "|"
+      - listitem [ref=e215]:
+        - link "移动版" [ref=e216] [cursor=pointer]:
+          - /url: https://mqikan.cqvip.com
+    - generic [ref=e217]:
+      - paragraph [ref=e218]:
+        - generic [ref=e219]:
+          - text: V8.0 版权所有© 2001-2026
+          - link "渝B2-20050021-1" [ref=e220] [cursor=pointer]:
+            - /url: https://beian.miit.gov.cn/#/Integrated/recordQuery
+        - link "渝公网安备 50019002500403号" [ref=e222] [cursor=pointer]:
+          - /url: http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=50019002500403
+          - img
+          - text: 渝公网安备 50019002500403号
+        - link "违法和不良信息举报中心" [ref=e224] [cursor=pointer]:
+          - /url: https://www.12377.cn/
+        - text: 举报邮箱：jubao@cqvip.com
+      - paragraph [ref=e225]: 互联网出版许可证 新出网证(渝)字10号机构客服热线 023-67882612
+  - text: ဆ

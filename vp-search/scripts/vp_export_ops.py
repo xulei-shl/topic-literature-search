@@ -116,13 +116,56 @@ class VpExportMixin:
         return self._click_export_entry_after_batch_action()
 
     def _click_export_entry_after_batch_action(self) -> bool:
-        """点击批量处理后进入导出入口。"""
+        """点击批量处理后进入导出入口。
+
+        先通过 Playwright 常规点击触发批量处理，失败则用 JS 兜底逐条激活。
+        任一成功后轮询等待导出题录选项出现并点击。
+        """
+        batch_menu_export_selectors = [
+            ".btn-hover-list a.behavior-exporttitle",
+            ".articleOperateDown dd a.behavior-exporttitle",
+            ".layui-btn-group .btn-hover-list a[data-stype='export']",
+            "dl.articleOperateDown dd a:has-text('导出题录')",
+            "dl.btn-hover-list dd a:has-text('导出题录')",
+        ]
         combined_export_selectors = list(self.EXPORT_ENTRY_SELECTORS) + list(self.EXPORT_ENTRY_MENU_SELECTORS)
-        if not self._click_first_available(self.BATCH_ACTION_MENU_SELECTORS):
+
+        # 常规 Playwright 点击触发批量处理
+        activated = self._click_first_available(self.BATCH_ACTION_MENU_SELECTORS)
+        if not activated:
+            # JS 兜底：绕过 Playwright actionability 检查逐条点击
+            for selector in self.BATCH_ACTION_MENU_SELECTORS:
+                locator = self.page.locator(selector).first
+                if locator.count() == 0:
+                    continue
+                try:
+                    locator.evaluate("(element) => element.click()")
+                    activated = True
+                    break
+                except Exception as exc:
+                    logger.debug("JS 兜底触发批量处理失败: selector=%s, error=%s", selector, exc)
+                    continue
+
+        if not activated:
+            logger.debug("未找到可用的批量处理按钮")
             return False
 
+        # 等待下拉菜单或面板中出现导出题录选项
         deadline = time.time() + self._page_change_timeout_seconds()
         while time.time() < deadline:
+            for selector in batch_menu_export_selectors:
+                locator = self.page.locator(selector).first
+                if locator.count() == 0:
+                    continue
+                try:
+                    locator.wait_for(state="visible", timeout=2000)
+                    locator.click(timeout=self._action_timeout_ms())
+                    logger.debug("通过批量处理菜单点击导出题录: selector=%s", selector)
+                    return True
+                except Exception as exc:
+                    logger.debug("批量处理菜单导出题录点击失败: selector=%s, error=%s", selector, exc)
+                    continue
+
             if self._has_visible_selector(combined_export_selectors):
                 return self._click_first_available(combined_export_selectors)
             if self._has_visible_selector(self.EXPORT_BATCH_DIALOG_SELECTORS):
@@ -224,7 +267,6 @@ class VpExportMixin:
                         force_reclick=attempt > 1,
                     )
                     self._wait_for_export_type_selected(export_page=export_page, export_type=export_type)
-                    time.sleep(max(self._action_poll_interval_seconds(), 0.2))
                     download = self._capture_export_download_by_confirm(export_page=export_page, kind=kind)
             else:
                 if export_type:
@@ -234,7 +276,6 @@ class VpExportMixin:
                         force_reclick=attempt > 1,
                     )
                     self._wait_for_export_type_selected(export_page=export_page, export_type=export_type)
-                    time.sleep(max(self._action_poll_interval_seconds(), 0.2))
                 download = self._capture_export_download_by_confirm(export_page=export_page, kind=kind)
             suggested_name = download.suggested_filename or default_name
             try:

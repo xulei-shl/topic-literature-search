@@ -1,33 +1,21 @@
-"""????????????"""
+"""VP 结果页每页显示数量调整逻辑。"""
 
 import logging
-import re
 import time
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 
-from playwright.sync_api import Locator, Page, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import Locator
 
-from src.core.advanced_export_flow import BaseAdvancedExportFlow
-from src.core.advanced_export_types import BatchSelectionResult, SearchParams
-from src.utils.playwright_page import click_first_available, disable_checkbox, enable_checkbox, has_visible_selector, set_native_select_value, wait_for_any_selector
-from src.utils.result_output import build_export_file_path
-
-from browser import BrowserManager
-from config import VpSearchConfig
-from exceptions import CaptchaError, TimeoutError, ValidationError
-from export_processor import ExportResultProcessor
-from progress_store import SearchProgressStore
-from result_parser import ResultParser
-from utils import build_output_slug
+from exceptions import TimeoutError
 
 logger = logging.getLogger("vp_search.interactor")
 
+
 class VpPageSizeMixin:
-    """????????????"""
+    """负责切换维普结果页每页显示数量。"""
 
     def _prefer_results_page_size(self) -> None:
+        """将结果页切换到期望的每页显示数量。"""
         page_size_link = self._find_preferred_results_page_size_link()
         if page_size_link is None:
             logger.debug("未找到每页显示数量入口，保持当前分页大小: target=%s", self.PREFERRED_RESULTS_PAGE_SIZE)
@@ -46,20 +34,13 @@ class VpPageSizeMixin:
         previous_row_count = self._result_checkbox_locator().count()
 
         try:
-            logger.debug(
-                "准备切换每页显示数量: target=%s, previous_page=%s, previous_row_count=%s",
-                self.PREFERRED_RESULTS_PAGE_SIZE,
-                previous_page,
-                previous_row_count,
-            )
             page_size_link.click()
             self._wait_for_results_page_size_applied(page_size_link, previous_page, previous_row_count)
-            logger.debug("每页显示数量切换完成: target=%s", self.PREFERRED_RESULTS_PAGE_SIZE)
         except Exception as exc:
             logger.debug("切换每页显示数量失败: target=%s, error=%s", self.PREFERRED_RESULTS_PAGE_SIZE, exc)
 
     def _find_preferred_results_page_size_link(self) -> Optional[Locator]:
-        """查找“每页 50 条”入口，兼容不同分页容器实现。"""
+        """查找“每页 50 条”入口。"""
         page_size_selectors = [
             f"#selectPageSize a[data-count='{self.PREFERRED_RESULTS_PAGE_SIZE}']",
             f"#selectPageSize [data-count='{self.PREFERRED_RESULTS_PAGE_SIZE}']",
@@ -84,6 +65,7 @@ class VpPageSizeMixin:
         previous_page: str,
         previous_row_count: int,
     ) -> None:
+        """等待每页显示数量切换生效。"""
         deadline = time.time() + self._page_change_timeout_seconds()
         while time.time() < deadline:
             self._ensure_captcha_cleared()
@@ -103,6 +85,7 @@ class VpPageSizeMixin:
                 return
 
             time.sleep(self._page_change_poll_interval_seconds())
+
         raise TimeoutError("等待每页显示数量切换超时")
 
     def _current_results_page_size(self) -> int:

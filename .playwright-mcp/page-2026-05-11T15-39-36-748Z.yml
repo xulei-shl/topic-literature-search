@@ -1,0 +1,259 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - list [ref=e5]:
+        - text: 
+        - listitem [ref=e6]:
+          - link " 期刊评价报告 2025版" [ref=e7] [cursor=pointer]:
+            - /url: /Qikan/Evaluation/Index?from=index
+            - generic [ref=e8]: 
+            - text: 期刊评价报告
+            - superscript [ref=e9]: 2025版
+        - listitem [ref=e10]:
+          - link " 期刊开放获取" [ref=e11] [cursor=pointer]:
+            - /url: /Qikan/Journal/OaIndex?from=index
+            - generic [ref=e12]: 
+            - text: 期刊开放获取
+        - listitem [ref=e13]:
+          - link "数据出版直通车" [ref=e14] [cursor=pointer]:
+            - /url: javascript:void(0);
+            - text: 数据出版直通车
+        - listitem [ref=e16]:
+          - link "融合出版服务 推荐" [ref=e17] [cursor=pointer]:
+            - /url: javascript:void(0);
+            - text: 融合出版服务
+            - superscript [ref=e19]: 推荐
+        - listitem [ref=e20]:
+          - link " 下载APP" [ref=e21] [cursor=pointer]:
+            - /url: /Qikan/WebControl/AppIntroduce?from=index
+            - generic [ref=e22]: 
+            - text: 下载APP
+        - listitem [ref=e23]:
+          - link "更多" [ref=e24] [cursor=pointer]:
+            - /url: javascript:void(0);
+      - list
+    - generic:
+      - generic: 
+    - img "维普期刊服务平台" [ref=e26]
+    - generic [ref=e27]:
+      - text: 已收录
+      - strong [ref=e28]: 83,872,405 +
+      - text: 条文献
+    - generic [ref=e30]:
+      - textbox "请选择" [ref=e34] [cursor=pointer]: 任意字段
+      - textbox "请输入检索词" [ref=e37]
+      - button " 检索" [ref=e39] [cursor=pointer]
+      - list [ref=e40]:
+        - listitem [ref=e41]:
+          - link "高级检索" [ref=e42] [cursor=pointer]:
+            - /url: /Qikan/Search/Advance?from=index
+        - listitem [ref=e43]:
+          - link "期刊导航" [ref=e44] [cursor=pointer]:
+            - /url: /Qikan/Journal/JournalGuid?from=index
+        - listitem [ref=e45]:
+          - link "检索历史" [ref=e46] [cursor=pointer]:
+            - /url: /Qikan/Article/History?from=index
+    - generic [ref=e47]:
+      - generic [ref=e48]: "学术资讯 :"
+      - list [ref=e49]:
+        - listitem [ref=e50]:
+          - link "《世界科技研究与发展》“算力网”专题征稿通知" [ref=e51] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1316&from=index
+        - listitem [ref=e52]:
+          - link "《世界科技研究与发展》 “战略科技‘四极’布局”专题征稿通知" [ref=e53] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1315&from=index
+        - listitem [ref=e54]:
+          - link "《世界科技研究与发展》“脑机接口”专题征稿通知" [ref=e55] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1314&from=index
+        - listitem [ref=e56]:
+          - link "《世界科技研究与发展》2026年选题指南" [ref=e57] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1312&from=index
+        - listitem [ref=e58]:
+          - link "砚承·科研辅导与咨询服务正式启航！" [ref=e59] [cursor=pointer]:
+            - /url: /Qikan/Academic/SiteNewDetail?ID=1310&from=index
+      - link "更多+" [ref=e61] [cursor=pointer]:
+        - /url: /Qikan/Academic/Index?from=index
+    - generic:
+      - list:     
+  - generic [ref=e75]:
+    - generic [ref=e76]:
+      - heading "丰富的检索应用" [level=2] [ref=e77]
+      - paragraph [ref=e78]: 满足用户查全、查准、查新等多场景检索应用
+    - generic [ref=e81]: 
+  - generic [ref=e95]:
+    - generic [ref=e96]:
+      - heading "热门文章" [level=2] [ref=e97]
+      - paragraph [ref=e98]: HOT ARTICLES
+    - generic [ref=e99]:
+      - generic [ref=e100]:
+        - term [ref=e101]:
+          - link "Meteorite impact craters as hotspots for mineral resources and energy fuels:A global review" [ref=e102] [cursor=pointer]:
+            - /url: /Qikan/Article/Detail?id=7110900750&from=index
+        - definition [ref=e103]:
+          - generic [ref=e104]:
+            - link "S.James" [ref=e105] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dS.James&from=index
+            - link "Saranya R.Chandran" [ref=e106] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dSaranya%2bR.Chandran&from=index
+            - link "M.Santosh" [ref=e107] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dM.Santosh&from=index
+            - link "A.P.Pradeepkumar" [ref=e108] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dA.P.Pradeepkumar&from=index
+            - link "M.N.Praveen" [ref=e109] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dM.N.Praveen&from=index
+            - link "K.S Sajinkumar" [ref=e110] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3dK.S%2bSajinkumar&from=index
+          - link "《Energy Geoscience》" [ref=e112] [cursor=pointer]:
+            - /url: /Qikan/Journal/Summary?kind=1&gch=59371X&from=index
+          - generic [ref=e113]: 2022年第2期136-146,共11页
+        - definition [ref=e114]: The ever-increasing recovery rate of natural resources from terrestrial impact craters over the last fewdecades across the globe offers new avenues for further exploration of mineral and hydrocarbon resources in such settings.As of today,60 of the 208 terrestrial craters have been identified to host diverseresources such as hydrocarbons,metals and construction materials.The potential of craters as plausibleresource contributors to the energy sector is therefore,worthy of consideration,as 42(70%)of the 60craters host energy resources such as oil,gas,coal,uranium,mercury,critical and major minerals as wellas hydropower resources.Among others,19 craters are of well-developed hydrocarbon reserves.Mineraldeposits associated with craters are also classified similar to other mineral resources such as progenetic,syngenetic and epigenetic sources.Of these,the progenetic and syngenetic mineralization are confinedto the early and late excavation stage of impact crater evolution,respectively,whereas epigenetic deposits are formed during and after the modification stage of crater formation.Thus,progenetic andsyngenetic mineral deposits(like Fe,Ni,Pb,Zn and Cu)associated with craters are formed as a directresult of the impact event,whereas epigenetic deposits(e.g.hydrocarbon)are hosted by the impactstructure and result from post-impact processes.In the progenetic and syngenetic deposits,the shockwave induced fracturing and melting aid the formation of deposits,whereas in the epigenetic deposits,the highly fractured lithostratigraphic units of higher porosity and permeability,like the centralelevated area(CEA)or the rim,act as traps.In this review,we provide a holistic view of the mineral andenergy resources associated with impact craters,and use some of the remote sensing techniques toidentify the mineral deposits as supplemented by a schematic model of the types of deposits formedduring cratering process.
+      - generic [ref=e115]:
+        - term [ref=e116]:
+          - link "康普印刷科技 推动环保橡皮布国产化进程" [ref=e117] [cursor=pointer]:
+            - /url: /Qikan/Article/Detail?id=7108270712&from=index
+        - definition [ref=e118]:
+          - link "无" [ref=e120] [cursor=pointer]:
+            - /url: /Qikan/Search/Index?key=A%3d%e6%97%a0&from=index
+          - link "《印刷杂志》" [ref=e122] [cursor=pointer]:
+            - /url: /Qikan/Journal/Summary?kind=1&gch=91599X&from=index
+          - generic [ref=e123]: 2022年第S1期80-80,共1页
+        - definition [ref=e124]: 2022年1月,国家新闻出版署发布《印刷业“十四五”时期发展专项规划》。在“高端印刷装备器材”一节中明确提出“推动绿色油墨、环保橡皮布等印刷器材国产化进程”。在“分类布局建设装备器材创新高地”一节中明确提出“江苏(苏州、泰州)建设绿色原辅料材创新中心”。
+      - generic [ref=e125]:
+        - term [ref=e126]:
+          - link "严复思想学以致用" [ref=e127] [cursor=pointer]:
+            - /url: /Qikan/Article/Detail?id=7108698306&from=index
+        - definition [ref=e128]:
+          - generic [ref=e129]:
+            - link "江登峰" [ref=e130] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3d%e6%b1%9f%e7%99%bb%e5%b3%b0&from=index
+            - link "王宏" [ref=e131] [cursor=pointer]:
+              - /url: /Qikan/Search/Index?key=A%3d%e7%8e%8b%e5%ae%8f&from=index
+          - link "《海峡通讯》" [ref=e133] [cursor=pointer]:
+            - /url: /Qikan/Journal/Summary?kind=1&gch=71308X&from=index
+          - generic [ref=e134]: 2022年第11期80-81,共2页
+        - definition [ref=e135]: 大道至简,实干为要。习近平总书记在党的二十大报告中强调,牢记空谈误国、实干兴邦。“学以致用”是“实干”的基本要求,也是伟大的思想家严复留给人类的精神财富之一。学以致用,通俗理解就是为了实际应用而学习,并将学到的理论知识结合实际情况运用到生活或工作中,在实践过程中针对性地解决遇到的新问题,从而进一步完善理论。严复“代表了在中国共产党出世以前向西方寻找真理的一派人物”(摘自《毛泽东选集》合订本第1358页),是“中国近代思想文化史上里程碑式的巨人”(摘自1993年习近平同志为《严复国际学术研讨会论文集》所作的序言)。
+  - generic [ref=e137]:
+    - generic [ref=e138]:
+      - heading "合作期刊" [level=2] [ref=e139]
+      - paragraph [ref=e140]: Cooperative Periodicals
+    - generic [ref=e141]:
+      - link "《生态学报》 《生态学报》 《生态学报》报道生态学领域前沿理论和原始创新性研究成果。坚持百花齐放、百家争鸣、产生于科学性、立足于学术性、着眼于实践性、服务于社会性的办刊理念，依靠和团结广大生态学科研工作者，探索生态学奥秘，为生态学基础理论研究搭建交流平台，促进生态学研究深入发展，为我国培养和造就生态学科研人才，为国民经济建设和发展提供知识创新服务。《生态学报》是生态学研究国内最大的学术交流平台，为我国生态学研究服务于社会经济发展创造了能用、有用和管用的科学效益。《生态学报》主要报道生态学及各分支学科的重要基础理论和应用研究的原始创新性科研成果；特别欢迎能反映现代生态学发展方向的优秀综述文章；研究简报；生态学新理论、新方法、新技术介绍；新书评价和学术、科研动态、生态学国际大会及开放实验室介绍等。" [ref=e142] [cursor=pointer]:
+        - /url: /Qikan/Journal/Summary?kind=1&gch=90772X&from=index
+        - img "《生态学报》" [ref=e144]
+        - generic [ref=e145]:
+          - generic [ref=e146]: 《生态学报》
+          - generic [ref=e147]: 《生态学报》报道生态学领域前沿理论和原始创新性研究成果。坚持百花齐放、百家争鸣、产生于科学性、立足于学术性、着眼于实践性、服务于社会性的办刊理念，依靠和团结广大生态学科研工作者，探索生态学奥秘，为生态学基础理论研究搭建交流平台，促进生态学研究深入发展，为我国培养和造就生态学科研人才，为国民经济建设和发展提供知识创新服务。《生态学报》是生态学研究国内最大的学术交流平台，为我国生态学研究服务于社会经济发展创造了能用、有用和管用的科学效益。《生态学报》主要报道生态学及各分支学科的重要基础理论和应用研究的原始创新性科研成果；特别欢迎能反映现代生态学发展方向的优秀综述文章；研究简报；生态学新理论、新方法、新技术介绍；新书评价和学术、科研动态、生态学国际大会及开放实验室介绍等。
+      - link "《智能城市》 《智能城市》 《智能城市》杂志是由国家新闻出版广电总局批准，辽宁省科学情报所承办的国内外公开发行的期刊。本刊拟抓住国家推广智慧城市建设这一契机，通过平面媒体平台加以引导和宣传，深度参与智能城市建设与发展进程，打造智能城市的品牌企业。本刊力争打造成为中文版的PLOS ONE，成为全领域的智慧综合性期刊。 1.本刊特色 本刊立足于智能城市施工、智能机器制造、智能家居、智能交通、智能医疗、智能安防、智能电网、智能环保、智能农业、智能金融等领域的科技与实用相结合，通过深度文章分享、学术研究探讨、智能潮流引导及领先技术方案等立图打造一本全方位系统阐述创建智能城市原理和方向的平面媒体。 2.办刊宗旨 本刊以系统工程学科理论为基础，集中反映建筑、环境与控制等学科交叉的复合型研究领域的学术成果与技术动向，探讨智能建筑理论和技术热点，服务智能城市建设与发展。" [ref=e148] [cursor=pointer]:
+        - /url: /Qikan/Journal/Summary?kind=1&gch=72146X&from=index
+        - img "《智能城市》" [ref=e150]
+        - generic [ref=e151]:
+          - generic [ref=e152]: 《智能城市》
+          - generic [ref=e153]: 《智能城市》杂志是由国家新闻出版广电总局批准，辽宁省科学情报所承办的国内外公开发行的期刊。本刊拟抓住国家推广智慧城市建设这一契机，通过平面媒体平台加以引导和宣传，深度参与智能城市建设与发展进程，打造智能城市的品牌企业。本刊力争打造成为中文版的PLOS ONE，成为全领域的智慧综合性期刊。 1.本刊特色 本刊立足于智能城市施工、智能机器制造、智能家居、智能交通、智能医疗、智能安防、智能电网、智能环保、智能农业、智能金融等领域的科技与实用相结合，通过深度文章分享、学术研究探讨、智能潮流引导及领先技术方案等立图打造一本全方位系统阐述创建智能城市原理和方向的平面媒体。 2.办刊宗旨 本刊以系统工程学科理论为基础，集中反映建筑、环境与控制等学科交叉的复合型研究领域的学术成果与技术动向，探讨智能建筑理论和技术热点，服务智能城市建设与发展。
+      - link "《四川建材》 《四川建材》 《四川建材》办刊宗旨是为广大工程建设、建材行业的科研、设计、施工、教学、生产应用、流通领域企业、学校、院所以及业界人士服务。主要反映国内外工程建设、建材行业的生产应用、科研、设计、教学以及企业管理等方面的新成果（产品）、新技术、新工艺、新装备和新动态，行业政策以及指导产业导向的国家法规。" [ref=e154] [cursor=pointer]:
+        - /url: /Qikan/Journal/Summary?kind=1&gch=90474X&from=index
+        - img "《四川建材》" [ref=e156]
+        - generic [ref=e157]:
+          - generic [ref=e158]: 《四川建材》
+          - generic [ref=e159]: 《四川建材》办刊宗旨是为广大工程建设、建材行业的科研、设计、施工、教学、生产应用、流通领域企业、学校、院所以及业界人士服务。主要反映国内外工程建设、建材行业的生产应用、科研、设计、教学以及企业管理等方面的新成果（产品）、新技术、新工艺、新装备和新动态，行业政策以及指导产业导向的国家法规。
+      - generic [ref=e160]:
+        - link "" [ref=e161] [cursor=pointer]:
+          - /url: /Qikan/Search/Index?key=AM=OA&objectType=7&from=index
+        - generic [ref=e162]: OA期刊
+        - generic [ref=e163]:
+          - list:
+            - listitem [ref=e164]:
+              - link "《科技资讯》" [ref=e165] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=87241X&from=index
+            - listitem [ref=e166]:
+              - link "《中国实用医药》" [ref=e167] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=88643X&from=index
+            - listitem [ref=e168]:
+              - link "《安徽农业科学》" [ref=e169] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=90168X&from=index
+            - listitem [ref=e170]:
+              - link "《科学咨询》" [ref=e171] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=85412X&from=index
+            - listitem [ref=e172]:
+              - link "《科技创新与应用》" [ref=e173] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=96274A&from=index
+            - listitem [ref=e174]:
+              - link "《中国现代药物应用》" [ref=e175] [cursor=pointer]:
+                - /url: /Qikan/Journal/Summary?kind=1&gch=88776X&from=index
+  - generic [ref=e177]:
+    - generic [ref=e178]:
+      - heading "合作单位" [level=2] [ref=e179]
+      - paragraph [ref=e180]: Cooperative unit
+    - list [ref=e182]:
+      - listitem [ref=e183]:
+        - generic [ref=e185]: 北京大学
+      - listitem [ref=e186]:
+        - generic [ref=e188]: 重庆大学
+      - listitem [ref=e189]:
+        - generic [ref=e191]: 中国国家图书馆
+      - listitem [ref=e192]:
+        - generic [ref=e194]: 上海图书馆
+      - listitem [ref=e195]:
+        - generic [ref=e197]: 黑龙江护理高等专科学校
+      - listitem [ref=e198]:
+        - generic [ref=e200]: 四川财经职业学院
+      - listitem [ref=e201]:
+        - generic [ref=e203]: 中国科学院文献情报中心
+      - listitem [ref=e204]:
+        - generic [ref=e206]: 中国中铁二局集团有限公司
+  - generic [ref=e208]:
+    - list [ref=e210]:
+      - listitem [ref=e211]:
+        - link "公司首页" [ref=e212] [cursor=pointer]:
+          - /url: http://www.vipinfo.com.cn/?from=index
+        - text: "|"
+      - listitem [ref=e213]:
+        - link "关于我们" [ref=e214] [cursor=pointer]:
+          - /url: /qikan/webcontrol/about?from=index
+        - text: "|"
+      - listitem [ref=e215]:
+        - link "联系我们" [ref=e216] [cursor=pointer]:
+          - /url: http://www.vipinfo.com.cn/helpcontactus.html?from=index
+        - text: "|"
+      - listitem [ref=e217]:
+        - link "服务协议" [ref=e218] [cursor=pointer]:
+          - /url: /Qikan/WebControl/ServiceAgreement?from=index
+        - text: "|"
+      - listitem [ref=e219]:
+        - link "移动版" [ref=e220] [cursor=pointer]:
+          - /url: https://mqikan.cqvip.com?from=index
+    - generic [ref=e221]:
+      - paragraph [ref=e222]:
+        - generic [ref=e223]:
+          - text: V8.0 版权所有© 2001-2026
+          - link "渝B2-20050021-1" [ref=e224] [cursor=pointer]:
+            - /url: https://beian.miit.gov.cn/#/Integrated/recordQuery
+        - link "渝公网安备 50019002500403号" [ref=e226] [cursor=pointer]:
+          - /url: http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=50019002500403&from=index
+          - img [ref=e227]
+          - text: 渝公网安备 50019002500403号
+        - link "违法和不良信息举报中心" [ref=e229] [cursor=pointer]:
+          - /url: https://www.12377.cn/?from=index
+        - text: 举报邮箱：jubao@cqvip.com
+      - paragraph [ref=e230]: 互联网出版许可证 新出网证(渝)字10号机构客服热线 023-67882612
+  - text: ဆ       
+  - generic [ref=e231]:
+    - link "在线咨询" [ref=e232]:
+      - /url: "#"
+      - generic [ref=e233]: 在线咨询
+    - link " 使用帮助" [ref=e235] [cursor=pointer]:
+      - /url: /Qikan/WebControl/UseHelp?from=index
+      - generic [ref=e236]:
+        - generic [ref=e237]: 
+        - text: 使用帮助
+    - link " 返回顶部" [ref=e238] [cursor=pointer]:
+      - /url: "#top"
+      - generic [ref=e239]:
+        - generic [ref=e240]: 
+        - text: 返回顶部
+    - link " 意见反馈" [ref=e241] [cursor=pointer]:
+      - /url: javascript:void(0)
+      - generic [ref=e242]:
+        - generic [ref=e243]: 
+        - text: 意见反馈
+  - text: ": : : :"
+  - paragraph

@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
@@ -225,25 +225,18 @@ class WanfangInteractorSelectionTestCase(unittest.TestCase):
         self.interactor = WanfangSearchInteractor(page=page, config=config, browser_manager=browser_manager)
         self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"page": "1/10", "current_page": 1})
 
-    def test_select_batch_results_tolerates_page_shortfall_in_full_export_mode(self) -> None:
-        """全量导出模式下不应跨页补足页面缺口。"""
+    def test_select_batch_results_rejects_page_shortfall_in_full_export_mode(self) -> None:
+        """全量导出模式下出现页面缺口应直接失败，避免游标漂移。"""
         row_locator = FakeLocatorGroup([FakeLocator() for _ in range(50)])
         self.interactor.page = FakePage({"div.normal-list": row_locator})
 
         with (
             patch.object(self.interactor, "_wait_for_results_ready"),
-            patch.object(self.interactor, "_select_rows_on_current_page", side_effect=[47, 50]),
-            patch.object(self.interactor, "_current_results_page_number", side_effect=[1, 2]),
-            patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
+            patch.object(self.interactor, "_select_rows_on_current_page", return_value=47),
+            patch.object(self.interactor, "_current_results_page_number", return_value=1),
+            self.assertRaises(ValidationError),
         ):
-            result = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=False)
-
-        self.assertEqual(result["selected_count"], 97)
-        self.assertEqual(result["next_row_offset"], 50)
-        self.assertEqual(result["page_row_count"], 50)
-        self.assertEqual(result["start_page"], 1)
-        self.assertEqual(result["end_page"], 2)
-        goto_next_results_page.assert_called_once()
+            self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=False)
 
     def test_select_batch_results_keeps_topping_up_in_strict_mode(self) -> None:
         """限定数量模式下应继续向后补足目标数量。"""
@@ -252,18 +245,18 @@ class WanfangInteractorSelectionTestCase(unittest.TestCase):
 
         with (
             patch.object(self.interactor, "_wait_for_results_ready"),
-            patch.object(self.interactor, "_select_rows_on_current_page", side_effect=[47, 50, 3]),
-            patch.object(self.interactor, "_current_results_page_number", side_effect=[1, 2, 3]),
+            patch.object(self.interactor, "_select_rows_on_current_page", side_effect=[50, 3]),
+            patch.object(self.interactor, "_current_results_page_number", side_effect=[1, 2]),
             patch.object(self.interactor, "_goto_next_results_page", return_value=True) as goto_next_results_page,
         ):
-            result = self.interactor._select_batch_results(export_limit=100, row_offset=0, strict_target=True)
+            result = self.interactor._select_batch_results(export_limit=53, row_offset=0, strict_target=True)
 
-        self.assertEqual(result["selected_count"], 100)
+        self.assertEqual(result["selected_count"], 53)
         self.assertEqual(result["next_row_offset"], 3)
         self.assertEqual(result["page_row_count"], 50)
         self.assertEqual(result["start_page"], 1)
-        self.assertEqual(result["end_page"], 3)
-        self.assertEqual(goto_next_results_page.call_count, 2)
+        self.assertEqual(result["end_page"], 2)
+        self.assertEqual(goto_next_results_page.call_count, 1)
 
     def test_select_batch_results_returns_reached_end_when_last_page_exhausted(self) -> None:
         """续跑游标已在末页末尾时应按正常结束返回。"""
@@ -311,12 +304,19 @@ class WanfangInteractorSelectionTestCase(unittest.TestCase):
             children={
                 "input.ivu-checkbox-input": select_all_input,
                 "span.ivu-checkbox": FakeLocator(class_name="ivu-checkbox"),
+                "span.ivu-checkbox-inner": FakeLocator(on_click=mark_all_checked),
             },
             on_click=mark_all_checked,
+        )
+        select_all_container = FakeLocator(
+            children={
+                "label.ivu-checkbox-wrapper": select_all_checkbox,
+            }
         )
         self.interactor.page = FakePage(
             {
                 "div.normal-list div.wf-checkbox label.ivu-checkbox-wrapper": checkbox_group,
+                "div.top-check-bar div.wf-checkbox": select_all_container,
                 "div.top-check-bar div.wf-checkbox label.ivu-checkbox-wrapper": select_all_checkbox,
             }
         )
@@ -331,6 +331,62 @@ class WanfangInteractorSelectionTestCase(unittest.TestCase):
         self.assertEqual(selected_count, 2)
         self.assertTrue(all(input_locator.checked for input_locator in row_inputs))
 
+    def test_select_rows_on_current_page_should_fail_immediately_when_full_page_select_all_cannot_be_verified(self) -> None:
+        """整页全选无法确认成功时不应回退逐条勾选。"""
+        checkbox_group = FakeLocatorGroup([FakeLocator(), FakeLocator()])
+        self.interactor.page = FakePage(
+            {
+                "div.normal-list div.wf-checkbox label.ivu-checkbox-wrapper": checkbox_group,
+                "div.top-check-bar div.wf-checkbox label.ivu-checkbox-wrapper": FakeLocator(),
+            }
+        )
+
+        with (
+            patch.object(self.interactor, "_try_select_all_on_current_page", return_value=False),
+            patch.object(self.interactor, "_ensure_checkbox_checked") as ensure_checkbox_checked,
+            self.assertRaises(ValidationError),
+        ):
+            self.interactor._select_rows_on_current_page(
+                row_offset=0,
+                page_target_count=2,
+                row_count=2,
+            )
+
+        ensure_checkbox_checked.assert_not_called()
+
+    def test_ensure_select_all_checked_should_fall_back_to_checkbox_span(self) -> None:
+        """全选 label 点击不生效时应继续尝试更精确的 checkbox 节点。"""
+        select_all_input = FakeLocator(checked=False)
+
+        def mark_checked(_locator: FakeLocator) -> None:
+            select_all_input.checked = True
+
+        checkbox_span = FakeLocator(on_click=mark_checked)
+        select_all = FakeLocator(
+            children={
+                "input.ivu-checkbox-input": select_all_input,
+                "span.ivu-checkbox": checkbox_span,
+                "span.ivu-checkbox-inner": FakeLocator(),
+            }
+        )
+        select_all_container = FakeLocator(
+            children={
+                "label.ivu-checkbox-wrapper": select_all,
+            }
+        )
+
+        with (
+            patch.object(self.interactor, "_ensure_checkbox_checked"),
+            patch("wanfang_selection_ops.time.sleep", lambda _seconds: None),
+        ):
+            self.interactor._ensure_select_all_checked(
+                select_all_container=select_all_container,
+                select_all=select_all,
+                prefer_precise_targets=False,
+            )
+
+        self.assertTrue(select_all_input.checked)
+
     def test_is_checkbox_checked_prefers_input_state_over_wrapper_class(self) -> None:
         """勾选状态判定应优先信任原生 input。"""
         checkbox = FakeLocator(
@@ -341,6 +397,82 @@ class WanfangInteractorSelectionTestCase(unittest.TestCase):
         )
 
         self.assertFalse(self.interactor._is_checkbox_checked(checkbox))
+
+    def test_select_batch_for_export_rebuilds_search_context_before_retry(self) -> None:
+        """当前批次首次勾选失败后应先重建检索上下文再重试。"""
+        success_result = {
+            "selected_count": 20,
+            "next_row_offset": 20,
+            "page_row_count": 20,
+            "start_page": 3,
+            "end_page": 3,
+        }
+
+        with (
+            patch.object(self.interactor, "_clear_selected_results"),
+            patch.object(
+                self.interactor,
+                "_select_batch_results",
+                side_effect=[ValidationError("当前页勾选未达标"), success_result],
+            ),
+            patch.object(self.interactor, "_rebuild_search_results_context_for_batch") as rebuild_context,
+            patch.object(self.interactor, "_restart_browser_for_batch_retry") as restart_browser,
+        ):
+            result = self.interactor._select_batch_for_export(
+                search_params={"query": "新青年", "date_from": None, "date_to": None, "max_download": 20},
+                batch_index=2,
+                batch_target=20,
+                current_page=3,
+                current_row_offset=0,
+                strict_target=True,
+            )
+
+        self.assertEqual(result["selected_count"], 20)
+        rebuild_context.assert_called_once_with(
+            search_params={"query": "新青年", "date_from": None, "date_to": None, "max_download": 20},
+            batch_index=2,
+            target_page=3,
+            current_row_offset=0,
+        )
+        restart_browser.assert_not_called()
+
+    def test_select_batch_for_export_should_restart_browser_after_local_retries_exhausted(self) -> None:
+        """当前批次连续失败后应升级到浏览器级重试。"""
+        success_result = {
+            "selected_count": 20,
+            "next_row_offset": 20,
+            "page_row_count": 20,
+            "start_page": 3,
+            "end_page": 3,
+        }
+
+        with (
+            patch.object(self.interactor, "_clear_selected_results"),
+            patch.object(
+                self.interactor,
+                "_select_batch_results",
+                side_effect=[ValidationError("首次失败"), ValidationError("再次失败"), success_result],
+            ),
+            patch.object(self.interactor, "_rebuild_search_results_context_for_batch") as rebuild_context,
+            patch.object(self.interactor, "_restart_browser_for_batch_retry") as restart_browser,
+        ):
+            result = self.interactor._select_batch_for_export(
+                search_params={"query": "新青年", "date_from": None, "date_to": None, "max_download": 20},
+                batch_index=2,
+                batch_target=20,
+                current_page=3,
+                current_row_offset=0,
+                strict_target=True,
+            )
+
+        self.assertEqual(result["selected_count"], 20)
+        rebuild_context.assert_called_once()
+        restart_browser.assert_called_once_with(
+            search_params={"query": "新青年", "date_from": None, "date_to": None, "max_download": 20},
+            batch_index=2,
+            target_page=3,
+            current_row_offset=0,
+        )
 
 
 class WanfangInteractorFormTestCase(unittest.TestCase):
@@ -748,8 +880,8 @@ class WanfangInteractorProgressTestCase(unittest.TestCase):
         self.interactor = WanfangSearchInteractor(page=page, config=config, browser_manager=None)
         self.interactor.parser = SimpleNamespace(parse_results_summary=lambda: {"current_page": 2, "page": "2/10"})
 
-    def test_build_resume_runtime_rejects_missing_history_files(self) -> None:
-        """历史批次文件缺失时应拒绝恢复。"""
+    def test_build_resume_runtime_resets_when_history_files_missing(self) -> None:
+        """历史批次文件缺失时应自动重置计数，从头开始。"""
         with TemporaryDirectory() as temp_dir:
             missing_file = Path(temp_dir) / "missing.xlsx"
             resume_data = {
@@ -764,14 +896,19 @@ class WanfangInteractorProgressTestCase(unittest.TestCase):
                 },
             }
 
-            with self.assertRaises(ValidationError):
-                self.interactor._build_resume_runtime(
-                    resume_data=resume_data,
-                    output_dir=Path(temp_dir),
-                    planned_download=100,
-                    batch_count=2,
-                    total=200,
-                )
+            runtime = self.interactor._build_resume_runtime(
+                resume_data=resume_data,
+                output_dir=Path(temp_dir),
+                planned_download=100,
+                batch_count=2,
+                total=200,
+            )
+            self.assertEqual(runtime["exported_batches"], 0)
+            self.assertEqual(runtime["exported_total"], 0)
+            self.assertEqual(runtime["next_batch_index"], 1)
+            self.assertEqual(runtime["current_page"], 1)
+            self.assertEqual(runtime["current_row_offset"], 0)
+            self.assertEqual(runtime["enriched_batch_files"], [])
 
     def test_save_progress_snapshot_persists_runtime_context(self) -> None:
         """进度快照应落盘关键运行态。"""
@@ -1053,6 +1190,12 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
                         "progress_file": str(output_dir / "1978-progress.json"),
                     },
                 ]) as run_single,
+                patch.object(self.interactor, "_collect_yearly_validation_outcomes", return_value=([], [])),
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(output_dir / "1978-report.txt")]),
+                ),
                 patch.object(self.interactor, "_save_yearly_progress_snapshot"),
             ):
                 result = self.interactor._run_yearly_advanced_export(
@@ -1119,6 +1262,12 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
                     "report_file": str(output_dir / "1979-report.txt"),
                     "progress_file": str(output_dir / "1979-progress.json"),
                 }) as run_single,
+                patch.object(self.interactor, "_collect_yearly_validation_outcomes", return_value=([], [])),
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(output_dir / "1979-report.txt")]),
+                ),
                 patch.object(self.interactor, "_save_yearly_progress_snapshot"),
             ):
                 result = self.interactor._run_yearly_advanced_export(
@@ -1135,6 +1284,279 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
         run_single.assert_called_once()
         self.assertEqual(result["executed_years"], ["1949", "1978", "1979"])
         self.assertEqual(result["empty_years"], ["1949"])
+
+    def test_run_yearly_advanced_export_reruns_mismatched_year_before_merge(self) -> None:
+        """年度汇总数量与合并表格行数不一致时应先重跑再总合并。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            success_file = output_dir / "1978-merged.xlsx"
+            report_file = output_dir / "1978-report.txt"
+            progress_file = output_dir / "1978-progress.json"
+            task = {
+                "query": "新青年",
+                "year": "1978",
+                "date_from": "1978",
+                "date_to": "1978",
+                "max_download": None,
+            }
+
+            merge_batch_excels = Mock(return_value=str(output_dir / "final.xlsx"))
+            self.interactor.config.ensure_output_dir = lambda data=None: output_dir
+            self.interactor.export_processor = SimpleNamespace(merge_batch_excels=merge_batch_excels)
+
+            with (
+                patch.object(self.interactor, "_prepare_yearly_progress_store", return_value=(SimpleNamespace(file_path=output_dir / "outer.json"), None)),
+                patch.object(self.interactor, "_collect_available_end_years", return_value=["1978"]),
+                patch.object(self.interactor, "_ensure_yearly_search_page_ready"),
+                patch.object(
+                    self.interactor,
+                    "_run_single_yearly_export",
+                    side_effect=[
+                        {
+                            "status": "success",
+                            "year": "1978",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(success_file),
+                            "report_file": str(report_file),
+                            "progress_file": str(progress_file),
+                            "batch_report_files": [],
+                        },
+                        {
+                            "status": "success",
+                            "year": "1978",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(success_file),
+                            "report_file": str(report_file),
+                            "progress_file": str(progress_file),
+                            "batch_report_files": [],
+                        },
+                    ],
+                ) as run_single,
+                patch.object(
+                    self.interactor,
+                    "_collect_yearly_validation_outcomes",
+                    side_effect=[
+                        ([{"task": task, "year": "1978", "reported_total": 319, "actual_rows": 100}], []),
+                        ([], []),
+                    ],
+                ) as collect_failures,
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(report_file)]),
+                ),
+                patch.object(self.interactor, "_build_yearly_sub_progress_file", return_value=progress_file),
+                patch.object(self.interactor, "_cleanup_year_output_dir") as cleanup_dir,
+                patch.object(self.interactor, "_save_yearly_progress_snapshot"),
+            ):
+                result = self.interactor._run_yearly_advanced_export(
+                    cli_params={
+                        "query": "新青年",
+                        "date_from": None,
+                        "date_to": "1978",
+                        "max_download": None,
+                    },
+                    progress_file=None,
+                )
+
+        self.assertEqual(run_single.call_count, 2)
+        self.assertEqual(collect_failures.call_count, 2)
+        cleanup_dir.assert_called_once_with(output_dir, task)
+        merge_args = merge_batch_excels.call_args.args
+        self.assertEqual(merge_args[0], [Path(str(success_file))])
+        self.assertEqual(merge_args[1].parent, output_dir)
+        self.assertTrue(merge_args[1].name.endswith("-merged.xlsx"))
+        self.assertTrue(result["yearly_mode"])
+
+    def test_run_yearly_advanced_export_stops_merge_when_validation_never_recovers(self) -> None:
+        """年度结果多轮重跑后仍不一致时不应继续总合并。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            task = {
+                "query": "新青年",
+                "year": "1978",
+                "date_from": "1978",
+                "date_to": "1978",
+                "max_download": None,
+            }
+            progress_file = output_dir / "1978-progress.json"
+            merge_batch_excels = Mock(return_value=str(output_dir / "final.xlsx"))
+            self.interactor.config.ensure_output_dir = lambda data=None: output_dir
+            self.interactor.export_processor = SimpleNamespace(merge_batch_excels=merge_batch_excels)
+
+            with (
+                patch.object(self.interactor, "_prepare_yearly_progress_store", return_value=(SimpleNamespace(file_path=output_dir / "outer.json"), None)),
+                patch.object(self.interactor, "_collect_available_end_years", return_value=["1978"]),
+                patch.object(self.interactor, "_ensure_yearly_search_page_ready"),
+                patch.object(
+                    self.interactor,
+                    "_run_single_yearly_export",
+                    side_effect=[
+                        {
+                            "status": "success",
+                            "year": "1978",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(output_dir / "1978-merged.xlsx"),
+                            "report_file": str(output_dir / "1978-report.txt"),
+                            "progress_file": str(progress_file),
+                            "batch_report_files": [],
+                        },
+                        {
+                            "status": "success",
+                            "year": "1978",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(output_dir / "1978-merged.xlsx"),
+                            "report_file": str(output_dir / "1978-report.txt"),
+                            "progress_file": str(progress_file),
+                            "batch_report_files": [],
+                        },
+                        {
+                            "status": "success",
+                            "year": "1978",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(output_dir / "1978-merged.xlsx"),
+                            "report_file": str(output_dir / "1978-report.txt"),
+                            "progress_file": str(progress_file),
+                            "batch_report_files": [],
+                        },
+                    ],
+                ),
+                patch.object(
+                    self.interactor,
+                    "_collect_yearly_validation_outcomes",
+                    side_effect=[
+                        ([{"task": task, "year": "1978", "reported_total": 319, "actual_rows": 100}], []),
+                        ([{"task": task, "year": "1978", "reported_total": 319, "actual_rows": 100}], []),
+                        ([{"task": task, "year": "1978", "reported_total": 319, "actual_rows": 100}], []),
+                    ],
+                ),
+                patch.object(self.interactor, "_build_yearly_sub_progress_file", return_value=progress_file),
+                patch.object(self.interactor, "_cleanup_year_output_dir"),
+                patch.object(self.interactor, "_save_yearly_progress_snapshot"),
+            ):
+                with self.assertRaises(ValidationError):
+                    self.interactor._run_yearly_advanced_export(
+                        cli_params={
+                            "query": "新青年",
+                            "date_from": None,
+                            "date_to": "1978",
+                            "max_download": None,
+                        },
+                        progress_file=None,
+                    )
+
+        merge_batch_excels.assert_not_called()
+
+    def test_run_yearly_advanced_export_skips_unreadable_year_and_keeps_merge(self) -> None:
+        """某个年度合并表格无法读取时应记录跳过并继续总合并。"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            success_file = output_dir / "1978-merged.xlsx"
+            report_file = output_dir / "1978-report.txt"
+            good_year_task = {
+                "query": "新青年",
+                "year": "1978",
+                "date_from": "1978",
+                "date_to": "1978",
+                "max_download": None,
+            }
+            bad_year_task = {
+                "query": "新青年",
+                "year": "1979",
+                "date_from": "1979",
+                "date_to": "1979",
+                "max_download": None,
+            }
+            merge_batch_excels = Mock(return_value=str(output_dir / "final.xlsx"))
+            self.interactor.config.ensure_output_dir = lambda data=None: output_dir
+            self.interactor.export_processor = SimpleNamespace(merge_batch_excels=merge_batch_excels)
+
+            with (
+                patch.object(self.interactor, "_prepare_yearly_progress_store", return_value=(SimpleNamespace(file_path=output_dir / "outer.json"), None)),
+                patch.object(self.interactor, "_collect_available_end_years", return_value=["1978", "1979"]),
+                patch.object(self.interactor, "_ensure_yearly_search_page_ready"),
+                patch.object(
+                    self.interactor,
+                    "_run_single_yearly_export",
+                    side_effect=[
+                        {
+                            "status": "success",
+                            "year": "1978",
+                            "exported": 12,
+                            "selected": 12,
+                            "planned_download": 12,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(success_file),
+                            "report_file": str(report_file),
+                            "progress_file": str(output_dir / "1978-progress.json"),
+                            "batch_report_files": [],
+                        },
+                        {
+                            "status": "success",
+                            "year": "1979",
+                            "exported": 5,
+                            "selected": 5,
+                            "planned_download": 5,
+                            "batch_count": 1,
+                            "exported_batches": 1,
+                            "final_file_path": str(output_dir / "1979-merged.xlsx"),
+                            "report_file": str(output_dir / "1979-report.txt"),
+                            "progress_file": str(output_dir / "1979-progress.json"),
+                            "batch_report_files": [],
+                        },
+                    ],
+                ),
+                patch.object(
+                    self.interactor,
+                    "_collect_yearly_validation_outcomes",
+                    return_value=(
+                        [],
+                        [{"year": "1979", "reason": "年度合并 Excel 无法读取: File is not a zip file"}],
+                    ),
+                ),
+                patch.object(
+                    self.interactor,
+                    "_rebuild_yearly_output_files",
+                    return_value=([str(success_file)], [str(report_file)]),
+                ),
+                patch.object(self.interactor, "_save_yearly_progress_snapshot"),
+            ):
+                result = self.interactor._run_yearly_advanced_export(
+                    cli_params={
+                        "query": "新青年",
+                        "date_from": None,
+                        "date_to": "1979",
+                        "max_download": None,
+                    },
+                    progress_file=None,
+                )
+
+        self.assertEqual(result["skipped_years"], ["1979"])
+        self.assertEqual(result["skipped_year_details"][0]["year"], "1979")
+        self.assertIn("无法读取", result["skipped_year_details"][0]["reason"])
+        merge_args = merge_batch_excels.call_args.args
+        self.assertEqual(merge_args[0], [Path(str(success_file))])
 
     def test_run_single_yearly_export_reopens_advanced_search_page(self) -> None:
         """年度子任务开始前应重新打开首页并进入高级检索页。"""

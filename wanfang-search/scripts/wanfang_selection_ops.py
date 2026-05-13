@@ -69,6 +69,11 @@ class WanfangSelectionMixin:
                 page_target_count,
                 current_row_count,
             )
+            if page_selected_count < page_target_count:
+                raise ValidationError(
+                    f"当前页勾选返回缺口: row_offset={current_row_offset}, "
+                    f"target={page_target_count}, actual={page_selected_count}"
+                )
             covered_count += page_target_count
             selected_count += page_selected_count
             if strict_target:
@@ -125,7 +130,7 @@ class WanfangSelectionMixin:
         """当前页勾选 + 实勾校验 + 缺口补勾。"""
         checkbox_locator = self._wait_for_result_checkboxes(row_offset + page_target_count)
 
-        # 全选优化: 当页内全选时尝试页级全选，校验通过则直接返回
+        # 整页全选必须强一致，一旦无法确认成功，立刻失败并交给上层重建检索上下文。
         if row_offset == 0 and page_target_count == row_count:
             selected_before = self._extract_selected_count(0)
             if self._try_select_all_on_current_page(
@@ -134,9 +139,16 @@ class WanfangSelectionMixin:
                 checkbox_locator=checkbox_locator,
             ):
                 return page_target_count
-            logger.info("页级全选校验未通过，回退逐条勾选")
+            logger.warning(
+                "整页全选校验未通过，终止当前页并交给上层重试: target=%s, row_count=%s",
+                page_target_count,
+                row_count,
+            )
+            raise ValidationError(
+                f"整页全选未成功: target={page_target_count}, row_count={row_count}"
+            )
 
-        # 逐条勾选（含页级全选失败回退）
+        # 非整页场景仍按逐条勾选处理。
         for index in range(row_offset, row_offset + page_target_count):
             checkbox = checkbox_locator.nth(index)
             self._ensure_checkbox_checked(
@@ -166,10 +178,13 @@ class WanfangSelectionMixin:
 
         if selected_count < page_target_count:
             logger.warning(
-                "当前页补勾后仍未达标，将保留缺口继续处理: row_offset=%s, target=%s, actual=%s",
+                "当前页补勾后仍未达标，判定本批次失败: row_offset=%s, target=%s, actual=%s",
                 row_offset,
                 page_target_count,
                 selected_count,
+            )
+            raise ValidationError(
+                f"当前页勾选未达标: row_offset={row_offset}, target={page_target_count}, actual={selected_count}"
             )
         return selected_count
 
@@ -180,19 +195,21 @@ class WanfangSelectionMixin:
         checkbox_locator: Locator,
     ) -> bool:
         """尝试页级全选，并通过已选数量增量校验是否真正生效。"""
-        select_all = self.page.locator("div.top-check-bar div.wf-checkbox label.ivu-checkbox-wrapper").first
-        if select_all.count() == 0:
+        select_all_container = self.page.locator("div.top-check-bar div.wf-checkbox").first
+        select_all = select_all_container.locator("label.ivu-checkbox-wrapper").first
+        if select_all_container.count() == 0 or select_all.count() == 0:
             logger.debug("当前页不存在全选复选框，跳过页级全选")
             return False
 
-        # 等待全选按钮可交互（翻页后 ivu-checkbox 可能尚未绑定事件）
-        try:
-            select_all.wait_for(state="visible", timeout=self._action_timeout_ms())
-        except Exception as exc:
-            logger.debug("全选复选框等待可见超时: %s", exc)
+        if not self._wait_for_select_all_ready(select_all_container, select_all):
+            logger.debug("全选复选框结构未就绪，跳过页级全选")
+            return False
 
-        # 首次尝试点击全选
-        self._ensure_checkbox_checked(select_all, selector="div.top-check-bar div.wf-checkbox label.ivu-checkbox-wrapper")
+        # 优先使用更完整的节点链路尝试勾选全选框，减少误点空白区域导致的失败。
+        self._ensure_select_all_checked(
+            select_all_container=select_all_container,
+            select_all=select_all,
+        )
         time.sleep(0.3)
 
         if self._count_checked_rows(checkbox_locator, 0, expected_increase) >= expected_increase:
@@ -214,7 +231,11 @@ class WanfangSelectionMixin:
         if not self._is_checkbox_checked(select_all):
             logger.debug("页级全选首次点击后仍未选中，准备重试")
             time.sleep(0.5)
-            self._click_checkbox_via_js(select_all)
+            self._ensure_select_all_checked(
+                select_all_container=select_all_container,
+                select_all=select_all,
+                prefer_precise_targets=True,
+            )
             time.sleep(0.3)
             if self._count_checked_rows(checkbox_locator, 0, expected_increase) >= expected_increase:
                 return True
@@ -226,7 +247,7 @@ class WanfangSelectionMixin:
 
         # 仍然失败，回退：取消全选并返回 False
         logger.warning(
-            "页级全选校验未通过，回退逐条勾选: expected_increase=%s, actual_increase=%s",
+            "页级全选校验未通过: expected_increase=%s, actual_increase=%s",
             expected_increase,
             actual_increase,
         )
@@ -235,6 +256,104 @@ class WanfangSelectionMixin:
             select_all.click(timeout=self._action_timeout_ms())
             time.sleep(0.2)
         return False
+
+    def _wait_for_select_all_ready(self, select_all_container: Locator, select_all: Locator) -> bool:
+        """等待全选复选框结构完整可用。"""
+        deadline = time.time() + self._page_change_timeout_seconds()
+        while time.time() < deadline:
+            try:
+                if not self._locator_is_visible(select_all_container) or not self._locator_is_visible(select_all):
+                    time.sleep(0.1)
+                    continue
+            except Exception as exc:
+                logger.debug("等待全选容器可见时遇到瞬时异常: %s", exc)
+                time.sleep(0.1)
+                continue
+
+            input_el = select_all.locator("input.ivu-checkbox-input").first
+            checkbox_span = select_all.locator("span.ivu-checkbox").first
+            inner_span = select_all.locator("span.ivu-checkbox-inner").first
+            if input_el.count() > 0 and checkbox_span.count() > 0 and inner_span.count() > 0:
+                return True
+            time.sleep(0.1)
+
+        logger.debug("等待全选复选框结构就绪超时")
+        return False
+
+    def _ensure_select_all_checked(
+        self,
+        select_all_container: Locator,
+        select_all: Locator,
+        prefer_precise_targets: bool = False,
+    ) -> None:
+        """按多个候选节点尝试勾选全选复选框。"""
+        selector = "div.top-check-bar div.wf-checkbox label.ivu-checkbox-wrapper"
+        if not prefer_precise_targets:
+            self._ensure_checkbox_checked(select_all, selector=selector)
+            if self._is_checkbox_checked(select_all):
+                return
+
+        candidate_steps = [
+            ("span.ivu-checkbox", "div.top-check-bar div.wf-checkbox span.ivu-checkbox"),
+            ("span.ivu-checkbox-inner", "div.top-check-bar div.wf-checkbox span.ivu-checkbox-inner"),
+        ]
+        for child_selector, child_label in candidate_steps:
+            candidate = select_all.locator(child_selector).first
+            if candidate.count() == 0:
+                continue
+            self._click_locator_if_present(candidate, child_label)
+            if self._is_checkbox_checked(select_all):
+                return
+
+        input_el = select_all.locator("input.ivu-checkbox-input").first
+        if input_el.count() > 0:
+            try:
+                input_el.check(force=True, timeout=self._action_timeout_ms())
+                time.sleep(0.1)
+            except Exception as exc:
+                logger.debug("全选 input 强制勾选失败: error=%s", exc)
+            if self._is_checkbox_checked(select_all):
+                return
+
+        if not prefer_precise_targets:
+            return
+
+        self._click_locator_if_present(select_all_container, "div.top-check-bar div.wf-checkbox")
+
+    def _click_locator_if_present(self, locator: Locator, selector: str) -> None:
+        """在节点存在时尝试直接点击，失败后使用 JS 兜底。"""
+        try:
+            locator.scroll_into_view_if_needed(timeout=self._action_timeout_ms())
+        except Exception as exc:
+            logger.debug("节点滚动到可视区域失败: selector=%s, error=%s", selector, exc)
+
+        try:
+            locator.click(timeout=self._action_timeout_ms())
+            time.sleep(0.1)
+            return
+        except Exception as exc:
+            logger.debug("节点点击失败，尝试使用 JS 兜底: selector=%s, error=%s", selector, exc)
+
+        try:
+            locator.evaluate(
+                """
+                (element) => {
+                    element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+                    element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+                    element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                }
+                """
+            )
+            time.sleep(0.1)
+        except Exception as exc:
+            logger.debug("节点 JS 点击失败: selector=%s, error=%s", selector, exc)
+
+    def _locator_is_visible(self, locator: Locator) -> bool:
+        """安全判断节点是否存在且可见。"""
+        try:
+            return locator.count() > 0 and locator.is_visible()
+        except Exception:
+            return False
 
     def _ensure_checkbox_checked(self, checkbox: Locator, selector: str = "") -> None:
         """稳定勾选 ivu-checkbox 复选框。"""

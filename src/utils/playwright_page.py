@@ -111,7 +111,7 @@ def set_native_select_value(
     value: str,
     error_cls: type[Exception],
 ) -> None:
-    """为原生下拉框写值并触发事件。"""
+    """为原生下拉框写值并触发事件，同时处理 layui 自定义下拉框。"""
     locator = page.locator(selector).first
     if locator.count() == 0:
         raise error_cls(f"未找到年份选择器: {selector}")
@@ -121,6 +121,25 @@ def set_native_select_value(
             element.value = selectedValue;
             element.dispatchEvent(new Event('input', { bubbles: true }));
             element.dispatchEvent(new Event('change', { bubbles: true }));
+            var parent = element.closest('.layui-form-select');
+            if (parent) {
+                var selectedOption = element.options[element.selectedIndex];
+                var titleInput = parent.querySelector('.layui-select-title input');
+                if (titleInput && selectedOption) {
+                    titleInput.value = selectedOption.text;
+                }
+                parent.classList.remove('layui-form-selected');
+                var dl = parent.querySelector('dl');
+                if (dl) {
+                    dl.querySelectorAll('dd').forEach(function(dd) {
+                        dd.classList.remove('layui-this');
+                    });
+                    var selectedDd = dl.querySelector('dd[lay-value="' + selectedValue + '"]');
+                    if (selectedDd) {
+                        selectedDd.classList.add('layui-this');
+                    }
+                }
+            }
         }
         """,
         value,

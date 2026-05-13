@@ -62,7 +62,7 @@ class BaseAdvancedExportFlow(ABC):
         if not reuse_current_search_page:
             self._open_advanced_search_page()
         if self.ADVANCED_FORM_READY_SELECTORS:
-            self._wait_for_any_selector(list(self.ADVANCED_FORM_READY_SELECTORS))
+            self._wait_for_any_selector(list(self.ADVANCED_FORM_READY_SELECTORS), timeout=30)
         self._ensure_captcha_cleared()
         self._fill_advanced_search_form_from_params(resolved_params)
         self._submit_advanced_search()
@@ -160,10 +160,12 @@ class BaseAdvancedExportFlow(ABC):
                 if batch_target <= 0:
                     break
 
-                self._clear_selected_results()
-                batch_selection = self._select_batch_results(
-                    batch_target,
-                    current_row_offset,
+                batch_selection = self._select_batch_for_export(
+                    search_params=resolved_params,
+                    batch_index=batch_index,
+                    batch_target=batch_target,
+                    current_page=current_page,
+                    current_row_offset=current_row_offset,
                     strict_target=strict_batch_target,
                 )
                 if int(batch_selection.get("selected_count") or 0) <= 0:
@@ -356,6 +358,24 @@ class BaseAdvancedExportFlow(ABC):
     def _prepare_results_page_for_export(self, planned_download: int, total: int) -> None:
         """在批量导出前执行站点级结果页预处理。"""
         del planned_download, total
+
+    def _select_batch_for_export(
+        self,
+        search_params: SearchParams,
+        batch_index: int,
+        batch_target: int,
+        current_page: int,
+        current_row_offset: int,
+        strict_target: bool,
+    ) -> BatchSelectionResult:
+        """为当前批次执行勾选。"""
+        del search_params, batch_index, current_page
+        self._clear_selected_results()
+        return self._select_batch_results(
+            batch_target,
+            current_row_offset,
+            strict_target=strict_target,
+        )
 
     def _prepare_next_batch_cursor(self, batch_selection: BatchSelectionResult) -> ResumeRuntime:
         """根据批次勾选结果计算下一批恢复游标。"""

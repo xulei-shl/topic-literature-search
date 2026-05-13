@@ -48,12 +48,47 @@ class VpPageMixin:
                 return True
         return self._result_checkbox_locator().count() > 0
 
-    def _dismiss_confirm_dialog_if_present(self) -> None:
-        confirm_button = self.page.locator(".layui-layer-btn0").first
-        if confirm_button.count() == 0:
-            return
+    def _dismiss_confirm_dialog_if_present(self, timeout_ms: int = 500) -> bool:
+        """关闭确认弹出框，先定位对话框容器再取内部按钮。"""
+        dialog = self.page.locator(".layui-layer-dialog").first
+        if dialog.count() == 0:
+            return False
         try:
-            confirm_button.click()
+            dialog.wait_for(state="visible", timeout=timeout_ms)
+        except Exception:
+            return False
+        confirm_button = dialog.locator(".layui-layer-btn0").first
+        if confirm_button.count() == 0:
+            # JS 兜底：直接点击页面上所有可见的确认按钮
+            try:
+                self.page.evaluate(
+                    """
+                    () => {
+                        const btn = document.querySelector('.layui-layer-dialog .layui-layer-btn0');
+                        if (btn) btn.click();
+                    }
+                    """
+                )
+                logger.debug("确认对话框已通过 JS 兜底关闭")
+                return True
+            except Exception as exc:
+                logger.debug("JS 兜底关闭对话框失败: %s", exc)
+                return False
+        try:
+            confirm_button.click(timeout=timeout_ms)
+            self._wait_for_dialog_dismissed()
+            logger.debug("确认对话框已关闭")
+            return True
+        except Exception as exc:
+            logger.debug("确认按钮点击失败: %s", exc)
+            return False
+
+    def _wait_for_dialog_dismissed(self, timeout_ms: int = 2000) -> None:
+        """等待对话框关闭"""
+        try:
+            dialog = self.page.locator(".layui-layer-dialog").first
+            if dialog.count() > 0:
+                dialog.wait_for(state="hidden", timeout=timeout_ms)
         except Exception:
             pass
 
@@ -80,52 +115,58 @@ class VpPageMixin:
         return ""
 
     def _click_first_available(self, selectors: list[str], page: Optional[Page] = None) -> bool:
-        return click_first_available(page or self.page, selectors, self._locator_wait_timeout_ms())
+        return click_first_available(page or self.page, selectors, timeout_ms=500)
 
     def _wait_for_any_selector(self, selectors: list[str], timeout: Optional[int] = None) -> None:
         wait_for_any_selector(
             page=self.page,
             selectors=selectors,
             timeout_seconds=float(timeout or self.config.page_timeout),
-            poll_interval_seconds=self._page_poll_interval_seconds(),
-            wait_timeout_ms=self._locator_wait_timeout_ms(),
+            poll_interval_seconds=0.5,
+            wait_timeout_ms=500,
             error_cls=TimeoutError,
             error_message=f"等待页面元素超时: {selectors[0]}",
         )
 
     def _action_timeout_ms(self) -> int:
+        """返回操作超时毫秒数（下限 1s，上限 15s，避免过短导致虚假超时，也避免过长浪费等待）。"""
         timeout_seconds = getattr(self.config, "action_timeout", self.config.page_timeout)
-        return int(timeout_seconds * 1000)
+        return max(min(int(timeout_seconds * 1000), 15000), 1000)
 
     def _navigation_timeout_ms(self) -> int:
+        """返回导航超时毫秒数。"""
         timeout_seconds = getattr(self.config, "navigation_timeout", self.config.page_timeout)
-        return int(timeout_seconds * 1000)
+        if timeout_seconds is None:
+            timeout_seconds = self.config.page_timeout
+        return max(int(timeout_seconds * 1000), 1000)
 
     def _download_timeout_ms(self) -> int:
+        """返回下载超时毫秒数（下限 10 秒，避免大文件下载超时）。"""
         timeout_seconds = getattr(self.config, "page_change_timeout", self.config.page_timeout)
-        return int(timeout_seconds * 1000)
+        return max(int(timeout_seconds * 1000), 10000)
 
     def _export_option_download_probe_timeout_ms(self) -> int:
-        """返回探测导出选项是否会自动下载的短超时时间。"""
-        return max(1000, int(self._action_timeout_ms() / 2))
+        """返回导出选项下载探测超时毫秒数（短超时，仅检测点击选项后是否触发下载）。"""
+        return 3000
 
     def _page_change_timeout_seconds(self) -> float:
+        """返回页面切换超时秒数（下限 1 秒，避免过短导致虚假超时重试）。"""
         timeout_seconds = getattr(self.config, "page_change_timeout", self.config.page_timeout)
-        return float(timeout_seconds)
+        return max(float(timeout_seconds), 1.0)
 
     def _locator_wait_timeout_ms(self) -> int:
-        return int(self._action_timeout_ms() / 60)
+        return max(min(int(self._action_timeout_ms() / 4), 1000), 300)
 
     def _action_poll_interval_seconds(self) -> float:
         timeout_seconds = getattr(self.config, "action_timeout", self.config.page_timeout)
-        return float(timeout_seconds) / 100
+        return min(max(float(timeout_seconds) / 20, 0.05), 0.3)
 
     def _page_poll_interval_seconds(self) -> float:
         timeout_seconds = getattr(self.config, "page_timeout", 30)
-        return float(timeout_seconds) / 120
+        return min(max(float(timeout_seconds) / 30, 0.1), 0.5)
 
     def _page_change_poll_interval_seconds(self) -> float:
-        return self._page_change_timeout_seconds() / 240
+        return min(max(self._page_change_timeout_seconds() / 20, 0.1), 0.5)
 
     def _format_date_range(self, date_from: Optional[str], date_to: Optional[str]) -> str:
         if date_from and date_to:

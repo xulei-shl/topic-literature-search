@@ -172,6 +172,39 @@ class ExportResultProcessorTestCase(unittest.TestCase):
         self.assertEqual(rows[1], ("文章一", "[1]引文一"))
         self.assertEqual(rows[2], ("文章二", "[1]引文二"))
 
+    def test_merge_batch_excels_rejects_missing_reference_column(self) -> None:
+        """启用参考格式检查时，缺少该列的文件应被拒绝。"""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            no_ref_path = temp_path / "no-ref.xlsx"
+            final_path = temp_path / "merged.xlsx"
+
+            workbook = openpyxl.Workbook()
+            sheet = workbook.active
+            sheet.append(["题名", "作者"])
+            sheet.append(["文章一", "作者甲"])
+            workbook.save(no_ref_path)
+
+            with self.assertRaises(Exception) as ctx:
+                self.processor.merge_batch_excels([no_ref_path], final_path, check_reference_column=True)
+            self.assertIn("缺少参考格式列", str(ctx.exception))
+
+    def test_merge_batch_excels_allows_missing_reference_column_when_disabled(self) -> None:
+        """关闭参考格式检查时，即使缺少该列也应合并成功。"""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            no_ref_path = temp_path / "no-ref.xlsx"
+            final_path = temp_path / "merged.xlsx"
+
+            workbook = openpyxl.Workbook()
+            sheet = workbook.active
+            sheet.append(["题名", "作者"])
+            sheet.append(["文章一", "作者甲"])
+            workbook.save(no_ref_path)
+
+            result_path = self.processor.merge_batch_excels([no_ref_path], final_path, check_reference_column=False)
+            self.assertTrue(Path(result_path).exists())
+
 
 class CliValidationTestCase(unittest.TestCase):
     """验证 CLI 参数校验。"""

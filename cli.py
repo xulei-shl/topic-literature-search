@@ -8,12 +8,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
+import subprocess
+
 PROJECT_ROOT = Path(__file__).resolve().parent
 TARGET_SCRIPT_PATHS = {
     "cnki": PROJECT_ROOT / "cnki-search" / "scripts" / "cli.py",
     "vp": PROJECT_ROOT / "vp-search" / "scripts" / "cli.py",
     "wanfang": PROJECT_ROOT / "wanfang-search" / "scripts" / "cli.py",
 }
+MERGE_EXCEL_SCRIPT = PROJECT_ROOT / "src" / "core" / "merge_excel.py"
 TARGET_DISPLAY_NAMES = {
     "cnki": "CNKI",
     "vp": "VP",
@@ -31,6 +34,27 @@ class DispatchResult:
     error_message: str | None = None
 
 
+async def run_merge_excel(query: str, targets: list[str]) -> int:
+    """执行 Excel 合并任务。
+
+    Args:
+        query: 检索关键词。
+        targets: 需要合并的数据源列表。
+
+    Returns:
+        退出码。
+    """
+    from src.core.merge_excel import merge_excel_files
+
+    try:
+        result_path = merge_excel_files(query, targets)
+        print(f"合并完成: {result_path}")
+        return 0
+    except Exception as exc:
+        print(f"合并失败: {exc}")
+        return 1
+
+
 def create_parser() -> argparse.ArgumentParser:
     """创建顶层参数解析器。"""
     parser = argparse.ArgumentParser(
@@ -44,6 +68,23 @@ def create_parser() -> argparse.ArgumentParser:
     advanced_search_parser.add_argument("--cnki", action="store_true", help="执行 CNKI")
     advanced_search_parser.add_argument("--vp", action="store_true", help="执行维普")
     advanced_search_parser.add_argument("--wanfang", action="store_true", help="执行万方")
+
+    merge_parser = subparsers.add_parser("merge-excel", help="合并多个数据源的 Excel 文件")
+    merge_parser.add_argument("--query", required=True, help="检索关键词，用于定位输出目录")
+    merge_parser.add_argument("--all", dest="merge_all", action="store_true", help="合并全部数据源")
+    merge_parser.add_argument("--cnki", action="store_true", help="合并 CNKI")
+    merge_parser.add_argument("--vp", action="store_true", help="合并维普")
+    merge_parser.add_argument("--wanfang", action="store_true", help="合并万方")
+
+    clean_parser = subparsers.add_parser("clean-excel", help="对合并后的 Excel 进行去重")
+    clean_parser.add_argument("--query", required=True, help="检索关键词，用于定位合并文件")
+    clean_parser.add_argument("--input", help="直接指定输入的合并 Excel 文件路径（可选）")
+
+    llm_parser = subparsers.add_parser("llm-filter", help="使用 LLM 对去重后的 Excel 进行主题相关性评估")
+    llm_parser.add_argument("--query", required=True, help="检索关键词，用于定位去重文件")
+    llm_parser.add_argument("--input", help="直接指定输入的去重 Excel 文件路径（可选）")
+    llm_parser.add_argument("--batch-size", type=int, help="批次大小（可选，优先级高于 .env 配置）")
+
     return parser
 
 
@@ -72,6 +113,16 @@ def resolve_targets(args: argparse.Namespace) -> list[str]:
     Raises:
         ValueError: 目标参数组合非法时抛出。
     """
+    if args.command == "merge-excel":
+        selected_targets = [target for target in ("cnki", "vp", "wanfang") if getattr(args, target)]
+        if args.merge_all and selected_targets:
+            raise ValueError("--all 不能与 --cnki/--vp/--wanfang 同时使用")
+        if args.merge_all:
+            return list(TARGET_SCRIPT_PATHS.keys())
+        if selected_targets:
+            return selected_targets
+        raise ValueError("至少需要指定 --all、--cnki、--vp、--wanfang 中的一个")
+
     selected_targets = [target for target in ("cnki", "vp", "wanfang") if getattr(args, target)]
     if args.run_all and selected_targets:
         raise ValueError("--all 不能与 --cnki/--vp/--wanfang 同时使用")
@@ -160,14 +211,45 @@ def main(argv: Sequence[str] | None = None) -> int:
     """顶层 CLI 主入口。"""
     try:
         args, passthrough_args = parse_cli_args(argv)
+
+        if args.command == "merge-excel":
+            targets = resolve_targets(args)
+            return run_merge_excel(args.query, targets)
+
+        if args.command == "clean-excel":
+            from src.core.clean_excel import clean_excel
+
+            input_path = Path(args.input) if args.input else None
+            try:
+                output_path = clean_excel(args.query, input_path)
+                print(f"去重成功: {output_path}")
+                return 0
+            except Exception as exc:
+                print(f"去重失败: {exc}")
+                return 1
+
+        if args.command == "llm-filter":
+            from src.core.llm_filter import llm_filter
+
+            input_path = Path(args.input) if args.input else None
+            try:
+                output_path = llm_filter(args.query, input_path, args.batch_size)
+                print(f"LLM 评估成功: {output_path}")
+                return 0
+            except Exception as exc:
+                print(f"LLM 评估失败: {exc}")
+                return 1
+
         if args.command != "advanced-search":
             raise ValueError(f"不支持的命令: {args.command}")
 
+        # advanced-search 命令处理
         targets = resolve_targets(args)
         print(f"开始执行 advanced-search，目标: {', '.join(TARGET_DISPLAY_NAMES[target] for target in targets)}")
         results = asyncio.run(run_selected_targets(targets, passthrough_args))
         print_summary(results)
         return 0 if all(result.exit_code == 0 for result in results) else 1
+
     except ValueError as exc:
         print(f"参数错误: {exc}")
         return 1

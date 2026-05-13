@@ -274,7 +274,11 @@ class BrowserManager:
         time.sleep(self._cleanup_settle_seconds())
 
     def _navigation_timeout_ms(self) -> int:
-        return int(self.config.navigation_timeout * 1000)
+        """返回导航超时毫秒数（保证至少 30 秒）。"""
+        timeout_seconds = getattr(self.config, "navigation_timeout", 60)
+        if timeout_seconds is None:
+            timeout_seconds = 60
+        return max(int(timeout_seconds * 1000), 30000)
 
     def _subprocess_timeout_seconds(self) -> int:
         return int(self.config.action_timeout)

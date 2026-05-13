@@ -1,36 +1,39 @@
-"""??????????"""
+"""VP 结果页导航与翻页逻辑。"""
 
 import logging
-import re
 import time
-from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, Optional
 
-from playwright.sync_api import Locator, Page, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import Locator
 
-from src.core.advanced_export_flow import BaseAdvancedExportFlow
-from src.core.advanced_export_types import BatchSelectionResult, SearchParams
-from src.utils.playwright_page import click_first_available, disable_checkbox, enable_checkbox, has_visible_selector, set_native_select_value, wait_for_any_selector
-from src.utils.result_output import build_export_file_path
-
-from browser import BrowserManager
-from config import VpSearchConfig
-from exceptions import CaptchaError, TimeoutError, ValidationError
-from export_processor import ExportResultProcessor
-from progress_store import SearchProgressStore
-from result_parser import ResultParser
-from utils import build_output_slug
+from exceptions import TimeoutError, ValidationError
 
 logger = logging.getLogger("vp_search.interactor")
 
+
 class VpNavigationMixin:
-    """??????????"""
+    """负责维普结果页的续跑恢复与翻页。"""
+
+    def _wait_for_pagination_loading_dismissed(self, timeout: Optional[float] = None) -> None:
+        """等待翻页时出现的 '加载中...' 弹窗消失。"""
+        deadline = time.time() + (timeout or self._page_change_timeout_seconds())
+        while time.time() < deadline:
+            try:
+                loading = self.page.locator(".layui-layer-msg:has-text('加载中')").first
+                if loading.count() == 0 or not loading.is_visible():
+                    return
+            except Exception:
+                return
+            time.sleep(self._page_change_poll_interval_seconds())
 
     def _restore_results_position(self, target_page: int) -> None:
-        """恢复到需要续跑的结果页，优先使用页码输入框跳转。"""
+        """恢复到需要续跑的结果页。"""
         if target_page <= 1:
             return
+
+        if hasattr(self.page, "locator"):
+            self._prefer_results_page_size()
+            self._wait_for_results_ready()
 
         summary = self.parser.parse_results_summary()
         current_page = int(summary["current_page"])
@@ -50,30 +53,51 @@ class VpNavigationMixin:
                 moved = self._goto_next_results_page()
             if not moved:
                 raise ValidationError(f"未能恢复到目标页码: {target_page}")
+
             next_page = int(self.parser.parse_results_summary()["current_page"])
             if next_page <= current_page:
                 raise ValidationError(f"恢复页码未前进: {current_page} -> {next_page}")
             current_page = next_page
 
     def _find_resume_skip_controls(self) -> tuple[Optional[Locator], Optional[Locator]]:
-        """查找结果页“到第 X 页”输入框与确认按钮。"""
+        """查找结果页跳页输入框与确认按钮。"""
         if not self.page or not hasattr(self.page, "locator"):
             return None, None
 
-        for pager_selector in self.RESULTS_PAGER_SELECTORS:
-            input_locator = self.page.locator(f"{pager_selector} .layui-laypage-skip input.layui-input").first
-            button_locator = self.page.locator(f"{pager_selector} .layui-laypage-skip .layui-laypage-btn").first
-            if input_locator.count() > 0 and button_locator.count() > 0:
-                return input_locator, button_locator
+        skip_input_selectors = [
+            ".layui-laypage-skip input.layui-input",
+            "span.layui-laypage-skip input.layui-input",
+            "div.layui-box.layui-laypage input.layui-input",
+        ]
+        skip_button_selectors = [
+            ".layui-laypage-skip .layui-laypage-btn",
+            ".layui-laypage-skip button.layui-laypage-btn",
+            ".layui-laypage-skip button:has-text('确定')",
+        ]
 
-        input_locator = self.page.locator(".layui-laypage-skip input.layui-input").first
-        button_locator = self.page.locator(".layui-laypage-skip .layui-laypage-btn").first
-        if input_locator.count() > 0 and button_locator.count() > 0:
-            return input_locator, button_locator
+        for pager_selector in self.RESULTS_PAGER_SELECTORS:
+            for input_selector in skip_input_selectors:
+                input_locator = self.page.locator(f"{pager_selector} {input_selector}").first
+                if input_locator.count() == 0:
+                    continue
+                for button_selector in skip_button_selectors:
+                    button_locator = self.page.locator(f"{pager_selector} {button_selector}").first
+                    if button_locator.count() > 0:
+                        return input_locator, button_locator
+
+        for input_selector in skip_input_selectors:
+            input_locator = self.page.locator(input_selector).first
+            if input_locator.count() == 0:
+                continue
+            for button_selector in skip_button_selectors:
+                button_locator = self.page.locator(button_selector).first
+                if button_locator.count() > 0:
+                    return input_locator, button_locator
+
         return None, None
 
     def _click_results_page_link(self, page_link: Locator, attempt: int) -> None:
-        """执行结果页数字页码点击。"""
+        """点击数字页码。"""
         try:
             page_link.scroll_into_view_if_needed(timeout=self._action_timeout_ms())
         except Exception as exc:
@@ -90,7 +114,7 @@ class VpNavigationMixin:
             page_link.evaluate("(element) => element.click()")
 
     def _click_skip_page_button(self, button_locator: Locator, attempt: int) -> None:
-        """执行结果页页码输入跳转确认。"""
+        """点击跳页确认按钮。"""
         try:
             button_locator.scroll_into_view_if_needed(timeout=self._action_timeout_ms())
         except Exception as exc:
@@ -107,7 +131,7 @@ class VpNavigationMixin:
             button_locator.evaluate("(element) => element.click()")
 
     def _jump_to_results_page(self, target_page: int) -> bool:
-        """通过分页输入框跳转到目标页。"""
+        """通过跳页输入框跳转到目标页。"""
         input_locator, button_locator = self._find_resume_skip_controls()
         if input_locator is None or button_locator is None:
             return False
@@ -123,6 +147,7 @@ class VpNavigationMixin:
             try:
                 input_locator.fill(str(target_page))
                 self._click_skip_page_button(button_locator, attempt)
+                self._wait_for_pagination_loading_dismissed()
                 self._wait_for_results_changed(previous_url, previous_page, previous_title)
                 return int(self.parser.parse_results_summary()["current_page"]) > previous_current_page
             except Exception as exc:
@@ -159,6 +184,7 @@ class VpNavigationMixin:
         for attempt in range(1, self.NEXT_PAGE_MAX_RETRIES + 1):
             try:
                 self._click_results_page_link(page_link, attempt)
+                self._wait_for_pagination_loading_dismissed()
                 self._wait_for_results_changed(previous_url, previous_page, previous_title)
                 return int(self.parser.parse_results_summary()["current_page"]) > previous_current_page
             except Exception as exc:
@@ -183,7 +209,7 @@ class VpNavigationMixin:
         return False
 
     def _find_resume_target_page_link(self, current_page: int, target_page: int) -> Optional[Locator]:
-        """查找恢复续跑时可直接点击的目标数字页。"""
+        """查找恢复续跑时可点击的目标数字页。"""
         if not self.page or not hasattr(self.page, "locator"):
             return None
 
@@ -222,80 +248,73 @@ class VpNavigationMixin:
 
         return candidate_link
 
+    def _dismiss_layui_shade(self) -> None:
+        """移除可能遮挡翻页按钮的遮罩层。"""
+        try:
+            shades = self.page.locator(".layui-layer-shade")
+            if shades.count() <= 0:
+                return
+            shades.evaluate_all(
+                """
+                (elements) => {
+                    elements.forEach((element) => {
+                        element.style.display = 'none';
+                    });
+                }
+                """
+            )
+        except Exception as exc:
+            logger.debug("移除 Layui 遮罩层失败: %s", exc)
+
     def _click_next_page_link(self, next_link: Locator, attempt: int) -> None:
+        """点击下一页。"""
         try:
             next_link.scroll_into_view_if_needed(timeout=self._action_timeout_ms())
         except Exception as exc:
             logger.debug("翻页按钮滚动到可视区域失败: %s", exc)
 
+        self._dismiss_layui_shade()
         if attempt < self.NEXT_PAGE_MAX_RETRIES:
             next_link.click(timeout=self._action_timeout_ms(), no_wait_after=True)
             return
+
         try:
             next_link.click(timeout=self._action_timeout_ms(), no_wait_after=True)
         except Exception as exc:
-            logger.debug("常规点击“下一页”失败，尝试使用 JS 点击: %s", exc)
+            logger.debug("常规点击下一页失败，尝试使用 JS 点击: %s", exc)
             next_link.evaluate("(element) => element.click()")
 
     def _goto_next_results_page(self) -> bool:
-        navigation_started_at = time.perf_counter()
+        """点击下一页并等待页码真实推进。"""
         previous_url = self.page.url
         summary = self.parser.parse_results_summary()
         previous_page = summary["page"]
         previous_current_page = int(summary.get("current_page") or 1)
         previous_title = self._first_result_title()
-        setattr(self, "_last_results_title_before_page_turn", previous_title)
         last_error: Optional[Exception] = None
 
         for attempt in range(1, self.NEXT_PAGE_MAX_RETRIES + 1):
             next_link = self._find_next_page_link()
             if next_link is None:
-                logger.debug("未找到下一页控件: previous_page=%s, previous_url=%s", previous_page, previous_url)
                 return False
 
             class_name = next_link.get_attribute("class") or ""
+            if "layui-disabled" in class_name or "disabled" in class_name:
+                return False
+
             data_page = next_link.get_attribute("data-page") or ""
             target_page = int(data_page) if data_page.isdigit() else (previous_current_page + 1)
-            try:
-                next_text = next_link.inner_text().strip()
-            except Exception:
-                next_text = ""
-            logger.debug(
-                "准备执行结果页翻页: attempt=%s/%s, previous_page=%s, next_text=%s, data_page=%s, class=%s",
-                attempt,
-                self.NEXT_PAGE_MAX_RETRIES,
-                previous_page,
-                next_text,
-                data_page,
-                class_name,
-            )
-            if "layui-disabled" in class_name or "disabled" in class_name:
-                logger.debug("下一页控件处于禁用状态，停止翻页: previous_page=%s", previous_page)
-                return False
 
             try:
                 self._click_next_page_link(next_link, attempt)
-                current_summary = self._wait_for_results_page_advanced(
+                self._wait_for_pagination_loading_dismissed()
+                self._wait_for_results_page_advanced(
                     previous_current_page=previous_current_page,
                     target_page=target_page,
                     previous_url=previous_url,
                     previous_page=previous_page,
                     previous_title=previous_title,
                 )
-                if current_summary is None:
-                    current_summary = self.parser.parse_results_summary()
-                current_page = current_summary["page"]
-                current_current_page = int(current_summary.get("current_page") or 0)
-                self._mark_known_results_page(max(current_current_page, target_page))
-                logger.debug(
-                    "结果页翻页完成: previous_page=%s, current_page=%s, target_page=%s, elapsed_ms=%s",
-                    previous_page,
-                    current_page,
-                    target_page,
-                    int((time.perf_counter() - navigation_started_at) * 1000),
-                )
-                if current_current_page < target_page:
-                    raise TimeoutError(f"结果页页码未推进到目标页: current={current_current_page}, target={target_page}")
                 return True
             except Exception as exc:
                 last_error = exc
@@ -314,23 +333,22 @@ class VpNavigationMixin:
                 self._ensure_captcha_cleared()
                 if attempt < self.NEXT_PAGE_MAX_RETRIES:
                     time.sleep(self._page_change_poll_interval_seconds())
+
         raise TimeoutError(f"结果页翻页失败，已重试 {self.NEXT_PAGE_MAX_RETRIES} 次: {last_error}")
 
     def _has_results_state_changed(self, previous_url: str, previous_page: str, previous_title: str) -> bool:
+        """判断结果页是否发生变化。"""
         current_url = self.page.url
         current_page = self.parser.parse_results_summary()["page"]
         current_title = self._first_result_title()
         return any([current_url != previous_url, current_page != previous_page, current_title != previous_title])
 
     def _is_results_page_advanced(self, previous_current_page: int, target_page: int) -> bool:
-        """判断结果页页码是否已经推进到目标页。"""
+        """判断结果页是否真正推进到目标页。"""
         try:
             current_current_page = int(self.parser.parse_results_summary().get("current_page") or 0)
         except Exception:
             return False
-        if current_current_page >= target_page and current_current_page > previous_current_page:
-            self._mark_known_results_page(current_current_page)
-            return True
         return current_current_page >= target_page and current_current_page > previous_current_page
 
     def _wait_for_results_page_advanced(
@@ -342,14 +360,8 @@ class VpNavigationMixin:
         previous_title: str,
         timeout: Optional[float] = None,
     ) -> Optional[Dict[str, Any]]:
-        """等待结果页页码真正推进到目标页。"""
+        """等待结果页页码真实推进。"""
         deadline = time.time() + (timeout or self._page_change_timeout_seconds())
-        logger.debug(
-            "开始等待结果页翻页完成: previous_page=%s, target_page=%s, previous_url=%s",
-            previous_page,
-            target_page,
-            previous_url,
-        )
         while time.time() < deadline:
             self._ensure_captcha_cleared()
             try:
@@ -357,13 +369,6 @@ class VpNavigationMixin:
                 current_page = current_summary["page"]
                 current_current_page = int(current_summary.get("current_page") or 0)
                 if current_current_page >= target_page and current_current_page > previous_current_page:
-                    self._mark_known_results_page(current_current_page)
-                    logger.debug(
-                        "检测到结果页页码已推进: previous_page=%s, current_page=%s, target_page=%s",
-                        previous_page,
-                        current_page,
-                        target_page,
-                    )
                     return current_summary
                 if self.page.url != previous_url or current_page != previous_page:
                     logger.debug(
@@ -372,28 +377,17 @@ class VpNavigationMixin:
                         current_page,
                         target_page,
                     )
-                else:
-                    current_title = self._first_result_title()
-                    if current_title != previous_title:
-                        logger.debug(
-                            "检测到结果首条已变化但页码未推进，继续等待: previous_page=%s, current_page=%s, target_page=%s",
-                            previous_page,
-                            current_page,
-                            target_page,
-                        )
+                elif self._first_result_title() != previous_title:
+                    logger.debug(
+                        "检测到标题变化但页码未推进，继续等待: previous_page=%s, target_page=%s",
+                        previous_page,
+                        target_page,
+                    )
             except Exception as exc:
                 logger.debug("等待结果页翻页完成时状态刷新中，继续等待: %s", exc)
             time.sleep(self._page_change_poll_interval_seconds())
-        try:
-            current_page = self.parser.parse_results_summary()["page"]
-        except Exception:
-            current_page = ""
-        raise TimeoutError(f"等待翻页完成超时: previous_page={previous_page}, current_page={current_page}, target_page={target_page}")
 
-    def _mark_known_results_page(self, page_number: int) -> None:
-        """记录最近一次已确认推进到的结果页码。"""
-        if page_number > 0:
-            setattr(self, "_known_results_page", page_number)
+        raise TimeoutError("等待翻页完成超时")
 
     def _wait_for_results_changed(
         self,
@@ -402,40 +396,21 @@ class VpNavigationMixin:
         previous_title: str,
         timeout: Optional[float] = None,
     ) -> None:
+        """等待结果页状态发生变化。"""
         deadline = time.time() + (timeout or self._page_change_timeout_seconds())
-        logger.debug(
-            "开始等待结果页变化: previous_page=%s, previous_url=%s, previous_title=%s",
-            previous_page,
-            previous_url,
-            previous_title,
-        )
         while time.time() < deadline:
             self._ensure_captcha_cleared()
             try:
                 if self._has_results_state_changed(previous_url, previous_page, previous_title):
-                    try:
-                        current_page = self.parser.parse_results_summary()["page"]
-                    except Exception:
-                        current_page = ""
-                    logger.debug("检测到结果页变化: previous_page=%s, current_page=%s", previous_page, current_page)
                     return
             except Exception as exc:
                 logger.debug("结果页状态刷新中，继续等待: %s", exc)
             time.sleep(self._page_change_poll_interval_seconds())
-        try:
-            current_page = self.parser.parse_results_summary()["page"]
-        except Exception:
-            current_page = ""
-        logger.debug(
-            "等待结果页变化超时: previous_page=%s, current_page=%s, current_url=%s",
-            previous_page,
-            current_page,
-            self.page.url,
-        )
         raise TimeoutError("等待翻页完成超时")
 
     def _find_next_page_link(self) -> Optional[Locator]:
-        pager_selectors = []
+        """查找下一页控件。"""
+        pager_selectors: list[str] = []
         for pager_selector in self.RESULTS_PAGER_SELECTORS:
             pager_selectors.extend(
                 [
@@ -458,7 +433,7 @@ class VpNavigationMixin:
                     text = locator.inner_text().strip()
                 except Exception:
                     text = ""
-                if selector.endswith("a[data-page]") and text and text.isdigit():
+                if selector.endswith("a[data-page]") and text.isdigit():
                     continue
                 if not self._is_next_page_control(selector=selector, text=text):
                     continue
@@ -469,7 +444,7 @@ class VpNavigationMixin:
         return None
 
     def _is_next_page_control(self, selector: str, text: str) -> bool:
-        """判断候选节点是否为“下一页”控件。"""
+        """判断候选节点是否为下一页控件。"""
         if selector.endswith(".layui-laypage-next"):
             return True
 

@@ -7,7 +7,10 @@ pandas
 openpyxl
 pywin32
 lxml
+opencc-python-reimplemented
+PyYAML
 
 # LLM 评分依赖
 
 openai
+aiohttp

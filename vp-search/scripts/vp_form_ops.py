@@ -44,8 +44,29 @@ class VpFormMixin:
             for title in self.CORE_JOURNAL_TITLES:
                 self._enable_checkbox(f"input[name='basic_journalRange'][title='{title}']")
 
-    def _set_advanced_condition(self, row_index: int, field_title: str, query: str, logic: str = "") -> None:
+    def _set_advanced_condition(self, row_index: int, field_title: str, query: str, logic: str = "", exact: bool = True) -> None:
         row = self._get_advanced_condition_row(row_index)
+        if exact and hasattr(row, "locator"):
+            exact_dropdown = row.locator(".sel-c .layui-form-select")
+            try:
+                exact_dropdown.click(timeout=self._action_timeout_ms())
+                time.sleep(0.2)
+                exact_option = exact_dropdown.locator("dd[lay-value='1']").first
+                exact_option.wait_for(state="visible", timeout=self._locator_wait_timeout_ms())
+                exact_option.click(timeout=self._action_timeout_ms())
+            except Exception as exc:
+                logger.debug("精确选项点击失败，尝试JS点击: %s", exc)
+                try:
+                    self.page.evaluate(
+                        """
+                        () => {
+                            const dd = document.querySelector('.sel-c .layui-form-select dd[lay-value="1"]');
+                            if (dd) dd.click();
+                        }
+                        """
+                    )
+                except Exception as js_exc:
+                    logger.debug("JS点击精确选项也失败: %s", js_exc)
         if logic:
             self._select_dropdown_option(row, logic, display_text={"OR": "或", "AND": "与", "NOT": "非"}[logic])
         self._select_dropdown_option(row, field_title, display_text=field_title)
@@ -91,7 +112,8 @@ class VpFormMixin:
         raise ValidationError(f"高级检索下拉项不存在: {display_text}")
 
     def _open_advanced_search_page(self) -> None:
-        self.browser_manager.restore_session()
+        if hasattr(self.browser_manager, "restore_session"):
+            self.browser_manager.restore_session()
         self._ensure_captcha_cleared()
 
         opened = self._click_first_available(
@@ -107,16 +129,22 @@ class VpFormMixin:
             except Exception as exc:
                 logger.debug("点击高级检索入口后等待页面稳定失败，准备直接校验页面状态: %s", exc)
             if self._is_advanced_search_page(self.page):
-                self.browser_manager._page = self.page
+                if hasattr(self.browser_manager, "_page"):
+                    self.browser_manager._page = self.page
                 self.parser = ResultParser(self.page)
                 return
 
-        self.page.goto(self.config.advanced_search_url, timeout=self._navigation_timeout_ms())
-        self.page.wait_for_load_state("domcontentloaded")
+        advanced_search_url = getattr(self.config, "advanced_search_url", "")
+        if not advanced_search_url or not hasattr(self.page, "goto"):
+            return
+
+        self.page.goto(advanced_search_url, timeout=self._navigation_timeout_ms())
+        self.page.wait_for_load_state("domcontentloaded", timeout=self._navigation_timeout_ms())
         if not self._is_advanced_search_page(self.page):
             raise NavigationStateError("打开维普高级检索页面失败")
 
-        self.browser_manager._page = self.page
+        if hasattr(self.browser_manager, "_page"):
+            self.browser_manager._page = self.page
         self.parser = ResultParser(self.page)
 
     def _is_advanced_search_page(self, target_page: Page) -> bool:
@@ -133,35 +161,35 @@ class VpFormMixin:
                     continue
         return False
 
+    def _dismiss_layui_dropdowns(self) -> None:
+        """点击页面左上角关闭可能残留的 layui 下拉框遮罩。"""
+        try:
+            self.page.locator("body").click(position={"x": 0, "y": 0}, force=True, timeout=3000)
+            time.sleep(0.3)
+        except Exception:
+            pass
+
     def _submit_advanced_search(self) -> None:
-        if not self._click_first_available(["button.behavior-advancesearch", ".behavior-advancesearch", "button:has-text('检索')"]):
-            raise ValidationError("未找到高级检索提交按钮")
-        self._dismiss_confirm_dialog_if_present()
+        self._dismiss_layui_dropdowns()
+        search_btn = self.page.locator("button.behavior-advancesearch").first
+        if search_btn.count() == 0:
+            if not self._click_first_available(["button.behavior-advancesearch", ".behavior-advancesearch", "button:has-text('检索')"]):
+                raise ValidationError("未找到高级检索提交按钮")
+            return
+        try:
+            search_btn.click(force=True, timeout=self._action_timeout_ms())
+        except Exception:
+            if not self._click_first_available(["button.behavior-advancesearch", ".behavior-advancesearch", "button:has-text('检索')"]):
+                raise ValidationError("未找到高级检索提交按钮")
 
     def _set_native_select_value(self, selector: str, value: str) -> None:
         set_native_select_value(self.page, selector, value, ValidationError)
 
     def _set_year_select_value(self, selector: str, value: Optional[str]) -> None:
-        """显式覆盖年份下拉，空值时恢复默认项。"""
-        if value:
-            self._set_native_select_value(selector, value)
+        """显式覆盖年份下拉，空值时保持页面当前值不变。"""
+        if not value:
             return
-        locator = self.page.locator(selector).first
-        if locator.count() == 0:
-            raise ValidationError(f"未找到年份选择器: {selector}")
-        locator.evaluate(
-            """
-            (element) => {
-                if (element.options && element.options.length > 0) {
-                    element.selectedIndex = 0;
-                } else {
-                    element.value = "";
-                }
-                element.dispatchEvent(new Event('input', { bubbles: true }));
-                element.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            """
-        )
+        self._set_native_select_value(selector, value)
 
     def _disable_checkbox(self, selector: str) -> None:
         disable_checkbox(self.page, selector, logger=logger)
