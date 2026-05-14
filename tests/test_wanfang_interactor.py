@@ -1168,7 +1168,7 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
 
             self.interactor.config.ensure_output_dir = lambda data=None: output_dir
             self.interactor.export_processor = SimpleNamespace(
-                merge_batch_excels=lambda excel_paths, final_file: str(final_file),
+                merge_batch_excels=lambda excel_paths, final_file, **kwargs: str(final_file),
             )
 
             with (
@@ -1243,7 +1243,7 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
 
             self.interactor.config.ensure_output_dir = lambda data=None: output_dir
             self.interactor.export_processor = SimpleNamespace(
-                merge_batch_excels=lambda excel_paths, final_file: str(final_file),
+                merge_batch_excels=lambda excel_paths, final_file, **kwargs: str(final_file),
             )
 
             with (
@@ -1354,7 +1354,7 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
                     return_value=([str(success_file)], [str(report_file)]),
                 ),
                 patch.object(self.interactor, "_build_yearly_sub_progress_file", return_value=progress_file),
-                patch.object(self.interactor, "_cleanup_year_output_dir") as cleanup_dir,
+                patch.object(self.interactor, "_rerun_reset_year_for_export") as reset_year,
                 patch.object(self.interactor, "_save_yearly_progress_snapshot"),
             ):
                 result = self.interactor._run_yearly_advanced_export(
@@ -1369,7 +1369,7 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
 
         self.assertEqual(run_single.call_count, 2)
         self.assertEqual(collect_failures.call_count, 2)
-        cleanup_dir.assert_called_once_with(output_dir, task)
+        reset_year.assert_called_once()
         merge_args = merge_batch_excels.call_args.args
         self.assertEqual(merge_args[0], [Path(str(success_file))])
         self.assertEqual(merge_args[1].parent, output_dir)
@@ -1451,7 +1451,7 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
                     ],
                 ),
                 patch.object(self.interactor, "_build_yearly_sub_progress_file", return_value=progress_file),
-                patch.object(self.interactor, "_cleanup_year_output_dir"),
+                patch.object(self.interactor, "_rerun_reset_year_for_export"),
                 patch.object(self.interactor, "_save_yearly_progress_snapshot"),
             ):
                 with self.assertRaises(ValidationError):
