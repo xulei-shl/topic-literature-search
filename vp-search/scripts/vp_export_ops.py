@@ -239,6 +239,8 @@ class VpExportMixin:
         except Exception:
             pass
 
+        self._dismiss_batch_modal_if_present()
+
     def _download_from_export_page(
         self,
         export_page: Page,

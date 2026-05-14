@@ -92,6 +92,32 @@ class VpPageMixin:
         except Exception:
             pass
 
+    def _dismiss_batch_modal_if_present(self) -> bool:
+        """关闭批量处理后残留的模态弹窗。"""
+        try:
+            close_button = self.page.locator(".layui-layer-ico.layui-layer-close.layui-layer-close1").first
+            if close_button.count() > 0:
+                close_button.wait_for(state="visible", timeout=self._locator_wait_timeout_ms())
+                close_button.click(timeout=self._action_timeout_ms())
+                logger.debug("批量处理弹窗已关闭")
+                return True
+        except Exception as exc:
+            logger.debug("关闭批量处理弹窗失败: %s", exc)
+
+        try:
+            self.page.evaluate(
+                """
+                () => {
+                    const btn = document.querySelector('.layui-layer-ico.layui-layer-close.layui-layer-close1');
+                    if (btn) btn.click();
+                }
+                """
+            )
+            return True
+        except Exception as exc:
+            logger.debug("JS 兜底关闭批量处理弹窗失败: %s", exc)
+        return False
+
     def _ensure_captcha_cleared(self) -> None:
         if not self.browser_manager.is_captcha_visible(self.page):
             return
