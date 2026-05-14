@@ -1387,6 +1387,8 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
                 "date_to": "1978",
                 "max_download": None,
             }
+            success_file = output_dir / "1978-merged.xlsx"
+            report_file = output_dir / "1978-report.txt"
             progress_file = output_dir / "1978-progress.json"
             merge_batch_excels = Mock(return_value=str(output_dir / "final.xlsx"))
             self.interactor.config.ensure_output_dir = lambda data=None: output_dir
@@ -1453,19 +1455,19 @@ class WanfangInteractorYearlyExportTestCase(unittest.TestCase):
                 patch.object(self.interactor, "_build_yearly_sub_progress_file", return_value=progress_file),
                 patch.object(self.interactor, "_rerun_reset_year_for_export"),
                 patch.object(self.interactor, "_save_yearly_progress_snapshot"),
+                patch.object(self.interactor, "_rebuild_yearly_output_files", return_value=([str(success_file)], [str(report_file)])),
             ):
-                with self.assertRaises(ValidationError):
-                    self.interactor._run_yearly_advanced_export(
-                        cli_params={
-                            "query": "新青年",
-                            "date_from": None,
-                            "date_to": "1978",
-                            "max_download": None,
-                        },
-                        progress_file=None,
-                    )
+                result = self.interactor._run_yearly_advanced_export(
+                    cli_params={
+                        "query": "新青年",
+                        "date_from": None,
+                        "date_to": "1978",
+                        "max_download": None,
+                    },
+                    progress_file=None,
+                )
 
-        merge_batch_excels.assert_not_called()
+        merge_batch_excels.assert_called_once()
 
     def test_run_yearly_advanced_export_skips_unreadable_year_and_keeps_merge(self) -> None:
         """某个年度合并表格无法读取时应记录跳过并继续总合并。"""

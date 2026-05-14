@@ -165,14 +165,28 @@ class VpExportMixin:
                 if locator.count() == 0:
                     continue
                 try:
-                    locator.wait_for(state="visible", timeout=2000)
-                    locator.click(timeout=self._action_timeout_ms())
+                    locator.wait_for(state="attached", timeout=2000)
+                    locator.click(force=True, timeout=self._action_timeout_ms(), no_wait_after=True)
                     logger.debug("通过批量处理菜单点击导出题录: selector=%s", selector)
                     batch_menu_export_clicked = True
                     break
                 except Exception as exc:
-                    logger.debug("批量处理菜单导出题录点击失败: selector=%s, error=%s", selector, exc)
-                    continue
+                    logger.debug("批量处理菜单导出题录常规点击失败: selector=%s, error=%s", selector, exc)
+                    try:
+                        locator.evaluate(
+                            """
+                            (el) => {
+                                el.click();
+                                el.dispatchEvent(new Event('click', { bubbles: true }));
+                            }
+                            """
+                        )
+                        logger.debug("通过 JS 兜底点击批量处理菜单导出题录: selector=%s", selector)
+                        batch_menu_export_clicked = True
+                        break
+                    except Exception as js_exc:
+                        logger.debug("批量处理菜单导出题录 JS 点击失败: selector=%s, error=%s", selector, js_exc)
+                        continue
 
             if batch_menu_export_clicked:
                 time.sleep(self._action_poll_interval_seconds() * 5)

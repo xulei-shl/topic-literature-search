@@ -8,6 +8,7 @@ from playwright.sync_api import Page
 
 from src.core.advanced_export_flow import BaseAdvancedExportFlow
 from src.core.advanced_export_types import BatchSelectionResult, SearchParams
+from src.utils.yearly_export_validation import count_excel_rows
 
 from browser import BrowserManager
 from config import WanfangSearchConfig
@@ -57,6 +58,12 @@ class WanfangSearchInteractor(
         self.parser = ResultParser(page)
         self.export_processor = ExportResultProcessor()
         self._results_page_size = self.RESULTS_PER_PAGE_OPTIONS[-1]
+
+    def _get_batch_row_count(self, enriched_file: Path) -> int:
+        try:
+            return count_excel_rows(enriched_file)
+        except Exception:
+            return -1
 
     def login(self) -> Dict[str, Any]:
         """手动登录并保存会话。"""

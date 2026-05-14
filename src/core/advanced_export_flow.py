@@ -29,6 +29,7 @@ class BaseAdvancedExportFlow(ABC):
     """提供高级检索批量导出的公共主流程。"""
 
     EXPORT_BATCH_SIZE = 500
+    MAX_BATCH_RETRIES = 3
     ADVANCED_FORM_READY_SELECTORS: tuple[str, ...] = ()
     CLEANED_METADATA_KIND = "metadata-cleaned"
     ENRICHED_BATCH_KIND = "enriched"
@@ -160,73 +161,106 @@ class BaseAdvancedExportFlow(ABC):
                 if batch_target <= 0:
                     break
 
-                batch_selection = self._select_batch_for_export(
-                    search_params=resolved_params,
-                    batch_index=batch_index,
-                    batch_target=batch_target,
-                    current_page=current_page,
-                    current_row_offset=current_row_offset,
-                    strict_target=strict_batch_target,
-                )
-                if int(batch_selection.get("selected_count") or 0) <= 0:
-                    if bool(batch_selection.get("reached_end")):
+                batch_reached_end = False
+                for retry_attempt in range(1, self.MAX_BATCH_RETRIES + 1):
+                    if retry_attempt > 1:
                         logger.info(
-                            "结果页已到末尾，提前结束后续批次导出: batch=%s, exported_total=%s, planned_download=%s",
-                            batch_index,
-                            exported_total,
-                            planned_download,
+                            "批次数据不足，开始第 %s 次重试: batch=%s", retry_attempt, batch_index
                         )
+
+                    batch_selection = self._select_batch_for_export(
+                        search_params=resolved_params,
+                        batch_index=batch_index,
+                        batch_target=batch_target,
+                        current_page=current_page,
+                        current_row_offset=current_row_offset,
+                        strict_target=strict_batch_target,
+                    )
+                    if int(batch_selection.get("selected_count") or 0) <= 0:
+                        if bool(batch_selection.get("reached_end")):
+                            logger.info(
+                                "结果页已到末尾，提前结束后续批次导出: batch=%s, exported_total=%s, planned_download=%s",
+                                batch_index,
+                                exported_total,
+                                planned_download,
+                            )
+                            batch_reached_end = True
+                            break
+                        raise RuntimeError("批次勾选结果为空，且未标记为正常结束")
+                    batch_selection["restore_results_page"] = exported_total + batch_target < planned_download
+                    batch_download_started_at = time.perf_counter()
+                    batch_files = self._export_selected_results_for_batch(
+                        query=query,
+                        batch_index=batch_index,
+                        output_dir=output_dir,
+                        batch_selection=batch_selection,
+                    )
+                    logger.info(
+                        "批次下载阶段结束，准备进入本地处理: batch=%s, elapsed_ms=%s, excel=%s, txt=%s",
+                        batch_index,
+                        int((time.perf_counter() - batch_download_started_at) * 1000),
+                        batch_files["excel"],
+                        batch_files["txt"],
+                    )
+
+                    cleaned_excel_path = output_dir / build_batch_output_filename(
+                        query=query,
+                        batch_index=batch_index,
+                        kind=self.CLEANED_METADATA_KIND,
+                        suffix=".xlsx",
+                    )
+                    logger.info("开始清理导出表格: batch=%s, excel=%s", batch_index, batch_files["excel"])
+                    cleaned_excel_file = self.export_processor.sanitize_export_excel(
+                        excel_path=Path(batch_files["excel"]),
+                        output_path=cleaned_excel_path,
+                    )
+                    try:
+                        Path(batch_files["excel"]).unlink(missing_ok=True)
+                    except Exception as exc:
+                        logger.debug("删除原始元数据文件失败: %s", exc)
+
+                    enriched_path = output_dir / build_batch_output_filename(
+                        query=query,
+                        batch_index=batch_index,
+                        kind=self.ENRICHED_BATCH_KIND,
+                        suffix=".xlsx",
+                    )
+                    logger.info(
+                        "开始回填参考格式: batch=%s, excel=%s, txt=%s",
+                        batch_index,
+                        cleaned_excel_file,
+                        batch_files["txt"],
+                    )
+                    enriched_file = self.export_processor.enrich_batch_excel(
+                        excel_path=Path(cleaned_excel_file),
+                        txt_path=Path(batch_files["txt"]),
+                        output_path=enriched_path,
+                    )
+
+                    # 每批次行数校验
+                    actual_rows = self._get_batch_row_count(Path(enriched_file))
+                    if actual_rows < 0 or actual_rows >= batch_target - 5:
                         break
-                    raise RuntimeError("批次勾选结果为空，且未标记为正常结束")
-                batch_selection["restore_results_page"] = exported_total + batch_target < planned_download
-                batch_download_started_at = time.perf_counter()
-                batch_files = self._export_selected_results_for_batch(
-                    query=query,
-                    batch_index=batch_index,
-                    output_dir=output_dir,
-                    batch_selection=batch_selection,
-                )
-                logger.info(
-                    "批次下载阶段结束，准备进入本地处理: batch=%s, elapsed_ms=%s, excel=%s, txt=%s",
-                    batch_index,
-                    int((time.perf_counter() - batch_download_started_at) * 1000),
-                    batch_files["excel"],
-                    batch_files["txt"],
-                )
 
-                cleaned_excel_path = output_dir / build_batch_output_filename(
-                    query=query,
-                    batch_index=batch_index,
-                    kind=self.CLEANED_METADATA_KIND,
-                    suffix=".xlsx",
-                )
-                logger.info("开始清理导出表格: batch=%s, excel=%s", batch_index, batch_files["excel"])
-                cleaned_excel_file = self.export_processor.sanitize_export_excel(
-                    excel_path=Path(batch_files["excel"]),
-                    output_path=cleaned_excel_path,
-                )
-                try:
-                    Path(batch_files["excel"]).unlink(missing_ok=True)
-                except Exception as exc:
-                    logger.debug("删除原始元数据文件失败: %s", exc)
+                    if retry_attempt < self.MAX_BATCH_RETRIES:
+                        logger.warning(
+                            "批次行数不足，清理重试: batch=%s, attempt=%s/%s, actual=%s, expected=%s",
+                            batch_index, retry_attempt, self.MAX_BATCH_RETRIES,
+                            actual_rows, batch_target,
+                        )
+                        for stale in [enriched_file, cleaned_excel_file, batch_files.get("excel", ""), batch_files.get("txt", "")]:
+                            try:
+                                Path(stale).unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                    else:
+                        logger.warning(
+                            "批次行数持续不足，接受当前结果: batch=%s, actual=%s, expected=%s",
+                            batch_index, actual_rows, batch_target,
+                        )
 
-                enriched_path = output_dir / build_batch_output_filename(
-                    query=query,
-                    batch_index=batch_index,
-                    kind=self.ENRICHED_BATCH_KIND,
-                    suffix=".xlsx",
-                )
-                logger.info(
-                    "开始回填参考格式: batch=%s, excel=%s, txt=%s",
-                    batch_index,
-                    cleaned_excel_file,
-                    batch_files["txt"],
-                )
-                enriched_file = self.export_processor.enrich_batch_excel(
-                    excel_path=Path(cleaned_excel_file),
-                    txt_path=Path(batch_files["txt"]),
-                    output_path=enriched_path,
-                )
+                if batch_reached_end:
+                    break
 
                 batch_page_range = self._format_batch_page_range(batch_selection)
                 batch_report_path = self._write_batch_report(
@@ -650,3 +684,8 @@ class BaseAdvancedExportFlow(ABC):
     @abstractmethod
     def _normalize_download_limit(self, num_results: Optional[int], total_results: int) -> int:
         """标准化最大下载量。"""
+
+    def _get_batch_row_count(self, enriched_file: Path) -> int:
+        """返回 enriched 批次文件的实际行数，返回 -1 跳过校验。"""
+        del enriched_file
+        return -1

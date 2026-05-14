@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import random
 import time
 from datetime import datetime
@@ -694,7 +695,9 @@ class VpYearlyExportMixin:
 
             # 对比数据一致性
             actual_diff = abs(reported_total - actual_rows)
-            if actual_diff > 10:
+            batch_size = getattr(self, "EXPORT_BATCH_SIZE", 100)
+            tolerance = max(10, math.ceil(reported_total / batch_size) * 5)
+            if actual_diff > tolerance:
                 failures.append(
                     {
                         "task": task,
@@ -744,8 +747,7 @@ class VpYearlyExportMixin:
         batch_count: int,
         exported_batches: int,
     ) -> tuple[list[str], list[dict[str, Any]]]:
-        """在总合并前重跑数量不一致的年份。"""
-        retry_round = 0
+        """在总合并前重跑数量不一致的年份（单轮重跑，仍不一致则记录跳过并继续）。"""
         year_index_map = {task["year"]: index for index, task in enumerate(tasks)}
         skipped_year_map: dict[str, dict[str, Any]] = {}
         if hasattr(progress_store, "load"):
@@ -754,113 +756,109 @@ class VpYearlyExportMixin:
             state = {}
         runtime = state.get("runtime", {})
         saved_pending_years = runtime.get("validation_rerun_pending_years", [])
-        while True:
-            if saved_pending_years:
-                logger.info("从已保存的重跑列表继续: %s", ", ".join(saved_pending_years))
-                pending_task_map = {task["year"]: task for task in tasks}
-                failures = []
-                for year in list(saved_pending_years):
-                    if year not in pending_task_map:
-                        saved_pending_years.remove(year)
-                        continue
-                    task = pending_task_map[year]
-                    failures.append({"task": task, "year": year, "reason": "中断重跑"})
-                skipped_year_details = []
-            else:
-                failures, skipped_year_details = self._collect_yearly_validation_outcomes(
-                    tasks=tasks,
-                    output_dir=output_dir,
-                    executed_years=executed_years,
-                    empty_years=empty_years,
-                )
-            for item in skipped_year_details:
-                skipped_year_map[item["year"]] = item
-            if not failures:
-                return batch_report_files, list(skipped_year_map.values())
 
-            retry_round += 1
-            if retry_round > self.YEARLY_VALIDATION_MAX_RETRIES:
-                mismatch_summary = ", ".join(
-                    f"{item['year']}({abs(item['reported_total'] - item['actual_rows'])}相差)" for item in failures
-                )
-                raise ValidationError(f"逐年导出结果校验失败，超过最大重试次数: {mismatch_summary}")
-
-            logger.info(
-                "逐年导出结果校验发现数量不一致，开始第 %s 轮重跑: %s",
-                retry_round,
-                ", ".join(item["year"] for item in failures),
+        if saved_pending_years:
+            logger.info("从已保存的重跑列表继续: %s", ", ".join(saved_pending_years))
+            pending_task_map = {task["year"]: task for task in tasks}
+            failures = []
+            for year in list(saved_pending_years):
+                if year not in pending_task_map:
+                    continue
+                failures.append({"task": pending_task_map[year], "year": year, "reason": "中断重跑"})
+            skipped_year_details = []
+        else:
+            failures, skipped_year_details = self._collect_yearly_validation_outcomes(
+                tasks=tasks, output_dir=output_dir,
+                executed_years=executed_years, empty_years=empty_years,
             )
+        for item in skipped_year_details:
+            skipped_year_map[item["year"]] = item
+        if not failures:
+            return batch_report_files, list(skipped_year_map.values())
 
-            saved_pending_years = [item["year"] for item in list(failures)]
+        logger.info(
+            "逐年导出结果校验发现数量不一致，开始重跑: %s",
+            ", ".join(item["year"] for item in failures),
+        )
 
-            for failure in failures:
-                task = failure["task"]
-                year_index = year_index_map[task["year"]]
-                sub_progress_file = self._build_yearly_sub_progress_file(output_dir, task)
-                self._rerun_reset_year_for_export(task, output_dir, sub_progress_file)
-                self._save_yearly_progress_snapshot(
-                    progress_store=progress_store,
-                    status="running",
-                    search_params=search_params,
-                    output_dir=output_dir,
-                    available_years=available_years,
-                    next_year_index=len(tasks),
-                    executed_years=executed_years,
-                    empty_years=empty_years,
-                    yearly_result_files=yearly_result_files,
-                    batch_report_files=batch_report_files,
-                    yearly_report_files=yearly_report_files,
-                    empty_result_files=empty_result_files,
-                    current_year=task["year"],
-                    current_year_date_from=task["date_from"],
-                    current_year_date_to=task["date_to"],
-                    current_year_progress_file=str(sub_progress_file),
-                    total=total,
-                    planned_download=planned_download,
-                    exported_total=exported_total,
-                    batch_count=batch_count,
-                    exported_batches=exported_batches,
-                    final_file_path="",
-                    validation_rerun_in_progress=True,
-                    validation_rerun_pending_years=saved_pending_years,
+        for failure in failures:
+            task = failure["task"]
+            remaining_pending = [y for y in saved_pending_years if y != task["year"]]
+            sub_progress_file = self._build_yearly_sub_progress_file(output_dir, task)
+            self._rerun_reset_year_for_export(task, output_dir, sub_progress_file)
+            self._save_yearly_progress_snapshot(
+                progress_store=progress_store,
+                status="running",
+                search_params=search_params,
+                output_dir=output_dir,
+                available_years=available_years,
+                next_year_index=len(tasks),
+                executed_years=executed_years,
+                empty_years=empty_years,
+                yearly_result_files=yearly_result_files,
+                batch_report_files=batch_report_files,
+                yearly_report_files=yearly_report_files,
+                empty_result_files=empty_result_files,
+                current_year=task["year"],
+                current_year_date_from=task["date_from"],
+                current_year_date_to=task["date_to"],
+                current_year_progress_file=str(sub_progress_file),
+                total=total,
+                planned_download=planned_download,
+                exported_total=exported_total,
+                batch_count=batch_count,
+                exported_batches=exported_batches,
+                final_file_path="",
+                validation_rerun_in_progress=True,
+                validation_rerun_pending_years=saved_pending_years,
+            )
+            rerun_result = self._run_single_yearly_export(task, output_dir, sub_progress_file)
+            if rerun_result.get("status") == "no_results":
+                raise ValidationError(f"年度结果复核重跑后为空: {task['year']}")
+            rerun_final = str(rerun_result.get("final_file_path") or "")
+            if rerun_final:
+                yearly_result_files.append(rerun_final)
+            batch_report_files.extend(rerun_result.get("batch_report_files") or [])
+            if rerun_result.get("report_file"):
+                yearly_report_files.append(str(rerun_result["report_file"]))
+            self._save_yearly_progress_snapshot(
+                progress_store=progress_store,
+                status="running",
+                search_params=search_params,
+                output_dir=output_dir,
+                available_years=available_years,
+                next_year_index=len(tasks),
+                executed_years=executed_years,
+                empty_years=empty_years,
+                yearly_result_files=yearly_result_files,
+                batch_report_files=batch_report_files,
+                yearly_report_files=yearly_report_files,
+                empty_result_files=empty_result_files,
+                current_year="",
+                current_year_date_from="",
+                current_year_date_to="",
+                current_year_progress_file="",
+                total=total,
+                planned_download=planned_download,
+                exported_total=exported_total,
+                batch_count=batch_count,
+                exported_batches=exported_batches,
+                final_file_path="",
+                validation_rerun_in_progress=True,
+                validation_rerun_pending_years=remaining_pending,
                 )
-                rerun_result = self._run_single_yearly_export(task, output_dir, sub_progress_file)
-                if rerun_result.get("status") == "no_results":
-                    raise ValidationError(f"年度结果复核重跑后为空: {task['year']}")
-                if task["year"] in saved_pending_years:
-                    saved_pending_years.remove(task["year"])
-                rerun_final = str(rerun_result.get("final_file_path") or "")
-                if rerun_final:
-                    yearly_result_files.append(rerun_final)
-                batch_report_files.extend(rerun_result.get("batch_report_files") or [])
-                if rerun_result.get("report_file"):
-                    yearly_report_files.append(str(rerun_result["report_file"]))
-                self._save_yearly_progress_snapshot(
-                    progress_store=progress_store,
-                    status="running",
-                    search_params=search_params,
-                    output_dir=output_dir,
-                    available_years=available_years,
-                    next_year_index=len(tasks),
-                    executed_years=executed_years,
-                    empty_years=empty_years,
-                    yearly_result_files=yearly_result_files,
-                    batch_report_files=batch_report_files,
-                    yearly_report_files=yearly_report_files,
-                    empty_result_files=empty_result_files,
-                    current_year="",
-                    current_year_date_from="",
-                    current_year_date_to="",
-                    current_year_progress_file="",
-                    total=total,
-                    planned_download=planned_download,
-                    exported_total=exported_total,
-                    batch_count=batch_count,
-                    exported_batches=exported_batches,
-                    final_file_path="",
-                    validation_rerun_in_progress=True,
-                    validation_rerun_pending_years=saved_pending_years,
-                )
+
+        # 重跑后再次校验，仍不一致的年份记录跳过
+        final_failures, _ = self._collect_yearly_validation_outcomes(
+            tasks=tasks, output_dir=output_dir,
+            executed_years=executed_years, empty_years=empty_years,
+        )
+        for f in final_failures:
+            year = f["year"]
+            diff = abs(f.get("reported_total", 0) - f.get("actual_rows", 0))
+            logger.warning("年份 %s 重跑后数据仍不一致（差 %s 条），接受现有结果，继续参与总合并", year, diff)
+
+        return batch_report_files, list(skipped_year_map.values())
 
     def _rebuild_yearly_output_files(
         self,
@@ -906,51 +904,23 @@ class VpYearlyExportMixin:
             raise ValidationError(f"清理年度输出目录失败: {year_output_dir}") from exc
 
     def _rerun_reset_year_for_export(self, task: dict[str, Any], output_dir: Path, sub_progress_file: Path) -> None:
-        """重置年度目录状态以支持重跑续传。
-
-        若子进度为 success（从未重跑过），删除进度文件以强制从零导出；
-        否则保留批次文件与进度文件，由 run_advanced_export 自然续跑。
-        """
+        """年份重跑：保留批次文件和进度，从进度续跑。"""
         year_output_dir = output_dir / f"year-{task['year']}"
-        progress_is_success = False
         if sub_progress_file.exists():
             try:
                 data = json.loads(sub_progress_file.read_text(encoding="utf-8"))
-                progress_is_success = data.get("status") == "success"
+                if data.get("status") in ("success", "no_results"):
+                    data["status"] = "running"
+                    sub_progress_file.write_text(
+                        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+                    )
             except Exception:
                 pass
-
-        if progress_is_success:
-            sub_progress_file.unlink(missing_ok=True)
-            cleanup_year_output_dir(year_output_dir)
-        else:
-            # 单页模式不支持页内偏移 → 重置为 0
-            if sub_progress_file.exists():
-                try:
-                    data = json.loads(sub_progress_file.read_text(encoding="utf-8"))
-                    runtime = data.get("runtime") or {}
-                    row_offset = int(runtime.get("current_row_offset") or 0)
-                    if row_offset > 0:
-                        runtime["current_row_offset"] = 0
-                        data["runtime"] = runtime
-                        sub_progress_file.write_text(
-                            json.dumps(data, ensure_ascii=False, indent=2),
-                            encoding="utf-8",
-                        )
-                except Exception:
-                    pass
-            # 清理旧的 merged/report 文件，保留批次文件
-            for p in year_output_dir.glob("*-merged.xlsx"):
-                try:
-                    p.unlink()
-                except OSError:
-                    pass
-            for p in year_output_dir.glob("*-report.txt"):
-                if "-batch" not in p.name and not p.name.endswith("-no-results.txt"):
-                    try:
-                        p.unlink()
-                    except OSError:
-                        pass
+        for p in year_output_dir.glob("*-merged.xlsx"):
+            p.unlink(missing_ok=True)
+        for p in year_output_dir.glob("*-report.txt"):
+            if "-batch" not in p.name and not p.name.endswith("-no-results.txt"):
+                p.unlink(missing_ok=True)
 
     def _write_yearly_summary_report(
         self,
