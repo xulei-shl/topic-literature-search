@@ -22,3 +22,13 @@
 - 跨模块复用时，Mixin 之间的方法冲突需要仔细通过 MRO 检查
 - 工具方法（如 `_action_poll_interval_seconds`）应当只在一个 Mixin 中定义
 - 进度管理和导出管理的 `_prepare_progress_store`、`_resolve_output_dir` 等重叠方法应放在一个 Mixin（`WpProgressMixin`）中，避免冲突
+
+## 2026-05-14: 批量导出降级策略
+
+### 问题
+`_click_export_entry_after_batch_action()` 中下拉菜单（behavior-allDowns）的"导出题录"点击后直接 `return True`，不验证导出页是否真的打开。当该点击因页面状态原因未生效时，`_open_export_page()` 空等至超时（~3 分钟），导致整批失败。
+
+### 解决方案
+1. **验证后返回**：下拉菜单"导出题录"点击后，通过检测新页面/URL 变化/导出页就绪来验证是否生效
+2. **自动降级**：验证失败时主动点击 `a[href='javascript:batch();']` 切换为模态弹窗方式，由同一个循环找到"导出全部"按钮
+3. **弹窗清理**：导出完成后通过 `_dismiss_batch_modal_if_present()` 自动关闭模态弹窗，避免遮罩层阻塞后续翻页/勾选操作

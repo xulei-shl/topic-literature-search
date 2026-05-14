@@ -119,7 +119,9 @@ class VpExportMixin:
         """点击批量处理后进入导出入口。
 
         先通过 Playwright 常规点击触发批量处理，失败则用 JS 兜底逐条激活。
-        任一成功后轮询等待导出题录选项出现并点击。
+        优先尝试下拉菜单（behavior-allDowns）中的"导出题录"，验证导出页是否打开；
+        若该方式未生效则自动降级到模态弹窗（javascript:batch → 导出全部），
+        避免因单一方式失效导致整个流程中断。
         """
         batch_menu_export_selectors = [
             ".btn-hover-list a.behavior-exporttitle",
@@ -129,6 +131,9 @@ class VpExportMixin:
             "dl.btn-hover-list dd a:has-text('导出题录')",
         ]
         combined_export_selectors = list(self.EXPORT_ENTRY_SELECTORS) + list(self.EXPORT_ENTRY_MENU_SELECTORS)
+
+        existing_pages_start = list(self.page.context.pages)
+        previous_url_start = self.page.url
 
         # 常规 Playwright 点击触发批量处理
         activated = self._click_first_available(self.BATCH_ACTION_MENU_SELECTORS)
@@ -153,6 +158,8 @@ class VpExportMixin:
         # 等待下拉菜单或面板中出现导出题录选项
         deadline = time.time() + self._page_change_timeout_seconds()
         while time.time() < deadline:
+            batch_menu_export_clicked = False
+
             for selector in batch_menu_export_selectors:
                 locator = self.page.locator(selector).first
                 if locator.count() == 0:
@@ -161,10 +168,32 @@ class VpExportMixin:
                     locator.wait_for(state="visible", timeout=2000)
                     locator.click(timeout=self._action_timeout_ms())
                     logger.debug("通过批量处理菜单点击导出题录: selector=%s", selector)
-                    return True
+                    batch_menu_export_clicked = True
+                    break
                 except Exception as exc:
                     logger.debug("批量处理菜单导出题录点击失败: selector=%s, error=%s", selector, exc)
                     continue
+
+            if batch_menu_export_clicked:
+                time.sleep(self._action_poll_interval_seconds() * 5)
+                for opened_page in self.page.context.pages:
+                    if opened_page not in existing_pages_start:
+                        logger.debug("批量处理菜单导出已验证成功: 检测到新页面")
+                        return True
+                if self.page.url != previous_url_start:
+                    logger.debug("批量处理菜单导出已验证成功: 检测到 URL 变化")
+                    return True
+                if self._is_export_page_ready(self.page):
+                    logger.debug("批量处理菜单导出已验证成功: 当前页就绪")
+                    return True
+                logger.debug("批量处理菜单导出未生效，降级尝试模态弹窗")
+                modal_batch = self.page.locator("a[href='javascript:batch();']").first
+                if modal_batch.count() > 0:
+                    try:
+                        modal_batch.evaluate("(element) => element.click()")
+                        logger.debug("已降级点击 javascript:batch() 打开导出弹窗")
+                    except Exception as exc:
+                        logger.debug("降级点击 javascript:batch() 失败: %s", exc)
 
             if self._has_visible_selector(combined_export_selectors):
                 return self._click_first_available(combined_export_selectors)
