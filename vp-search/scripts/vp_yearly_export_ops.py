@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import random
 import time
@@ -923,6 +924,22 @@ class VpYearlyExportMixin:
             sub_progress_file.unlink(missing_ok=True)
             cleanup_year_output_dir(year_output_dir)
         else:
+            # 单页模式不支持页内偏移 → 重置为 0
+            if sub_progress_file.exists():
+                try:
+                    data = json.loads(sub_progress_file.read_text(encoding="utf-8"))
+                    runtime = data.get("runtime") or {}
+                    row_offset = int(runtime.get("current_row_offset") or 0)
+                    if row_offset > 0:
+                        runtime["current_row_offset"] = 0
+                        data["runtime"] = runtime
+                        sub_progress_file.write_text(
+                            json.dumps(data, ensure_ascii=False, indent=2),
+                            encoding="utf-8",
+                        )
+                except Exception:
+                    pass
+            # 清理旧的 merged/report 文件，保留批次文件
             for p in year_output_dir.glob("*-merged.xlsx"):
                 try:
                     p.unlink()
