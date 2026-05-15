@@ -214,7 +214,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         if args.command == "merge-excel":
             targets = resolve_targets(args)
-            return run_merge_excel(args.query, targets)
+            return asyncio.run(run_merge_excel(args.query, targets))
 
         if args.command == "clean-excel":
             from src.core.clean_excel import clean_excel

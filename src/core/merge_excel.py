@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 SOURCE_NAMESPACES = {
     "cnki": "cnki-search",
     "wanfang": "wanfang-search",
-    "weipu": "weipu-search",
+    "vp": "vp-search",
 }
 
 
@@ -145,12 +145,97 @@ def read_excel_with_mapping(file_path: Path, source_mapping: dict[str, str]) -> 
                         value = clean_reference_number(value)
                 converted_row[target_col] = value
 
-        converted_row["检索数据库"] = file_path.parent.name.replace("-search", "")
+        converted_row["检索数据库"] = file_path.parent.parent.name.replace("-search", "")
 
         rows.append(converted_row)
 
     wb.close()
     return rows
+
+
+def generate_merge_report(
+    source_info: list[dict],
+    output_path: Path,
+    all_rows: list[dict],
+    query: str,
+) -> str:
+    """生成合并结果的 Markdown 报告并保存。
+
+    Args:
+        source_info: 各数据源信息（target, file_path, row_count）。
+        output_path: 合并后的 Excel 文件路径。
+        all_rows: 所有数据行。
+        query: 检索关键词。
+
+    Returns:
+        报告文件路径。
+    """
+    from collections import Counter
+
+    title_cnt = Counter()
+    abstract_cnt = Counter()
+    keyword_cnt = Counter()
+    combos = Counter()
+
+    for row in all_rows:
+        t = check_contains_xinnianqing(row.get("题名"))
+        a = check_contains_xinnianqing(row.get("摘要"))
+        k = check_contains_xinnianqing(row.get("关键词"))
+        title_cnt[t] += 1
+        abstract_cnt[a] += 1
+        keyword_cnt[k] += 1
+        combos[(t, a, k)] += 1
+
+    total = len(all_rows)
+
+    lines = [
+        "# 合并结果报告",
+        "",
+        f"- **检索词**: {query}",
+        f"- **生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"- **总记录数**: {total}",
+        "",
+        "---",
+        "",
+        "## 数据源",
+        "",
+        "| 数据库 | 原始文件 | 记录数 |",
+        "|--------|----------|--------|",
+    ]
+    for info in source_info:
+        lines.append(f"| {info['target']} | {info['file_path']} | {info['row_count']} |")
+
+    lines += [
+        "",
+        "## 合并输出",
+        "",
+        f"- **输出文件**: {output_path}",
+        "",
+        "---",
+        "",
+        "## 各列《新青年》包含情况",
+        "",
+        "| 列 | 有 | 无 |",
+        "|-----|----|----|",
+        f"| 题名含《新青年》 | {title_cnt.get('有', 0)} | {title_cnt.get('无', 0)} |",
+        f"| 摘要含《新青年》 | {abstract_cnt.get('有', 0)} | {abstract_cnt.get('无', 0)} |",
+        f"| 关键词含《新青年》 | {keyword_cnt.get('有', 0)} | {keyword_cnt.get('无', 0)} |",
+        "",
+        "## 三列组配统计",
+        "",
+        "| 题名含《新青年》 | 摘要含《新青年》 | 关键词含《新青年》 | 数量 | 占比 |",
+        "|-----------------|-----------------|-----------------|------|------|",
+    ]
+    for t in ("有", "无"):
+        for a in ("有", "无"):
+            for k in ("有", "无"):
+                count = combos.get((t, a, k), 0)
+                pct = f"{count / total * 100:.1f}%" if total > 0 else "0%"
+                lines.append(f"| {t} | {a} | {k} | {count} | {pct} |")
+
+    report_path = output_path.with_suffix(".md")
+    report_path.write_text("\n".join(lines), encoding="utf-8")
+    return str(report_path)
 
 
 def merge_excel_files(query: str, targets: list[str]) -> str:
@@ -168,6 +253,7 @@ def merge_excel_files(query: str, targets: list[str]) -> str:
     target_fields = config["target_fields"]
 
     all_rows = []
+    source_info = []
 
     for target in targets:
         namespace = SOURCE_NAMESPACES.get(target)
@@ -184,6 +270,7 @@ def merge_excel_files(query: str, targets: list[str]) -> str:
         print(f"读取: {merged_file}")
         rows = read_excel_with_mapping(merged_file, mapping)
         print(f"  -> 读取 {len(rows)} 行")
+        source_info.append({"target": target, "file_path": str(merged_file), "row_count": len(rows)})
         all_rows.extend(rows)
 
     if not all_rows:
@@ -222,6 +309,9 @@ def merge_excel_files(query: str, targets: list[str]) -> str:
 
     wb.save(output_path)
     print(f"合并完成: {output_path} (共 {len(all_rows)} 行)")
+
+    report_path = generate_merge_report(source_info, output_path, all_rows, query)
+    print(f"报告生成: {report_path}")
 
     return str(output_path)
 

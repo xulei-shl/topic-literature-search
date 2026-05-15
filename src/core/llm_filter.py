@@ -508,6 +508,13 @@ def llm_filter(query: str, input_path: Path | None = None, batch_size: int | Non
     print(f"\n处理完成: 总计 {total_rows} 行, 成功 {final_success}, 失败 {final_error}")
     print(f"输出文件: {output_path}")
 
+    try:
+        from src.core.llm_report import generate_llm_report
+        report_path = generate_llm_report(input_path, output_path, total_rows, results, query)
+        print(f"报告生成: {report_path}")
+    except Exception as exc:
+        print(f"报告生成失败（不影响结果）: {exc}")
+
     return str(output_path)
 
 
