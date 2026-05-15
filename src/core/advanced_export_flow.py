@@ -301,6 +301,13 @@ class BaseAdvancedExportFlow(ABC):
                     enriched_batch_files=enriched_batch_files,
                     final_file_path="",
                 )
+
+                if bool(batch_selection.get("reached_end")):
+                    logger.info(
+                        "所有结果页已处理完毕，提前结束后续批次导出: batch=%s, exported_total=%s, planned_download=%s",
+                        batch_index, exported_total, planned_download,
+                    )
+                    break
         except KeyboardInterrupt as exc:
             self._save_progress_snapshot_for_flow(
                 progress_store=progress_store,

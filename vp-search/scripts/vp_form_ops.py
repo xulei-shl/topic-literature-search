@@ -49,11 +49,12 @@ class VpFormMixin:
         if exact and hasattr(row, "locator"):
             exact_dropdown = row.locator(".sel-c .layui-form-select")
             try:
-                exact_dropdown.click(timeout=self._action_timeout_ms())
-                time.sleep(0.2)
+                self._dismiss_layui_shade()
+                exact_dropdown.click(force=True, no_wait_after=True, timeout=self._action_timeout_ms())
+                time.sleep(0.3)
                 exact_option = exact_dropdown.locator("dd[lay-value='1']").first
-                exact_option.wait_for(state="visible", timeout=self._locator_wait_timeout_ms())
-                exact_option.click(timeout=self._action_timeout_ms())
+                exact_option.wait_for(state="visible", timeout=self._action_timeout_ms())
+                exact_option.click(force=True, no_wait_after=True, timeout=self._action_timeout_ms())
             except Exception as exc:
                 logger.debug("精确选项点击失败，尝试JS点击: %s", exc)
                 try:
@@ -102,18 +103,28 @@ class VpFormMixin:
                 if option.count() == 0:
                     continue
                 try:
-                    dropdown.click()
-                    option.wait_for(state="visible", timeout=self._locator_wait_timeout_ms())
+                    self._dismiss_layui_shade()
+                    dropdown.click(force=True, no_wait_after=True)
+                    time.sleep(0.3)
+                    option.wait_for(state="visible", timeout=self._action_timeout_ms())
                     option.click(force=True)
                     return
                 except Exception as exc:
                     logger.debug("等待下拉项失败: %s", exc)
+                    try:
+                        dropdown.evaluate("(el) => el.click()")
+                        time.sleep(0.3)
+                        option.evaluate("(el) => el.click()")
+                        return
+                    except Exception as js_exc:
+                        logger.debug("JS 下拉兜底也失败: %s", js_exc)
             time.sleep(self._action_poll_interval_seconds())
         raise ValidationError(f"高级检索下拉项不存在: {display_text}")
 
     def _open_advanced_search_page(self) -> None:
         if hasattr(self.browser_manager, "restore_session"):
             self.browser_manager.restore_session()
+        self._dismiss_layui_shade()
         self._ensure_captcha_cleared()
 
         opened = self._click_first_available(

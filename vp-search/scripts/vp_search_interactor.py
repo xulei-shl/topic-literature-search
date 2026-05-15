@@ -245,14 +245,14 @@ class VpSearchInteractor(
             "already_at_target": selected_count >= page_target_count,
             "start_page": resolved_current_page,
             "end_page": resolved_current_page,
-            "reached_end": False,
+            "reached_end": not bool(summary.get("has_next_page")),
         }
 
     def _prepare_next_batch_cursor(self, batch_selection: BatchSelectionResult) -> Dict[str, int]:
-        """单页导出完成后，下一批从下一页重新开始。"""
+        """单页导出完成后，下一批从下一页重新开始。已到末尾时保持当前页码。"""
         current_page = int(batch_selection.get("end_page") or 1)
         return {
-            "current_page": current_page + 1,
+            "current_page": current_page + (0 if batch_selection.get("reached_end") else 1),
             "current_row_offset": 0,
         }
 

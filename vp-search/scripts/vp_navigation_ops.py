@@ -145,7 +145,11 @@ class VpNavigationMixin:
 
         for attempt in range(1, self.NEXT_PAGE_MAX_RETRIES + 1):
             try:
-                input_locator.fill(str(target_page))
+                self._dismiss_layui_shade()
+                try:
+                    input_locator.fill(str(target_page))
+                except Exception:
+                    self.page.evaluate(f"document.querySelector('.layui-laypage-skip input.layui-input').value = '{target_page}'")
                 self._click_skip_page_button(button_locator, attempt)
                 self._wait_for_pagination_loading_dismissed()
                 self._wait_for_results_changed(previous_url, previous_page, previous_title)

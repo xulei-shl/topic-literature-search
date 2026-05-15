@@ -75,7 +75,7 @@ class VpPageMixin:
                 logger.debug("JS 兜底关闭对话框失败: %s", exc)
                 return False
         try:
-            confirm_button.click(timeout=timeout_ms)
+            confirm_button.click(force=True, timeout=self._action_timeout_ms())
             self._wait_for_dialog_dismissed()
             logger.debug("确认对话框已关闭")
             return True

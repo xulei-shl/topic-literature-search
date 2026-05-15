@@ -34,7 +34,8 @@ class VpPageSizeMixin:
         previous_row_count = self._result_checkbox_locator().count()
 
         try:
-            page_size_link.click()
+            self._dismiss_layui_shade()
+            page_size_link.click(force=True, no_wait_after=True)
             self._wait_for_results_page_size_applied(page_size_link, previous_page, previous_row_count)
         except Exception as exc:
             logger.debug("切换每页显示数量失败: target=%s, error=%s", self.PREFERRED_RESULTS_PAGE_SIZE, exc)
