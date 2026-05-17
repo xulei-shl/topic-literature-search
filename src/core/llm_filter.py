@@ -402,6 +402,61 @@ def write_excel_with_results(
     wb.save(output_path)
 
 
+def load_existing_filtered_results(output_path: Path, total_rows: int) -> dict[int, LLMResult]:
+    """从已存在的 _llm_filtered.xlsx 中加载已有结果，用于中断续跑。
+
+    Args:
+        output_path: 已存在的输出文件路径
+        total_rows: 原始数据总行数
+
+    Returns:
+        {行索引: LLMResult}，只包含已处理的行（成功或失败）
+    """
+    if not output_path.exists():
+        return {}
+
+    try:
+        wb = load_workbook(output_path, read_only=True)
+        ws = wb.active
+    except Exception:
+        return {}
+
+    headers = [cell.value for cell in ws[1]]
+
+    llm_col_map = {}
+    for i, h in enumerate(headers):
+        if h in LLM_COLUMNS:
+            llm_col_map[h] = i
+
+    if not llm_col_map:
+        wb.close()
+        return {}
+
+    json_col = llm_col_map.get("LLM返回JSON")
+    error_col = llm_col_map.get("LLM错误信息")
+
+    results = {}
+    for row_idx_in_file, row in enumerate(ws.iter_rows(min_row=2, values_only=True)):
+        internal_idx = row_idx_in_file
+        if internal_idx >= total_rows:
+            break
+
+        raw_json = str(row[json_col]) if json_col is not None and row[json_col] is not None else ""
+        error_msg = str(row[error_col]) if error_col is not None and row[error_col] is not None else ""
+
+        if not raw_json and not error_msg:
+            continue
+
+        result = LLMResult(raw_json=raw_json, error=error_msg)
+        if raw_json:
+            result = parse_llm_response(result)
+
+        results[internal_idx] = result
+
+    wb.close()
+    return results
+
+
 def llm_filter(query: str, input_path: Path | None = None, batch_size: int | None = None) -> str:
     """对去重后的 Excel 进行 LLM 主题相关性评估。
 
@@ -439,9 +494,20 @@ def llm_filter(query: str, input_path: Path | None = None, batch_size: int | Non
     output_path = input_path.parent / f"{stem}_llm_filtered.xlsx"
 
     results: dict[int, LLMResult] = {}
-    error_indices = set(range(total_rows))
-    submitted_count = 0
-    completed_count = 0
+    existing_results = load_existing_filtered_results(output_path, total_rows)
+    if existing_results:
+        results.update(existing_results)
+        success_count = sum(1 for r in existing_results.values() if r.is_success())
+        fail_count = len(existing_results) - success_count
+        print(f"检测到已有进度: {success_count} 行成功, {fail_count} 行失败待重试")
+
+    error_indices = set()
+    for idx in range(total_rows):
+        if idx not in results or not results[idx].is_success():
+            error_indices.add(idx)
+
+    submitted_count = sum(1 for idx in range(total_rows) if idx in results and results[idx].is_success())
+    completed_count = submitted_count
 
     def save_progress():
         """保存当前进度到 Excel。"""
